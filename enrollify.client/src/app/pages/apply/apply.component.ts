@@ -258,10 +258,12 @@ type ApplyMode = 'Parent' | 'Student';
                       </select>
                     </div>
                     <div>
-                      <label class="form-label">{{ fieldLabel('email', mode() === 'Parent' ? "Child's Email" : 'Email') }} <span *ngIf="mode() === 'Student'">*</span></label>
-                      <input type="email" [(ngModel)]="a.email" [name]="'email_' + i" [required]="mode() === 'Student'" class="form-input" />
+                      <label class="form-label">{{ fieldLabel('email', mode() === 'Parent' ? "Child's Email" : 'Email') }} <span *ngIf="mode() === 'Student' || isFieldRequired('email')">*</span></label>
+                      <input type="email" [(ngModel)]="a.email" [name]="'email_' + i" [required]="mode() === 'Student' || isFieldRequired('email')" class="form-input" />
                       @if (mode() === 'Student') {
                         <p class="mt-1 text-xs text-gray-400">You'll sign in with this email once approved.</p>
+                      } @else {
+                        <p class="mt-1 text-xs text-gray-400">Optional — the parent account above is used to sign in.</p>
                       }
                     </div>
                   </div>

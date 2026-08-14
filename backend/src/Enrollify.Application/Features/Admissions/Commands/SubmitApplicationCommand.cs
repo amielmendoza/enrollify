@@ -104,6 +104,36 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
             ? request.ParentEmail?.Trim().ToLowerInvariant()
             : null;
 
+        // Reject emails that already have an account at SUBMISSION time, not at approval:
+        // the applicant gets immediate feedback, and an anonymous submission can't attach a
+        // child to an existing user's account without them signing in. Checked across tenants
+        // (IgnoreQueryFilters) because LoginCommand treats emails as globally unique.
+        if (request.AuthenticatedParentUserId == null)
+        {
+            if (effectiveType == "Parent" && !string.IsNullOrEmpty(normalizedParentEmail))
+            {
+                var parentEmailTaken = await _context.Users.IgnoreQueryFilters()
+                    .AnyAsync(u => u.Email.ToLower() == normalizedParentEmail, cancellationToken);
+                if (parentEmailTaken)
+                    throw new InvalidOperationException(
+                        "An account with this parent email already exists. Please sign in and use 'Enroll Another Child' to apply.");
+            }
+
+            if (effectiveType == "Student")
+            {
+                foreach (var applicant in request.Applicants)
+                {
+                    var studentEmail = applicant.Email?.Trim().ToLowerInvariant();
+                    if (string.IsNullOrEmpty(studentEmail)) continue;
+                    var studentEmailTaken = await _context.Users.IgnoreQueryFilters()
+                        .AnyAsync(u => u.Email.ToLower() == studentEmail, cancellationToken);
+                    if (studentEmailTaken)
+                        throw new InvalidOperationException(
+                            "An account with this email already exists. Please sign in instead of submitting a new application.");
+                }
+            }
+        }
+
         // Load the field config for this tenant so we can validate required custom fields and
         // strip any keys the admin doesn't actually have configured.
         var customFields = await _context.ApplicationFormFields.IgnoreQueryFilters()

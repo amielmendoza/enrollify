@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Enrollments.Commands;
 
-public record UploadRequirementCommand(Guid RequirementId, Guid UserId, string FileName) : IRequest<bool>;
+public record UploadRequirementCommand(Guid RequirementId, Guid StudentId, Guid ParentUserId, string FileName, string? FileUrl) : IRequest<bool>;
 
 public class UploadRequirementCommandHandler : IRequestHandler<UploadRequirementCommand, bool>
 {
@@ -15,8 +15,8 @@ public class UploadRequirementCommandHandler : IRequestHandler<UploadRequirement
     public async Task<bool> Handle(UploadRequirementCommand request, CancellationToken cancellationToken)
     {
         var student = await _context.Students
-            .FirstOrDefaultAsync(s => s.UserId == request.UserId, cancellationToken)
-            ?? throw new KeyNotFoundException("Student not found.");
+            .FirstOrDefaultAsync(s => s.Id == request.StudentId && s.ParentUserId == request.ParentUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("Child not found or you do not have access to this student.");
 
         var requirement = await _context.EnrollmentRequirements
             .Include(r => r.Enrollment)
@@ -25,6 +25,7 @@ public class UploadRequirementCommandHandler : IRequestHandler<UploadRequirement
 
         requirement.IsSubmitted = true;
         requirement.FileName = request.FileName;
+        requirement.Notes = request.FileUrl;
 
         await _context.SaveChangesAsync(cancellationToken);
         return true;

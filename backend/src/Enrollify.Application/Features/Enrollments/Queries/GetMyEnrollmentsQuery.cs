@@ -11,10 +11,7 @@ public class GetMyEnrollmentsQueryHandler : IRequestHandler<GetMyEnrollmentsQuer
 {
     private readonly IApplicationDbContext _context;
 
-    public GetMyEnrollmentsQueryHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public GetMyEnrollmentsQueryHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<List<EnrollmentDto>> Handle(GetMyEnrollmentsQuery request, CancellationToken cancellationToken)
     {

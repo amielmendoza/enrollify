@@ -20,6 +20,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _sender.Send(new GetStudentsQuery(search, page, pageSize));
@@ -27,6 +28,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _sender.Send(new GetStudentByIdQuery(id));
@@ -34,6 +36,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> Create([FromBody] CreateStudentRequest request)
     {
         var result = await _sender.Send(new CreateStudentCommand(
@@ -44,6 +47,7 @@ public class StudentsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateStudentRequest request)
     {
         var result = await _sender.Send(new UpdateStudentCommand(
@@ -67,6 +71,16 @@ public class StudentsController : ControllerBase
     {
         var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
         var result = await _sender.Send(new GetMyProfileQuery(userId));
+        return Ok(result);
+    }
+
+    [HttpPut("me")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateMyProfileRequest request)
+    {
+        var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var result = await _sender.Send(new UpdateMyProfileCommand(
+            userId, request.ContactNumber, request.Email, request.Address, request.GuardianName, request.GuardianContact));
         return Ok(result);
     }
 }

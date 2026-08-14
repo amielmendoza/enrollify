@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Fees.Queries;
 
-public record GetFeesQuery(string? SchoolYear, string? GradeLevel) : IRequest<List<FeeDto>>;
+public record GetFeesQuery(string? SchoolYear, string? GradeLevel, bool IncludeInactive = false) : IRequest<List<FeeDto>>;
 
 public class GetFeesQueryHandler : IRequestHandler<GetFeesQuery, List<FeeDto>>
 {
@@ -18,7 +18,10 @@ public class GetFeesQueryHandler : IRequestHandler<GetFeesQuery, List<FeeDto>>
 
     public async Task<List<FeeDto>> Handle(GetFeesQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Fees.Where(f => f.IsActive);
+        var query = _context.Fees.AsQueryable();
+
+        if (!request.IncludeInactive)
+            query = query.Where(f => f.IsActive);
 
         if (!string.IsNullOrWhiteSpace(request.SchoolYear))
             query = query.Where(f => f.SchoolYear == request.SchoolYear);

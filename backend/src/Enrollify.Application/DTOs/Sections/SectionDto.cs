@@ -16,3 +16,11 @@ public record CreateSectionRequest(
     string SchoolYear,
     int Capacity,
     string? Adviser);
+
+public record UpdateSectionRequest(
+    string Name,
+    string GradeLevel,
+    string SchoolYear,
+    int Capacity,
+    string? Adviser,
+    bool IsActive);

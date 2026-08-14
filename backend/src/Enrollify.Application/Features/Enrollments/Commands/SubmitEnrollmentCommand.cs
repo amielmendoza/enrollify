@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Enrollments.Commands;
 
-public record SubmitEnrollmentCommand(Guid EnrollmentId, Guid UserId) : IRequest<EnrollmentDto>;
+public record SubmitEnrollmentCommand(Guid EnrollmentId, Guid StudentId, Guid ParentUserId) : IRequest<EnrollmentDto>;
 
 public class SubmitEnrollmentCommandHandler : IRequestHandler<SubmitEnrollmentCommand, EnrollmentDto>
 {
@@ -18,8 +18,8 @@ public class SubmitEnrollmentCommandHandler : IRequestHandler<SubmitEnrollmentCo
     public async Task<EnrollmentDto> Handle(SubmitEnrollmentCommand request, CancellationToken cancellationToken)
     {
         var student = await _context.Students
-            .FirstOrDefaultAsync(s => s.UserId == request.UserId, cancellationToken)
-            ?? throw new KeyNotFoundException("Student not found.");
+            .FirstOrDefaultAsync(s => s.Id == request.StudentId && s.ParentUserId == request.ParentUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("Child not found or you do not have access to this student.");
 
         var enrollment = await _context.Enrollments
             .Include(e => e.Student)
@@ -42,7 +42,7 @@ public class SubmitEnrollmentCommandHandler : IRequestHandler<SubmitEnrollmentCo
             EnrollmentId = enrollment.Id,
             FromStatus = EnrollmentStatus.Draft,
             ToStatus = EnrollmentStatus.Submitted,
-            Remarks = "Submitted by student"
+            Remarks = "Submitted by parent"
         });
 
         await _context.SaveChangesAsync(cancellationToken);

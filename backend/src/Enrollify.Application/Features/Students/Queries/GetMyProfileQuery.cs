@@ -11,10 +11,7 @@ public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Stude
 {
     private readonly IApplicationDbContext _context;
 
-    public GetMyProfileQueryHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public GetMyProfileQueryHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<StudentDto> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
     {

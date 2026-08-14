@@ -10,6 +10,8 @@ public interface IApplicationDbContext
     DbSet<Student> Students { get; }
     DbSet<Enrollment> Enrollments { get; }
     DbSet<EnrollmentStatusHistory> EnrollmentStatusHistories { get; }
+    DbSet<EnrollmentFee> EnrollmentFees { get; }
+    DbSet<LedgerAdjustment> LedgerAdjustments { get; }
     DbSet<Fee> Fees { get; }
     DbSet<Payment> Payments { get; }
     DbSet<Section> Sections { get; }
@@ -17,6 +19,11 @@ public interface IApplicationDbContext
     DbSet<WorkflowStep> WorkflowSteps { get; }
     DbSet<AdmissionApplication> AdmissionApplications { get; }
     DbSet<EnrollmentRequirement> EnrollmentRequirements { get; }
+    DbSet<SchoolYear> SchoolYears { get; }
+    DbSet<FileDocument> FileDocuments { get; }
+    DbSet<PaymentTerm> PaymentTerms { get; }
+    DbSet<RequirementTemplate> RequirementTemplates { get; }
+    DbSet<ApplicationFormField> ApplicationFormFields { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

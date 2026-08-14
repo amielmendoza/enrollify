@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { SchoolYearService } from '../../../core/services/school-year.service';
 import { Student } from '../../../core/models';
+import { GRADE_LEVELS } from '../../../core/constants';
 
 @Component({
   selector: 'app-enrollment-wizard',
@@ -37,7 +39,7 @@ import { Student } from '../../../core/models';
           <div>
             <label class="form-label">Search Student</label>
             <input type="text" [(ngModel)]="studentSearch" (ngModelChange)="searchStudents()"
-                   placeholder="Type name or LRN..." class="form-input mb-3" />
+                   (focus)="loadStudents()" placeholder="Type name or LRN..." class="form-input mb-3" />
             <div class="space-y-2 max-h-60 overflow-auto">
               @for (s of studentResults(); track s.id) {
                 <button (click)="selectStudent(s)" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-blue-50 transition-colors"
@@ -59,8 +61,9 @@ import { Student } from '../../../core/models';
             <div>
               <label class="form-label">School Year *</label>
               <select [(ngModel)]="schoolYear" class="form-input">
-                <option value="2024-2025">2024-2025</option>
-                <option value="2025-2026">2025-2026</option>
+                @for (sy of syService.schoolYears(); track sy.id) {
+                  <option [value]="sy.name">{{ sy.name }}</option>
+                }
               </select>
             </div>
             <div>
@@ -110,16 +113,26 @@ export class EnrollmentWizardComponent {
   studentSearch = '';
   studentResults = signal<Student[]>([]);
   selectedStudent = signal<Student | null>(null);
-  schoolYear = '2024-2025';
+  schoolYear = '';
   gradeLevel = 'Grade 7';
-  gradeLevels = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+  gradeLevels = GRADE_LEVELS;
   stepLabels = ['Select Student', 'Details', 'Confirm'];
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, public syService: SchoolYearService) {
+    this.syService.ensureLoaded().subscribe(list => {
+      const active = list.find(sy => sy.isActive);
+      if (active && !this.schoolYear) this.schoolYear = active.name;
+    });
+  }
+
+  loadStudents(): void {
+    if (this.studentResults().length === 0) {
+      this.api.getStudents('', 1, 50).subscribe(r => this.studentResults.set(r.items));
+    }
+  }
 
   searchStudents(): void {
-    if (this.studentSearch.length < 2) return;
-    this.api.getStudents(this.studentSearch, 1, 10).subscribe(r => this.studentResults.set(r.items));
+    this.api.getStudents(this.studentSearch, 1, 50).subscribe(r => this.studentResults.set(r.items));
   }
 
   selectStudent(s: Student): void { this.selectedStudent.set(s); }

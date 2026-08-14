@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Enrollments.Commands;
 
-public record SelectPaymentPlanCommand(Guid UserId, string PaymentPlan) : IRequest<bool>;
+public record SelectPaymentPlanCommand(Guid StudentId, Guid ParentUserId, string PaymentPlan) : IRequest<bool>;
 
 public class SelectPaymentPlanCommandHandler : IRequestHandler<SelectPaymentPlanCommand, bool>
 {
@@ -18,11 +18,11 @@ public class SelectPaymentPlanCommandHandler : IRequestHandler<SelectPaymentPlan
             throw new InvalidOperationException("Invalid payment plan. Must be Full, Monthly, or Quarterly.");
 
         var student = await _context.Students
-            .FirstOrDefaultAsync(s => s.UserId == request.UserId, cancellationToken)
-            ?? throw new KeyNotFoundException("Student not found.");
+            .FirstOrDefaultAsync(s => s.Id == request.StudentId && s.ParentUserId == request.ParentUserId, cancellationToken)
+            ?? throw new KeyNotFoundException("Child not found or you do not have access to this student.");
 
-        var enrollment = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.StudentId == student.Id, cancellationToken)
+        var enrollment = await EnrollmentSelector.PickCurrentAsync(_context,
+                _context.Enrollments.Where(e => e.StudentId == student.Id), cancellationToken)
             ?? throw new KeyNotFoundException("Enrollment not found.");
 
         if (enrollment.Status < Enrollify.Domain.Enums.EnrollmentStatus.Approved)

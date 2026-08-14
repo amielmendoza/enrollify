@@ -15,6 +15,11 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.PaymentMethod).HasMaxLength(50).IsRequired();
         builder.Property(p => p.ReferenceNumber).HasMaxLength(100);
         builder.Property(p => p.Remarks).HasMaxLength(500);
+        builder.Property(p => p.ReceiptFileName).HasMaxLength(260);
+        builder.Property(p => p.ReceiptFileUrl).HasMaxLength(500);
+        builder.Property(p => p.Status).HasMaxLength(20).HasDefaultValue("Pending");
+        builder.Property(p => p.ReviewedBy).HasMaxLength(200);
+        builder.Property(p => p.ReviewNotes).HasMaxLength(500);
 
         builder.HasOne(p => p.Enrollment)
             .WithMany(e => e.Payments)

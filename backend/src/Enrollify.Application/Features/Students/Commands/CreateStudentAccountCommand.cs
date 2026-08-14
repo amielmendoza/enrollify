@@ -23,10 +23,7 @@ public class CreateStudentAccountCommandHandler : IRequestHandler<CreateStudentA
 {
     private readonly IApplicationDbContext _context;
 
-    public CreateStudentAccountCommandHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public CreateStudentAccountCommandHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<Guid> Handle(CreateStudentAccountCommand request, CancellationToken cancellationToken)
     {
@@ -34,19 +31,24 @@ public class CreateStudentAccountCommandHandler : IRequestHandler<CreateStudentA
             ?? throw new KeyNotFoundException("Student not found.");
 
         if (student.UserId.HasValue)
-            throw new InvalidOperationException("Student already has an account.");
+            throw new InvalidOperationException("Student already has a self-login account.");
+        if (student.ParentUserId.HasValue)
+            throw new InvalidOperationException("Student is managed by a parent account; cannot create a separate student login.");
 
-        var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Email, cancellationToken);
+        var emailExists = await _context.Users.IgnoreQueryFilters()
+            .AnyAsync(u => u.Email == request.Email, cancellationToken);
         if (emailExists)
             throw new InvalidOperationException("A user with this email already exists.");
 
         var user = new User
         {
+            TenantId = student.TenantId,
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             FirstName = student.FirstName,
             LastName = student.LastName,
-            Role = UserRole.Student
+            Role = UserRole.Student,
+            IsActive = true
         };
 
         _context.Users.Add(user);

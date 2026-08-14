@@ -24,3 +24,6 @@ Thumbs.db
 
 # Build
 *.log
+
+# Claude Code local session files
+.claude/

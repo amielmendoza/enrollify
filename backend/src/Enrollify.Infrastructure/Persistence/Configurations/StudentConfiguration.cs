@@ -25,6 +25,9 @@ public class StudentConfiguration : IEntityTypeConfiguration<Student>
         builder.Property(s => s.UserId);
         builder.HasIndex(s => new { s.TenantId, s.UserId }).IsUnique().HasFilter("[UserId] IS NOT NULL");
 
+        builder.Property(s => s.ParentUserId);
+        builder.HasIndex(s => new { s.TenantId, s.ParentUserId });
+
         builder.HasIndex(s => new { s.TenantId, s.LRN }).IsUnique();
         builder.HasIndex(s => s.TenantId);
 

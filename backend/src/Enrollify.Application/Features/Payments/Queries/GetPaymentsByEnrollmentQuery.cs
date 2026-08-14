@@ -21,7 +21,7 @@ public class GetPaymentsByEnrollmentQueryHandler : IRequestHandler<GetPaymentsBy
         return await _context.Payments
             .Where(p => p.EnrollmentId == request.EnrollmentId)
             .OrderByDescending(p => p.PaymentDate)
-            .Select(p => new PaymentDto(p.Id, p.EnrollmentId, p.Amount, p.PaymentMethod, p.ReferenceNumber, p.Remarks, p.PaymentDate))
+            .Select(p => new PaymentDto(p.Id, p.EnrollmentId, p.Amount, p.PaymentMethod, p.ReferenceNumber, p.Remarks, p.PaymentDate, p.Status, p.ReviewedBy, p.ReviewedAt, p.ReviewNotes, p.ReceiptFileName, p.ReceiptFileUrl))
             .ToListAsync(cancellationToken);
     }
 }

@@ -15,6 +15,7 @@ public class EnrollmentConfiguration : IEntityTypeConfiguration<Enrollment>
         builder.Property(e => e.GradeLevel).HasMaxLength(50).IsRequired();
         builder.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
         builder.Property(e => e.Remarks).HasMaxLength(1000);
+        builder.Property(e => e.AssessedTotal).HasPrecision(18, 2);
 
         builder.HasOne(e => e.Student)
             .WithMany(s => s.Enrollments)

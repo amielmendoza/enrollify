@@ -10,3 +10,5 @@ public record RegisterRequest(
     string FirstName,
     string LastName,
     string Role);
+
+public record ChangePasswordRequest(string CurrentPassword, string NewPassword);

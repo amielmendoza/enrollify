@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Admissions;
 using MediatR;
@@ -22,11 +23,20 @@ public class GetApplicationByIdQueryHandler : IRequestHandler<GetApplicationById
             .FirstOrDefaultAsync(a => a.Id == request.Id, cancellationToken)
             ?? throw new KeyNotFoundException("Application not found.");
 
+        Dictionary<string, string?>? custom = null;
+        if (!string.IsNullOrWhiteSpace(a.CustomFieldValues))
+        {
+            try { custom = JsonSerializer.Deserialize<Dictionary<string, string?>>(a.CustomFieldValues); }
+            catch { /* ignore malformed JSON */ }
+        }
+
         return new ApplicationDetailDto(
             a.Id, a.ApplicationNumber, a.FirstName, a.MiddleName, a.LastName,
             a.Email, a.ContactNumber, a.Gender, a.DateOfBirth, a.Address,
             a.GradeLevel, a.SchoolYear, a.PreviousSchool, a.PreviousSchoolAddress,
             a.GuardianName, a.GuardianContact, a.GuardianRelationship,
-            a.Status, a.CreatedAt, a.ReviewedAt, a.ReviewNotes, a.StudentId);
+            a.Status, a.CreatedAt, a.ReviewedAt, a.ReviewNotes, a.StudentId,
+            a.ApplicationType, a.ParentFirstName, a.ParentLastName, a.ParentEmail, a.ParentContactNumber,
+            custom);
     }
 }

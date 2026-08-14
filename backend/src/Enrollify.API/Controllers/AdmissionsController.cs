@@ -22,13 +22,29 @@ public class AdmissionsController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Apply([FromBody] SubmitApplicationRequest request, [FromHeader(Name = "X-Tenant-Id")] Guid tenantId)
     {
+        Guid? authenticatedParentUserId = null;
+        if (User.Identity?.IsAuthenticated == true && User.IsInRole("Parent"))
+        {
+            authenticatedParentUserId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        }
+
+        var applicants = (request.Applicants ?? new List<ApplicantData>())
+            .Select(a => new SubmitApplicationCommand.Applicant(
+                a.FirstName, a.MiddleName, a.LastName,
+                a.Email, a.ContactNumber, a.Gender,
+                a.DateOfBirth, a.Address,
+                a.GradeLevel, a.SchoolYear,
+                a.PreviousSchool, a.PreviousSchoolAddress,
+                a.GuardianName, a.GuardianContact, a.GuardianRelationship,
+                a.CustomFieldValues))
+            .ToList();
+
         var result = await _sender.Send(new SubmitApplicationCommand(
-            request.FirstName, request.MiddleName, request.LastName,
-            request.Email, request.ContactNumber, request.Gender,
-            request.DateOfBirth, request.Address,
-            request.GradeLevel, request.SchoolYear,
-            request.PreviousSchool, request.PreviousSchoolAddress,
-            request.GuardianName, request.GuardianContact, request.GuardianRelationship,
+            authenticatedParentUserId,
+            request.ApplicationType,
+            request.ParentFirstName, request.ParentLastName,
+            request.ParentEmail, request.ParentContactNumber,
+            applicants,
             tenantId));
         return Ok(result);
     }

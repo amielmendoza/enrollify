@@ -6,6 +6,18 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Fail fast on unsafe production config. Any of these can be overridden per environment
+// with environment variables (e.g. Jwt__Key) without touching appsettings.json.
+const string CommittedDevJwtKey = "EnrollifySecretKey2024!@#$%^&*()_+SuperSecure256Bit";
+if (builder.Environment.IsProduction())
+{
+    var jwtKey = builder.Configuration["Jwt:Key"];
+    if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey == CommittedDevJwtKey)
+        throw new InvalidOperationException(
+            "Jwt:Key is missing or still set to the committed development value. " +
+            "Configure a strong, secret signing key for Production (e.g. via the Jwt__Key environment variable).");
+}
+
 // Add services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -43,11 +55,17 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddHttpContextAccessor();
 
+// CORS origins come from the "AllowedOrigins" config array (overridable via
+// AllowedOrigins__0 etc.); the Angular dev server is the default when none are configured.
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+if (allowedOrigins == null || allowedOrigins.Length == 0)
+    allowedOrigins = new[] { "http://localhost:4200" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Enrollify.Application.Features.Payments.Commands;
 
 public record CreatePaymentCommand(
-    Guid EnrollmentId, decimal Amount, string PaymentMethod, string? ReferenceNumber, string? Remarks
+    Guid EnrollmentId, decimal Amount, string PaymentMethod, string? ReferenceNumber, string? Remarks,
+    string? ReceiptFileName = null, string? ReceiptFileUrl = null
 ) : IRequest<PaymentDto>;
 
 public class CreatePaymentCommandValidator : AbstractValidator<CreatePaymentCommand>
@@ -41,13 +42,17 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
             Amount = request.Amount,
             PaymentMethod = request.PaymentMethod,
             ReferenceNumber = request.ReferenceNumber,
-            Remarks = request.Remarks
+            Remarks = request.Remarks,
+            ReceiptFileName = request.ReceiptFileName,
+            ReceiptFileUrl = request.ReceiptFileUrl
         };
 
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync(cancellationToken);
 
         return new PaymentDto(payment.Id, payment.EnrollmentId, payment.Amount,
-            payment.PaymentMethod, payment.ReferenceNumber, payment.Remarks, payment.PaymentDate);
+            payment.PaymentMethod, payment.ReferenceNumber, payment.Remarks, payment.PaymentDate,
+            payment.Status, payment.ReviewedBy, payment.ReviewedAt, payment.ReviewNotes,
+            payment.ReceiptFileName, payment.ReceiptFileUrl);
     }
 }

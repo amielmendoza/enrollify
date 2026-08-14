@@ -40,7 +40,14 @@ public class ExceptionHandlingMiddleware
         }
         catch (UnauthorizedAccessException ex)
         {
-            context.Response.StatusCode = 403;
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Business-rule violations thrown by handlers (status guards, duplicates, capacity checks).
+            context.Response.StatusCode = 400;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
         }

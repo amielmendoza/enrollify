@@ -1,5 +1,6 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Payments;
+using Enrollify.Application.Features.Enrollments;
 using Enrollify.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,16 +12,15 @@ public record StudentPaymentCommand(
     decimal Amount,
     string PaymentMethod,
     string? ReferenceNumber,
-    string? Remarks) : IRequest<PaymentDto>;
+    string? Remarks,
+    string? ReceiptFileName = null,
+    string? ReceiptFileUrl = null) : IRequest<PaymentDto>;
 
 public class StudentPaymentCommandHandler : IRequestHandler<StudentPaymentCommand, PaymentDto>
 {
     private readonly IApplicationDbContext _context;
 
-    public StudentPaymentCommandHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public StudentPaymentCommandHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<PaymentDto> Handle(StudentPaymentCommand request, CancellationToken cancellationToken)
     {
@@ -28,8 +28,8 @@ public class StudentPaymentCommandHandler : IRequestHandler<StudentPaymentComman
             .FirstOrDefaultAsync(s => s.UserId == request.UserId, cancellationToken)
             ?? throw new KeyNotFoundException("Student record not found.");
 
-        var enrollment = await _context.Enrollments
-            .FirstOrDefaultAsync(e => e.StudentId == student.Id, cancellationToken)
+        var enrollment = await EnrollmentSelector.PickCurrentAsync(_context,
+                _context.Enrollments.Where(e => e.StudentId == student.Id), cancellationToken)
             ?? throw new KeyNotFoundException("No enrollment found.");
 
         if (request.Amount <= 0)
@@ -41,13 +41,17 @@ public class StudentPaymentCommandHandler : IRequestHandler<StudentPaymentComman
             Amount = request.Amount,
             PaymentMethod = request.PaymentMethod,
             ReferenceNumber = request.ReferenceNumber,
-            Remarks = request.Remarks
+            Remarks = request.Remarks,
+            ReceiptFileName = request.ReceiptFileName,
+            ReceiptFileUrl = request.ReceiptFileUrl
         };
 
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync(cancellationToken);
 
         return new PaymentDto(payment.Id, payment.EnrollmentId, payment.Amount,
-            payment.PaymentMethod, payment.ReferenceNumber, payment.Remarks, payment.PaymentDate);
+            payment.PaymentMethod, payment.ReferenceNumber, payment.Remarks, payment.PaymentDate,
+            payment.Status, payment.ReviewedBy, payment.ReviewedAt, payment.ReviewNotes,
+            payment.ReceiptFileName, payment.ReceiptFileUrl);
     }
 }

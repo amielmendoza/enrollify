@@ -16,7 +16,8 @@ public class Student : TenantEntity
     public string? GuardianName { get; set; }
     public string? GuardianContact { get; set; }
     public bool IsActive { get; set; } = true;
-    public Guid? UserId { get; set; }
+    public Guid? UserId { get; set; }          // Set when the student self-registered (Student-role User)
+    public Guid? ParentUserId { get; set; }    // Set when a parent registered the student (Parent-role User)
 
     public string FullName => $"{LastName}, {FirstName} {MiddleName}".TrimEnd();
 

@@ -15,3 +15,11 @@ public record CreateFeeRequest(
     decimal Amount,
     string SchoolYear,
     string GradeLevel);
+
+public record UpdateFeeRequest(
+    string Name,
+    string? Description,
+    decimal Amount,
+    string SchoolYear,
+    string GradeLevel,
+    bool IsActive);

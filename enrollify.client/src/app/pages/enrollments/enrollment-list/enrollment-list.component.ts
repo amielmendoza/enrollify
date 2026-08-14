@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
-import { Enrollment } from '../../../core/models';
+import { SchoolYearService } from '../../../core/services/school-year.service';
+import { Enrollment, SchoolYear } from '../../../core/models';
+import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
 
 @Component({
   selector: 'app-enrollment-list',
@@ -20,9 +22,15 @@ import { Enrollment } from '../../../core/models';
 
       <div class="bg-white rounded-xl border border-gray-200">
         <div class="p-4 border-b border-gray-200 flex flex-wrap gap-3">
-          <input type="text" [(ngModel)]="search" (ngModelChange)="load()" placeholder="Search student..."
+          <input type="text" [(ngModel)]="search" (ngModelChange)="onFilterChange()" placeholder="Search student..."
                  class="form-input max-w-sm" />
-          <select [(ngModel)]="statusFilter" (ngModelChange)="load()" class="form-input w-auto">
+          <select [(ngModel)]="schoolYearFilter" (ngModelChange)="onFilterChange()" class="form-input w-auto">
+            <option value="">All School Years</option>
+            @for (sy of schoolYears(); track sy.id) {
+              <option [value]="sy.name">{{ sy.name }}</option>
+            }
+          </select>
+          <select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()" class="form-input w-auto">
             <option value="">All Statuses</option>
             <option value="Draft">Draft</option>
             <option value="Submitted">Submitted</option>
@@ -30,6 +38,7 @@ import { Enrollment } from '../../../core/models';
             <option value="Approved">Approved</option>
             <option value="Paid">Paid</option>
             <option value="Enrolled">Enrolled</option>
+            <option value="Cancelled">Cancelled</option>
           </select>
         </div>
 
@@ -67,29 +76,67 @@ import { Enrollment } from '../../../core/models';
             </tbody>
           </table>
         </div>
+
+        @if (totalPages() > 1) {
+          <div class="flex items-center justify-between p-4 border-t border-gray-200">
+            <p class="text-sm text-gray-500">Showing page {{ page() }} of {{ totalPages() }} ({{ totalCount() }} total)</p>
+            <div class="flex gap-2">
+              <button (click)="loadPage(page() - 1)" [disabled]="page() <= 1"
+                      class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Previous</button>
+              <button (click)="loadPage(page() + 1)" [disabled]="page() >= totalPages()"
+                      class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Next</button>
+            </div>
+          </div>
+        }
       </div>
     </div>
   `
 })
 export class EnrollmentListComponent implements OnInit {
   enrollments = signal<Enrollment[]>([]);
+  schoolYears = signal<SchoolYear[]>([]);
   search = '';
   statusFilter = '';
+  schoolYearFilter = '';
+  page = signal(1);
+  totalCount = signal(0);
+  totalPages = signal(0);
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private syService: SchoolYearService) {}
 
-  ngOnInit(): void { this.load(); }
-
-  load(): void {
-    this.api.getEnrollments({ search: this.search, status: this.statusFilter || undefined }).subscribe(r => {
-      this.enrollments.set(r.items);
+  ngOnInit(): void {
+    this.syService.ensureLoaded().subscribe(list => {
+      this.schoolYears.set(list);
+      this.schoolYearFilter = this.syService.activeName() || '';
+      this.load();
     });
   }
 
-  private statusNames = ['Draft', 'Submitted', 'Assessed', 'Approved', 'Paid', 'Enrolled'];
+  load(): void {
+    this.api.getEnrollments({
+      search: this.search,
+      status: this.statusFilter || undefined,
+      schoolYear: this.schoolYearFilter || undefined,
+      page: this.page()
+    }).subscribe(r => {
+      this.enrollments.set(r.items);
+      this.totalCount.set(r.totalCount);
+      this.totalPages.set(r.totalPages);
+    });
+  }
+
+  onFilterChange(): void {
+    this.page.set(1);
+    this.load();
+  }
+
+  loadPage(p: number): void {
+    this.page.set(p);
+    this.load();
+  }
 
   getStatusName(status: string | number): string {
-    if (typeof status === 'number') return this.statusNames[status] ?? 'Draft';
+    if (typeof status === 'number') return ENROLLMENT_STATUS_NAMES[status] ?? 'Draft';
     return status;
   }
 
@@ -100,7 +147,8 @@ export class EnrollmentListComponent implements OnInit {
       Assessed: 'bg-yellow-100 text-yellow-700',
       Approved: 'bg-purple-100 text-purple-700',
       Paid: 'bg-green-100 text-green-700',
-      Enrolled: 'bg-emerald-100 text-emerald-800'
+      Enrolled: 'bg-emerald-100 text-emerald-800',
+      Cancelled: 'bg-red-100 text-red-700'
     };
     return classes[status] || 'bg-gray-100 text-gray-700';
   }

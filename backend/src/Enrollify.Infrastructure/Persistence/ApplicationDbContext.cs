@@ -21,6 +21,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<EnrollmentStatusHistory> EnrollmentStatusHistories => Set<EnrollmentStatusHistory>();
+    public DbSet<EnrollmentFee> EnrollmentFees => Set<EnrollmentFee>();
+    public DbSet<LedgerAdjustment> LedgerAdjustments => Set<LedgerAdjustment>();
     public DbSet<Fee> Fees => Set<Fee>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Section> Sections => Set<Section>();
@@ -28,6 +30,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<WorkflowStep> WorkflowSteps => Set<WorkflowStep>();
     public DbSet<AdmissionApplication> AdmissionApplications => Set<AdmissionApplication>();
     public DbSet<EnrollmentRequirement> EnrollmentRequirements => Set<EnrollmentRequirement>();
+    public DbSet<SchoolYear> SchoolYears => Set<SchoolYear>();
+    public DbSet<FileDocument> FileDocuments => Set<FileDocument>();
+    public DbSet<PaymentTerm> PaymentTerms => Set<PaymentTerm>();
+    public DbSet<RequirementTemplate> RequirementTemplates => Set<RequirementTemplate>();
+    public DbSet<ApplicationFormField> ApplicationFormFields => Set<ApplicationFormField>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -66,7 +73,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.TenantId = tenantId;
+                // Respect TenantId if the caller has already set it explicitly (e.g. SuperAdmin
+                // seeding defaults for a freshly-created tenant where the request has no tenant
+                // context). Only auto-assign when no value was provided.
+                if (entry.Entity.TenantId == Guid.Empty)
+                    entry.Entity.TenantId = tenantId;
                 entry.Entity.CreatedAt = DateTime.UtcNow;
             }
 

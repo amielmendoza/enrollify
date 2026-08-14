@@ -7,5 +7,6 @@ public enum EnrollmentStatus
     Assessed = 2,
     Approved = 3,
     Paid = 4,
-    Enrolled = 5
+    Enrolled = 5,
+    Cancelled = 6
 }

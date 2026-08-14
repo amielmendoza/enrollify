@@ -40,3 +40,17 @@ public record UpdateStudentRequest(
     string? Email,
     string? GuardianName,
     string? GuardianContact);
+
+public record UpdateMyProfileRequest(
+    string? ContactNumber,
+    string? Email,
+    string? Address,
+    string? GuardianName,
+    string? GuardianContact);
+
+public record UpdateChildProfileRequest(
+    string? ContactNumber,
+    string? Email,
+    string? Address,
+    string? GuardianName,
+    string? GuardianContact);

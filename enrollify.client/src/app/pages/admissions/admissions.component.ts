@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
 
 @Component({
@@ -20,9 +21,9 @@ import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
       <!-- Filters -->
       <div class="bg-white rounded-xl border border-gray-200 mt-6">
         <div class="p-4 border-b border-gray-100 flex flex-wrap gap-3">
-          <input type="text" [(ngModel)]="search" (ngModelChange)="load()" placeholder="Search by name or application #..."
+          <input type="text" [(ngModel)]="search" (ngModelChange)="onFilterChange()" placeholder="Search by name or application #..."
                  class="form-input max-w-sm" />
-          <select [(ngModel)]="statusFilter" (ngModelChange)="load()" class="form-input w-auto">
+          <select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()" class="form-input w-auto">
             <option value="">All Statuses</option>
             <option value="Submitted">Submitted</option>
             <option value="UnderReview">Under Review</option>
@@ -71,6 +72,18 @@ import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
             </tbody>
           </table>
         </div>
+
+        @if (totalPages() > 1) {
+          <div class="flex items-center justify-between p-4 border-t border-gray-200">
+            <p class="text-sm text-gray-500">Showing page {{ page() }} of {{ totalPages() }} ({{ totalCount() }} total)</p>
+            <div class="flex gap-2">
+              <button (click)="loadPage(page() - 1)" [disabled]="page() <= 1"
+                      class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Previous</button>
+              <button (click)="loadPage(page() + 1)" [disabled]="page() >= totalPages()"
+                      class="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Next</button>
+            </div>
+          </div>
+        }
       </div>
 
       <!-- Detail Modal -->
@@ -99,6 +112,29 @@ import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
                 <div><p class="text-xs text-gray-500">Previous School</p><p class="text-sm font-medium">{{ selectedApp()!.previousSchool || '-' }}</p></div>
                 <div><p class="text-xs text-gray-500">Guardian</p><p class="text-sm font-medium">{{ selectedApp()!.guardianName || '-' }} {{ selectedApp()!.guardianRelationship ? '(' + selectedApp()!.guardianRelationship + ')' : '' }}</p></div>
               </div>
+              @if (selectedApp()!.parentEmail || selectedApp()!.parentContactNumber) {
+                <div class="border-t border-gray-100 pt-4">
+                  <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Parent Contact</p>
+                  <div class="grid grid-cols-2 gap-4">
+                    @if (selectedApp()!.parentEmail) {
+                      <div><p class="text-xs text-gray-500">Parent Email</p><p class="text-sm font-medium">{{ selectedApp()!.parentEmail }}</p></div>
+                    }
+                    @if (selectedApp()!.parentContactNumber) {
+                      <div><p class="text-xs text-gray-500">Parent Contact Number</p><p class="text-sm font-medium">{{ selectedApp()!.parentContactNumber }}</p></div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (customFieldEntries().length > 0) {
+                <div class="border-t border-gray-100 pt-4">
+                  <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional Information</p>
+                  <div class="grid grid-cols-2 gap-4">
+                    @for (entry of customFieldEntries(); track entry.key) {
+                      <div><p class="text-xs text-gray-500">{{ formatFieldKey(entry.key) }}</p><p class="text-sm font-medium">{{ entry.value || '-' }}</p></div>
+                    }
+                  </div>
+                </div>
+              }
               @if (selectedApp()!.reviewNotes) {
                 <div class="bg-gray-50 rounded-lg p-4 mt-4">
                   <p class="text-xs text-gray-500">Review Notes</p>
@@ -108,8 +144,8 @@ import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
             </div>
             @if (selectedApp()!.status === 'Submitted') {
               <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
-                <button (click)="reject(selectedApp()!.id); selectedApp.set(null)" class="btn btn-danger">Reject</button>
-                <button (click)="approve(selectedApp()!.id); selectedApp.set(null)" class="btn btn-success">Approve</button>
+                <button (click)="reject(selectedApp()!.id)" class="btn btn-danger">Reject</button>
+                <button (click)="approve(selectedApp()!.id)" class="btn btn-success">Approve</button>
               </div>
             }
           </div>
@@ -123,28 +159,75 @@ export class AdmissionsComponent implements OnInit {
   selectedApp = signal<ApplicationDetailDto | null>(null);
   search = '';
   statusFilter = '';
+  page = signal(1);
+  totalCount = signal(0);
+  totalPages = signal(0);
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private notify: NotificationService) {}
 
   ngOnInit() { this.load(); }
 
   load() {
-    this.api.getApplications({ status: this.statusFilter || undefined, search: this.search || undefined }).subscribe(r => {
+    this.api.getApplications({ status: this.statusFilter || undefined, search: this.search || undefined, page: this.page() }).subscribe(r => {
       this.applications.set(r.items);
+      this.totalCount.set(r.totalCount);
+      this.totalPages.set(r.totalPages);
     });
+  }
+
+  onFilterChange() {
+    this.page.set(1);
+    this.load();
+  }
+
+  loadPage(p: number) {
+    this.page.set(p);
+    this.load();
   }
 
   viewDetail(id: string) {
     this.api.getApplication(id).subscribe(a => this.selectedApp.set(a));
   }
 
-  approve(id: string) {
-    this.api.reviewApplication(id, true, 'Application approved').subscribe(() => this.load());
+  async approve(id: string) {
+    const ok = await this.notify.confirm(
+      'Approve this application? This creates the student record, login account, and a draft enrollment.',
+      { title: 'Approve Application', confirmLabel: 'Approve' });
+    if (!ok) return;
+    this.api.reviewApplication(id, true, 'Application approved').subscribe({
+      next: () => {
+        this.selectedApp.set(null);
+        this.load();
+      },
+      error: (err) => this.notify.error(err.error?.error || 'Failed to review application.')
+    });
   }
 
-  reject(id: string) {
-    const notes = prompt('Rejection reason (optional):');
-    this.api.reviewApplication(id, false, notes || 'Application rejected').subscribe(() => this.load());
+  async reject(id: string) {
+    const notes = await this.notify.prompt('Rejection reason (optional):',
+      { title: 'Reject Application', confirmLabel: 'Reject', danger: true });
+    if (notes === null) return;
+    this.api.reviewApplication(id, false, notes || 'Application rejected').subscribe({
+      next: () => {
+        this.selectedApp.set(null);
+        this.load();
+      },
+      error: (err) => this.notify.error(err.error?.error || 'Failed to review application.')
+    });
+  }
+
+  customFieldEntries(): { key: string; value: string | null }[] {
+    const values = this.selectedApp()?.customFieldValues;
+    if (!values) return [];
+    return Object.entries(values).map(([key, value]) => ({ key, value }));
+  }
+
+  // "middle_name" / "middleName" -> "Middle Name" for display in the detail modal.
+  formatFieldKey(key: string): string {
+    return key
+      .replace(/_/g, ' ')
+      .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+      .replace(/\b\w/g, c => c.toUpperCase());
   }
 
   getStatusBadge(status: string): string {

@@ -11,5 +11,11 @@ public class Payment : TenantEntity
     public string PaymentMethod { get; set; } = default!;
     public string? ReferenceNumber { get; set; }
     public string? Remarks { get; set; }
+    public string? ReceiptFileName { get; set; }
+    public string? ReceiptFileUrl { get; set; }
     public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
+    public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
+    public string? ReviewedBy { get; set; }
+    public DateTime? ReviewedAt { get; set; }
+    public string? ReviewNotes { get; set; }
 }

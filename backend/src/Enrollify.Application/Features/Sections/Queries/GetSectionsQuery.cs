@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Sections.Queries;
 
-public record GetSectionsQuery(string? SchoolYear, string? GradeLevel) : IRequest<List<SectionDto>>;
+public record GetSectionsQuery(string? SchoolYear, string? GradeLevel, bool IncludeInactive = false) : IRequest<List<SectionDto>>;
 
 public class GetSectionsQueryHandler : IRequestHandler<GetSectionsQuery, List<SectionDto>>
 {
@@ -18,7 +18,10 @@ public class GetSectionsQueryHandler : IRequestHandler<GetSectionsQuery, List<Se
 
     public async Task<List<SectionDto>> Handle(GetSectionsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Sections.Include(s => s.Enrollments).Where(s => s.IsActive);
+        var query = _context.Sections.Include(s => s.Enrollments).AsQueryable();
+
+        if (!request.IncludeInactive)
+            query = query.Where(s => s.IsActive);
 
         if (!string.IsNullOrWhiteSpace(request.SchoolYear))
             query = query.Where(s => s.SchoolYear == request.SchoolYear);

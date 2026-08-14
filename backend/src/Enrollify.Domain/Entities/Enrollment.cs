@@ -18,7 +18,14 @@ public class Enrollment : TenantEntity
     public string? Remarks { get; set; }
     public string? PaymentPlan { get; set; } // Full, Monthly, Quarterly
 
+    // Fee snapshot captured when the enrollment is assessed. Null until first assessment;
+    // when set, balance reads use these instead of the live Fee catalog.
+    public decimal? AssessedTotal { get; set; }
+    public DateTime? AssessedAt { get; set; }
+
     public ICollection<EnrollmentStatusHistory> StatusHistory { get; set; } = new List<EnrollmentStatusHistory>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public ICollection<EnrollmentRequirement> Requirements { get; set; } = new List<EnrollmentRequirement>();
+    public ICollection<EnrollmentFee> FeeSnapshot { get; set; } = new List<EnrollmentFee>();
+    public ICollection<LedgerAdjustment> LedgerAdjustments { get; set; } = new List<LedgerAdjustment>();
 }

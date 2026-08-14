@@ -1,13 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="flex min-h-screen">
       <!-- LEFT: Blue branding panel -->
@@ -80,7 +80,12 @@ import { AuthService } from '../../core/services/auth.service';
             </button>
           </form>
 
-          <p class="mt-8 text-center text-sm text-gray-400">Demo: admin&#64;mshs.edu.ph / Admin123!</p>
+          <div class="mt-8 text-center text-sm text-gray-400 space-y-1">
+            <p>SuperAdmin: super&#64;enrollify.app / SuperAdmin123!</p>
+            <p>Admin: admin&#64;mshs.edu.ph / Admin123!</p>
+            <p>Parent: pedro.delacruz&#64;example.com / Parent123!</p>
+            <p class="pt-2"><a routerLink="/apply" class="text-[#4361ee] font-medium hover:underline">New parent? Enroll your child &rarr;</a></p>
+          </div>
         </div>
       </div>
     </div>
@@ -94,7 +99,7 @@ export class LoginComponent {
 
   constructor(private authService: AuthService, private router: Router) {
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate([this.landingRouteForRole(this.authService.userRole())]);
     }
   }
 
@@ -102,11 +107,17 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
     this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: (res) => this.router.navigate([this.landingRouteForRole(res.role)]),
       error: (err) => {
         this.loading.set(false);
         this.error.set(err.error?.error || 'Login failed. Please check your credentials.');
       }
     });
+  }
+
+  private landingRouteForRole(role: string): string {
+    if (role === 'Parent') return '/parent/dashboard';
+    if (role === 'SuperAdmin') return '/super/tenants';
+    return '/dashboard';
   }
 }

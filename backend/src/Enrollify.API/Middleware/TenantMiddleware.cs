@@ -28,6 +28,35 @@ public class TenantMiddleware
             return;
         }
 
+        // Tenant management itself is cross-tenant: public endpoints (active list, by-id lookup)
+        // need no tenant context, and SuperAdmin endpoints operate across all schools.
+        if (context.Request.Path.StartsWithSegments("/api/tenants"))
+        {
+            // Optional: still pick up a tenant header if one is provided, but never fail.
+            if (TryResolveTenantId(context, out var supplied))
+            {
+                tenantProvider.SetTenantId(supplied);
+            }
+
+            await _next(context);
+            return;
+        }
+
+        // Slug-based public school endpoints (/api/schools/{slug}/...) — the tenant is in the
+        // path, not the header. The controller resolves it explicitly. We still pick up an
+        // authenticated user's tenant from JWT claims when present so writes (e.g. parent adding
+        // another child) honor the global tenant filter on entities.
+        if (context.Request.Path.StartsWithSegments("/api/schools"))
+        {
+            if (TryResolveTenantId(context, out var supplied))
+            {
+                tenantProvider.SetTenantId(supplied);
+            }
+
+            await _next(context);
+            return;
+        }
+
         if (!TryResolveTenantId(context, out var tenantId))
         {
             context.Response.StatusCode = 400;

@@ -48,6 +48,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, LoginResp
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
             throw new InvalidOperationException("Invalid role specified.");
 
+        // Privileged accounts have dedicated, role-gated management endpoints
+        // (/api/registrars, /api/tenants/{id}/users) — never this one.
+        if (role is not (UserRole.Parent or UserRole.Student))
+            throw new InvalidOperationException("Only Parent or Student accounts can be registered here.");
+
         var user = new User
         {
             Email = request.Email,

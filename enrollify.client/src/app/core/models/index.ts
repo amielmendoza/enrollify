@@ -49,6 +49,8 @@ export interface EnrollmentRequirement {
   notes: string | null;
   isVerified: boolean;
   verifiedBy: string | null;
+  verifiedAt: string | null;
+  reviewNotes: string | null;
 }
 
 export interface Enrollment {
@@ -70,6 +72,40 @@ export interface CreateEnrollmentRequest {
   studentId: string;
   schoolYear: string;
   gradeLevel: string;
+}
+
+// One status transition of an enrollment (GET /enrollments/{id}/history, ascending).
+export interface EnrollmentHistoryItem {
+  fromStatus: string;
+  toStatus: string;
+  remarks: string | null;
+  transitionDate: string;
+}
+
+// Student account ledger (statement of account). Chronological; running balance
+// is server-computed. Voided adjustments still appear but are excluded from totals.
+export type LedgerEntryType = 'Charge' | 'Discount' | 'Interest' | 'Adjustment' | 'Payment';
+
+export interface LedgerEntry {
+  date: string;
+  type: LedgerEntryType;
+  description: string;
+  reference: string | null;
+  debit: number | null;
+  credit: number | null;
+  balance: number;
+  // Set on adjustment rows so the UI can offer Void; null for other entry types.
+  adjustmentId: string | null;
+  // Voided adjustment rows arrive with their amounts (rendered struck-through) but the
+  // server already excludes them from running balance/totals. Omitted from the printed SOA.
+  voided: boolean;
+}
+
+export interface EnrollmentLedger {
+  entries: LedgerEntry[];
+  totalDebits: number;
+  totalCredits: number;
+  balance: number;
 }
 
 export interface Section {
@@ -101,6 +137,12 @@ export interface Payment {
   referenceNumber: string | null;
   remarks: string | null;
   paymentDate: string;
+  status: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  reviewNotes: string | null;
+  receiptFileName: string | null;
+  receiptFileUrl: string | null;
 }
 
 export interface BalanceInfo {
@@ -137,12 +179,7 @@ export interface WorkflowStep {
   requiresApproval: boolean;
 }
 
-export interface CreateStudentAccountRequest {
-  email: string;
-  password: string;
-}
-
-export interface SubmitApplicationRequest {
+export interface ApplicantData {
   firstName: string;
   middleName: string | null;
   lastName: string;
@@ -158,6 +195,139 @@ export interface SubmitApplicationRequest {
   guardianName: string | null;
   guardianContact: string | null;
   guardianRelationship: string | null;
+  customFieldValues: Record<string, string | null> | null;
+}
+
+export type FormFieldType = 'Text' | 'TextArea' | 'Number' | 'Date' | 'Checkbox' | 'Dropdown';
+export type FormFieldSection = 'Parent' | 'Student' | 'Enrollment' | 'Guardian';
+export type FormFieldAppliesTo = 'Both' | 'ParentMode' | 'StudentMode';
+
+export interface Tenant {
+  id: string;
+  name: string;
+  subdomain: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  address: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PublicTenant {
+  id: string;
+  name: string;
+  subdomain: string;
+}
+
+export interface CreateTenantRequest {
+  name: string;
+  subdomain: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  address: string | null;
+}
+
+export interface UpdateTenantRequest {
+  name: string;
+  subdomain: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  address: string | null;
+  isActive: boolean;
+}
+
+export interface TenantUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'Admin' | 'Registrar' | 'SuperAdmin';
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateTenantUserRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
+export interface UpdateTenantUserRequest {
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+}
+
+export interface Registrar {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateRegistrarRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
+export interface UpdateRegistrarRequest {
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+}
+
+export interface ApplicationFormField {
+  id: string;
+  fieldKey: string;
+  label: string;
+  fieldType: FormFieldType;
+  section: FormFieldSection;
+  appliesTo: FormFieldAppliesTo;
+  isRequired: boolean;
+  isVisible: boolean;
+  isBuiltIn: boolean;
+  /** Core fields are part of the data model — admins can rename them but can't hide them
+   *  or make them optional. Visibility/required toggles are disabled in the UI. */
+  isCore: boolean;
+  displayOrder: number;
+  options: string | null;       // JSON-encoded array of strings for Dropdown
+  helpText: string | null;
+}
+
+export interface SubmitApplicationRequest {
+  // "Parent" or "Student" — chosen on the /apply form (anonymous applicants).
+  // Authenticated parents adding another child can leave as "Parent" (it's forced server-side).
+  applicationType: 'Parent' | 'Student';
+  // Parent fields — required when applicationType="Parent" and applicant is anonymous; otherwise ignored.
+  parentFirstName: string | null;
+  parentLastName: string | null;
+  parentEmail: string | null;
+  parentContactNumber: string | null;
+  // One or more applicants. Parent mode: 1+ children. Student mode: exactly one (the student themselves).
+  applicants: ApplicantData[];
+}
+
+export interface CreateStudentAccountRequest {
+  email: string;
+  password: string;
+}
+
+export interface ParentChild {
+  studentId: string | null;
+  applicationId: string | null;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  fullName: string;
+  gradeLevel: string | null;
+  schoolYear: string | null;
+  status: string | null;
+  source: 'Application' | 'Student';
 }
 
 export interface ApplicationListDto {
@@ -195,6 +365,21 @@ export interface ApplicationDetailDto {
   reviewedAt: string | null;
   reviewNotes: string | null;
   studentId: string | null;
+  applicationType: 'Parent' | 'Student';
+  parentFirstName: string | null;
+  parentLastName: string | null;
+  parentEmail: string | null;
+  parentContactNumber: string | null;
+  customFieldValues: Record<string, string | null> | null;
+}
+
+export interface ParentPayRequest {
+  amount: number;
+  paymentMethod: string;
+  referenceNumber: string | null;
+  remarks: string | null;
+  receiptFileName?: string | null;
+  receiptFileUrl?: string | null;
 }
 
 export interface StudentPayRequest {
@@ -202,9 +387,81 @@ export interface StudentPayRequest {
   paymentMethod: string;
   referenceNumber: string | null;
   remarks: string | null;
+  receiptFileName?: string | null;
+  receiptFileUrl?: string | null;
+}
+
+export interface ApplicationStatusDto {
+  applicationNumber: string;
+  applicantName: string;
+  gradeLevel: string;
+  schoolYear: string;
+  status: string;
+  submittedAt: string;
+  reviewedAt: string | null;
+  reviewNotes: string | null;
 }
 
 export interface MyPaymentsResponse {
   balance: BalanceInfo;
   payments: Payment[];
+  paymentPlan: string | null;
+  fees: FeeLine[];
+  schedule: Installment[];
+  discountAmount: number | null;
+  interestAmount: number | null;
+}
+
+export interface PaymentTerm {
+  id: string;
+  schoolYear: string;
+  planType: string;
+  downPaymentPercent: number;
+  interestRatePercent: number;
+  discountPercent: number;
+  installmentCount: number;
+  isActive: boolean;
+}
+
+export interface FeeLine {
+  name: string;
+  description: string | null;
+  amount: number;
+}
+
+export interface Installment {
+  number: number;
+  label: string;
+  amount: number;
+  dueDate: string;
+  isPaid: boolean;
+}
+
+export interface SchoolYear {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface RequirementTemplate {
+  id: string;
+  documentName: string;
+  gradeLevel: string | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+export interface DashboardStats {
+  totalStudents: number;
+  totalEnrollments: number;
+  pendingApplications: number;
+  draftEnrollments: number;
+  approvedEnrollments: number;
+  enrolledCount: number;
+  totalSections: number;
+  totalRevenue: number;
+  pendingPayments: number;
 }

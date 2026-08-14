@@ -11,7 +11,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   if (token) {
     headers = headers.set('Authorization', `Bearer ${token}`);
   }
-  if (tenantId) {
+  // Only fall back to the auth-resolved tenant if the caller hasn't explicitly set one
+  // (e.g. /apply uses the route's :tenantId, /tenants endpoints set it themselves, etc.)
+  if (tenantId && !req.headers.has('X-Tenant-Id')) {
     headers = headers.set('X-Tenant-Id', tenantId);
   }
 

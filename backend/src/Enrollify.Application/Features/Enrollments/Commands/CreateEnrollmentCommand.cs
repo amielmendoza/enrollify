@@ -35,7 +35,8 @@ public class CreateEnrollmentCommandHandler : IRequestHandler<CreateEnrollmentCo
             ?? throw new KeyNotFoundException("Student not found.");
 
         var existingEnrollment = await _context.Enrollments
-            .AnyAsync(e => e.StudentId == request.StudentId && e.SchoolYear == request.SchoolYear, cancellationToken);
+            .AnyAsync(e => e.StudentId == request.StudentId && e.SchoolYear == request.SchoolYear
+                && e.Status != Domain.Enums.EnrollmentStatus.Cancelled, cancellationToken);
 
         if (existingEnrollment)
             throw new InvalidOperationException("Student already has an enrollment for this school year.");

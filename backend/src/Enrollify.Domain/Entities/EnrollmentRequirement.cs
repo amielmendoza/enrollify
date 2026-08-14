@@ -13,4 +13,5 @@ public class EnrollmentRequirement : TenantEntity
     public bool IsVerified { get; set; }
     public string? VerifiedBy { get; set; }
     public DateTime? VerifiedAt { get; set; }
+    public string? ReviewNotes { get; set; }
 }

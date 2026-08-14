@@ -30,7 +30,15 @@ public class AdmissionApplicationConfiguration : IEntityTypeConfiguration<Admiss
         builder.Property(a => a.ReviewedBy).HasMaxLength(200);
         builder.Property(a => a.ReviewNotes).HasMaxLength(1000);
 
+        builder.Property(a => a.ApplicationType).HasMaxLength(20).IsRequired();
+        builder.Property(a => a.ParentFirstName).HasMaxLength(100);
+        builder.Property(a => a.ParentLastName).HasMaxLength(100);
+        builder.Property(a => a.ParentEmail).HasMaxLength(200);
+        builder.Property(a => a.ParentContactNumber).HasMaxLength(50);
+        builder.Property(a => a.ParentUserId);
+        builder.Property(a => a.CustomFieldValues).HasColumnType("nvarchar(max)");
         builder.HasIndex(a => new { a.TenantId, a.ApplicationNumber }).IsUnique();
         builder.HasIndex(a => new { a.TenantId, a.Status });
+        builder.HasIndex(a => new { a.TenantId, a.ParentUserId });
     }
 }

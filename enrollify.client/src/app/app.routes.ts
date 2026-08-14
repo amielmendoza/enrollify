@@ -16,9 +16,12 @@ export const routes: Routes = [
   // anonymous visitors are bounced to /tenants by the apply component.
   { path: 'apply', loadComponent: () => import('./pages/apply/apply.component').then(m => m.ApplyComponent) },
 
-  // Printable documents (COR / assessment slip / official receipt), ?doc=cor|assessment|receipt&paymentId=...
+  // Printable documents (COR / assessment slip / official receipt / SOA), ?doc=cor|assessment|receipt|soa&paymentId=...
   // Deliberately top-level, outside MainLayout, so the sidebar/nav never ends up on paper.
   { path: 'print/enrollment/:id', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-enrollment.component').then(m => m.PrintEnrollmentComponent) },
+
+  // Printable cashier's collections journal, ?from&to&method — same top-level treatment.
+  { path: 'print/collections', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-collections.component').then(m => m.PrintCollectionsComponent) },
 
   // Per-school slug-based apply page (e.g. /mshs/apply, /qcshs/apply).
   // Sits before the auth-protected MainLayout so it's reachable without a login session.
@@ -40,6 +43,7 @@ export const routes: Routes = [
       { path: 'enrollments/new', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/enrollments/enrollment-wizard/enrollment-wizard.component').then(m => m.EnrollmentWizardComponent) },
       { path: 'enrollments/:id', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/enrollments/enrollment-detail/enrollment-detail.component').then(m => m.EnrollmentDetailComponent) },
       { path: 'admissions', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/admissions/admissions.component').then(m => m.AdmissionsComponent) },
+      { path: 'reports/collections', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/collections.component').then(m => m.CollectionsComponent) },
       { path: 'settings', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
 
       // Student-self pages

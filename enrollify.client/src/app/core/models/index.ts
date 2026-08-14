@@ -454,6 +454,47 @@ export interface RequirementTemplate {
   displayOrder: number;
 }
 
+// Cashier's collections journal (GET /reports/collections). Rows ascending by
+// paymentDate; summary covers the whole filtered range regardless of paging.
+export interface CollectionRow {
+  paymentId: string;
+  paymentDate: string;
+  studentName: string;
+  gradeLevel: string;
+  schoolYear: string;
+  amount: number;
+  paymentMethod: string;
+  referenceNumber: string | null;
+  receivedBy: string | null;
+  enrollmentId: string;
+}
+
+export interface CollectionsMethodSummary {
+  method: string;
+  amount: number;
+  count: number;
+}
+
+export interface CollectionsDaySummary {
+  date: string;
+  amount: number;
+  count: number;
+}
+
+export interface CollectionsReport {
+  rows: CollectionRow[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  summary: {
+    totalAmount: number;
+    totalCount: number;
+    byMethod: CollectionsMethodSummary[];
+    byDay: CollectionsDaySummary[];
+  };
+}
+
 export interface DashboardStats {
   totalStudents: number;
   totalEnrollments: number;

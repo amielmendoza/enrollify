@@ -48,6 +48,19 @@ Follow-ups (non-blocking):
 - [ ] Assessment-slip footnote should also mention manual adjustments as a reason Balance can differ (`print-enrollment.component.ts`, one line).
 - [ ] Rename misleading `isAdmin()` in `enrollment-detail.component.ts` (it means Admin-or-Registrar; behavior is correct).
 
+## Batch 5 — Collections journal (delivered 2026-08-14, team-lead APPROVED after fixes)
+
+Cashier's journal over verified (Approved) payments, date-basis PaymentDate: `GET /api/reports/collections`
+(date-range + method filter, journal-ordered with deterministic Id tie-break, paged up to 500, full-range
+summary: total / by method / by day) and `GET /api/reports/collections/export` (CSV, RFC 4180, shares the
+exact filter/projection with the view). Collections page for Admin/Registrar (Today / This Week / This Month
+presets, summary tiles, day-grouped table with honest day subtotals from the full-range summary, pagination,
+CSV download) + printable Collections Journal with per-method summary, signature line, and a data-derived
+truncation notice (never silent). Supporting index `Payments (TenantId, Status, PaymentDate)` (migration
+`AddPaymentsCollectionsIndex`). Review caught and fixed a page-cap seam (backend clamp 200 vs print's 500)
+and non-deterministic ordering on timestamp ties. Verified: backend 0 errors, `dotnet test` 72/72, frontend
+build clean.
+
 **Batch 1 — ship-readiness (small fixes; makes the build deployable)**
 1. Slug-based school-years endpoint + use it on the apply page (School Year field is blank in prod / can show the wrong school's years in dev — depends on hardcoded `environment.defaultTenantId`).
 2. Pagination UI on enrollments + admissions lists.

@@ -7,7 +7,7 @@ import {
   EnrollmentLedger,
   Section, Fee, FeeLine, Payment, BalanceInfo, PagedResult, WorkflowDefinition,
   CreateStudentAccountRequest, SubmitApplicationRequest, ApplicationListDto, ApplicationDetailDto, ApplicationStatusDto,
-  ParentPayRequest, StudentPayRequest, ParentChild, MyPaymentsResponse, DashboardStats, SchoolYear, PaymentTerm, RequirementTemplate,
+  ParentPayRequest, StudentPayRequest, ParentChild, MyPaymentsResponse, DashboardStats, CollectionsReport, SchoolYear, PaymentTerm, RequirementTemplate,
   ApplicationFormField,
   Tenant, PublicTenant, CreateTenantRequest, UpdateTenantRequest,
   TenantUser, CreateTenantUserRequest, UpdateTenantUserRequest,
@@ -371,6 +371,22 @@ export class ApiService {
   // Dashboard stats
   getDashboardStats(): Observable<DashboardStats> {
     return this.http.get<DashboardStats>(`${this.baseUrl}/dashboard/stats`);
+  }
+
+  // Cashier's collections journal (Admin/Registrar).
+  getCollections(filters: { from: string; to: string; method?: string; page?: number; pageSize?: number }): Observable<CollectionsReport> {
+    let params = new HttpParams().set('from', filters.from).set('to', filters.to);
+    if (filters.method) params = params.set('method', filters.method);
+    params = params.set('page', filters.page ?? 1).set('pageSize', filters.pageSize ?? 20);
+    return this.http.get<CollectionsReport>(`${this.baseUrl}/reports/collections`, { params });
+  }
+
+  // CSV export of the collections journal; the auth interceptor supplies the JWT,
+  // so fetch as a blob and let the caller save it via an object URL.
+  exportCollections(from: string, to: string, method?: string): Observable<Blob> {
+    let params = new HttpParams().set('from', from).set('to', to);
+    if (method) params = params.set('method', method);
+    return this.http.get(`${this.baseUrl}/reports/collections/export`, { params, responseType: 'blob' });
   }
 
   // Application form fields (admin)

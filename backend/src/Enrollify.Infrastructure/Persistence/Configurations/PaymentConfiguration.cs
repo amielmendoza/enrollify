@@ -27,5 +27,9 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(p => p.EnrollmentId);
+
+        // Supports the collections journal: Approved payments over a PaymentDate range.
+        // TenantId leads because the global tenant query filter constrains it on every read.
+        builder.HasIndex(p => new { p.TenantId, p.Status, p.PaymentDate });
     }
 }

@@ -62,11 +62,23 @@ public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplica
                 .WithMessage("A valid parent email is required.");
         });
 
+        // A Student-mode applicant signs in with their own email once approved, so it's required
+        // there. Parent-mode children don't need one (the account is created from the parent's
+        // email) — the form config marks it optional and the UI renders it that way.
+        When(x => x.ApplicationType == "Student" && x.AuthenticatedParentUserId == null, () =>
+        {
+            RuleForEach(x => x.Applicants).ChildRules(a =>
+                a.RuleFor(x => x.Email).NotEmpty().EmailAddress()
+                    .WithMessage("A valid email is required for student applications — it becomes your login."));
+        });
+
         RuleForEach(x => x.Applicants).ChildRules(a =>
         {
             a.RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
             a.RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
-            a.RuleFor(x => x.Email).NotEmpty().EmailAddress();
+            a.RuleFor(x => x.Email).EmailAddress()
+                .When(x => !string.IsNullOrWhiteSpace(x.Email))
+                .WithMessage("'Email' is not a valid email address.");
             a.RuleFor(x => x.Gender).NotEmpty();
             a.RuleFor(x => x.DateOfBirth).NotEmpty().LessThan(DateTime.UtcNow);
             a.RuleFor(x => x.GradeLevel).NotEmpty();

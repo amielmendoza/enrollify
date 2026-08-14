@@ -93,7 +93,7 @@ type ApplyMode = 'Parent' | 'Student';
             }
 
             @if (error()) {
-              <div class="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{{ error() }}</div>
+              <div class="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 whitespace-pre-line">{{ error() }}</div>
             }
 
             <form (ngSubmit)="onSubmit()" class="mt-6 space-y-6">
@@ -670,9 +670,27 @@ export class ApplyComponent {
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Submission failed. Please check your inputs.');
+        this.error.set(this.formatApiError(err));
       }
     });
+  }
+
+  /** Turns the API's validation payload into readable, field-level lines.
+   *  The middleware serializes FluentValidation failures with PascalCase keys
+   *  ({ PropertyName, ErrorMessage }) — tolerate both casings. */
+  private formatApiError(err: any): string {
+    const details = err?.error?.details;
+    if (Array.isArray(details) && details.length > 0) {
+      const lines = details.map((d: any) => {
+        const prop: string = d.PropertyName ?? d.propertyName ?? '';
+        const msg: string = d.ErrorMessage ?? d.errorMessage ?? 'Invalid value.';
+        const m = /^Applicants\[(\d+)\]/.exec(prop);
+        const who = m ? `${this.mode() === 'Parent' ? 'Child' : 'Applicant'} ${Number(m[1]) + 1}: ` : '';
+        return `• ${who}${msg}`;
+      });
+      return lines.join('\n');
+    }
+    return err?.error?.error || 'Submission failed. Please check your inputs.';
   }
 
   private blankApplicant(): ApplicantData {

@@ -48,6 +48,37 @@ Follow-ups (non-blocking):
 - [ ] Assessment-slip footnote should also mention manual adjustments as a reason Balance can differ (`print-enrollment.component.ts`, one line).
 - [ ] Rename misleading `isAdmin()` in `enrollment-detail.component.ts` (it means Admin-or-Registrar; behavior is correct).
 
+## Bugs found in live testing (2026-08-14)
+
+- [x] Application submission rejected optional child email; UI showed only "Validation failed" with no field details. (Fixed: email required only for student-mode; per-field error lines in the apply banner; asterisk follows real required-ness.)
+- [x] Used email addresses were only rejected at approval time. (Fixed: anonymous submissions now fail fast when the parent/applicant email already has an account; authenticated parents exempt. 76 tests.)
+- [x] **Approval failed on rules submission never enforced** (live 400 on optional Address) and **ReviewApplicationCommand was not atomic** (an intermediate save left orphaned Approved+User+no-Student state, blocking retries). Fixed in batch 6 — see below.
+- [ ] No admin UI/API to delete or withdraw an application (two manual SQL cleanups so far). Add a guarded "Delete application" action: plain delete for pending/rejected apps; for approved apps, refuse when a student/enrollment/payments chain exists (point to Cancel Enrollment instead) or cascade only the empty orphans.
+
+## Batch 6 — Validation consistency + atomic approval (delivered 2026-08-21, team-lead audited, implemented, and re-verified; APPROVED)
+
+Full field-by-field audit of the applicant→student pipeline (form config / apply UI / submission
+validation / approval path / student CRUD validators / DB constraints), then fixes:
+- Approval is now pure transcription — it constructs the Student directly instead of dispatching
+  CreateStudentCommand through the validation pipeline, so it can never demand more than submission did.
+- Approval is atomic (`IApplicationDbContext.ExecuteInTransactionAsync`); the false-premise intermediate
+  save is gone; a failed approval leaves the application Submitted and retryable with zero orphans.
+- LRN minting extracted to shared `StudentNumbering` — MAX-scan instead of load-all, 3-attempt retry on
+  the (TenantId, LRN) unique index for concurrent approvals.
+- Submission now enforces server-side what the browser enforced alone: admin-required built-in fields
+  (e.g. parentRelationship) and DB-mirroring max lengths (over-length input → 400, not SqlException 500).
+- Admin edit form's Address requirement kept deliberately (documented); core+optional email documented.
+- Approve/reject toasts + apply banner share `formatApiError` — field-level messages, never bare
+  "Validation failed". Tests 76 → 86 (live bug is now a regression test; rollback proven through a
+  fresh context). Verified live end-to-end (address-less approval creates full chain).
+
+Follow-ups (non-blocking, from final review):
+- [ ] Optional LRN scan bound (`CompareTo("999999999999")`) to eliminate theoretical starvation by 50+ letter-prefixed 12-char manual LRNs.
+- [ ] Comment on `ExecuteInTransactionAsync` warning that enabling `EnableRetryOnFailure` later would need a redesign (execution strategy would replay the delegate against a dirty change tracker).
+- [ ] Duplicate-applicant approvals create duplicate Students (no identity dedup) — product decision needed.
+- [ ] Settings/super-tenants error handlers still show only the first validation detail — adopt `formatApiError` there too.
+- [ ] "UnderReview" appears in the admissions status filter but nothing ever sets it — wire a "mark under review" action or drop the option.
+
 ## Batch 5 — Collections journal (delivered 2026-08-14, team-lead APPROVED after fixes)
 
 Cashier's journal over verified (Approved) payments, date-basis PaymentDate: `GET /api/reports/collections`

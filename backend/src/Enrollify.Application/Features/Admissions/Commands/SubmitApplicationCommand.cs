@@ -62,6 +62,10 @@ public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplica
                 .WithMessage("A valid parent email is required.");
         });
 
+        // Max lengths mirror the DB column config (AdmissionApplicationConfiguration) so
+        // over-length input fails here as a 400, not as a SqlException at SaveChanges.
+        RuleFor(x => x.ParentContactNumber).MaximumLength(50);
+
         // A Student-mode applicant signs in with their own email once approved, so it's required
         // there. Parent-mode children don't need one (the account is created from the parent's
         // email) — the form config marks it optional and the UI renders it that way.
@@ -83,6 +87,18 @@ public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplica
             a.RuleFor(x => x.DateOfBirth).NotEmpty().LessThan(DateTime.UtcNow);
             a.RuleFor(x => x.GradeLevel).NotEmpty();
             a.RuleFor(x => x.SchoolYear).NotEmpty();
+
+            // Max lengths mirror the DB column config (AdmissionApplicationConfiguration) so
+            // over-length input fails here as a 400, not as a SqlException at SaveChanges.
+            a.RuleFor(x => x.MiddleName).MaximumLength(100);
+            a.RuleFor(x => x.Email).MaximumLength(200);
+            a.RuleFor(x => x.ContactNumber).MaximumLength(50);
+            a.RuleFor(x => x.Address).MaximumLength(500);
+            a.RuleFor(x => x.PreviousSchool).MaximumLength(200);
+            a.RuleFor(x => x.PreviousSchoolAddress).MaximumLength(500);
+            a.RuleFor(x => x.GuardianName).MaximumLength(200);
+            a.RuleFor(x => x.GuardianContact).MaximumLength(50);
+            a.RuleFor(x => x.GuardianRelationship).MaximumLength(50);
         });
     }
 }
@@ -134,16 +150,57 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
             }
         }
 
-        // Load the field config for this tenant so we can validate required custom fields and
-        // strip any keys the admin doesn't actually have configured.
-        var customFields = await _context.ApplicationFormFields.IgnoreQueryFilters()
-            .Where(f => f.TenantId == request.TenantId && f.IsVisible && !f.IsBuiltIn)
+        // Load the visible field config once: custom fields get validated + sanitized below,
+        // and required built-in NON-CORE fields are enforced server-side too (core fields are
+        // covered by SubmitApplicationCommandValidator).
+        var formFields = await _context.ApplicationFormFields.IgnoreQueryFilters()
+            .Where(f => f.TenantId == request.TenantId && f.IsVisible)
             .ToListAsync(cancellationToken);
+        var customFields = formFields.Where(f => !f.IsBuiltIn).ToList();
+        var requiredBuiltIns = formFields.Where(f => f.IsBuiltIn && !f.IsCore && f.IsRequired).ToList();
 
         var created = new List<AdmissionApplication>();
 
         foreach (var applicant in request.Applicants)
         {
+            // Server-side enforcement of required built-in non-core fields. Their values live
+            // on dedicated properties, so requiredness is checked via a key→property map that
+            // honors AppliesTo exactly the way the UI decides whether to render the field.
+            foreach (var field in requiredBuiltIns)
+            {
+                if (field.AppliesTo == "ParentMode" && effectiveType != "Parent") continue;
+                if (field.AppliesTo == "StudentMode" && effectiveType != "Student") continue;
+
+                string? value;
+                switch (field.FieldKey)
+                {
+                    case "middleName": value = applicant.MiddleName; break;
+                    case "contactNumber": value = applicant.ContactNumber; break;
+                    case "address": value = applicant.Address; break;
+                    case "previousSchool": value = applicant.PreviousSchool; break;
+                    case "previousSchoolAddress": value = applicant.PreviousSchoolAddress; break;
+                    case "guardianName": value = applicant.GuardianName; break;
+                    case "guardianContact": value = applicant.GuardianContact; break;
+                    case "guardianRelationship": value = applicant.GuardianRelationship; break;
+                    case "parentContactNumber":
+                        // The parent section isn't rendered for signed-in parents.
+                        if (request.AuthenticatedParentUserId != null) continue;
+                        value = request.ParentContactNumber;
+                        break;
+                    case "parentRelationship":
+                        if (request.AuthenticatedParentUserId != null) continue;
+                        // The apply UI maps the parent-mode "Relationship to children" onto each
+                        // applicant's GuardianRelationship (see apply.component.ts).
+                        value = applicant.GuardianRelationship;
+                        break;
+                    default:
+                        continue; // Built-in key without a dedicated property — nothing to enforce here.
+                }
+
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new InvalidOperationException($"'{field.Label}' is required.");
+            }
+
             // Validate required custom fields and trim values to known keys
             var sanitizedCustomValues = new Dictionary<string, string?>();
             foreach (var field in customFields)

@@ -1,6 +1,6 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Admissions;
-using Enrollify.Application.Features.Students.Commands;
+using Enrollify.Application.Features.Students;
 using Enrollify.Domain.Entities;
 using Enrollify.Domain.Enums;
 using MediatR;
@@ -15,13 +15,11 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
     private const string DefaultPassword = "ChangeMe123!";
 
     private readonly IApplicationDbContext _context;
-    private readonly ISender _sender;
     private readonly IEmailSender _emailSender;
 
-    public ReviewApplicationCommandHandler(IApplicationDbContext context, ISender sender, IEmailSender emailSender)
+    public ReviewApplicationCommandHandler(IApplicationDbContext context, IEmailSender emailSender)
     {
         _context = context;
-        _sender = sender;
         _emailSender = emailSender;
     }
 
@@ -34,87 +32,116 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
         if (app.Status != "Submitted" && app.Status != "UnderReview")
             throw new InvalidOperationException($"Cannot review application in '{app.Status}' status.");
 
-        app.ReviewedAt = DateTime.UtcNow;
-        app.ReviewNotes = request.Notes;
-
         // Email of a user account newly created by this approval (null when an existing account was reused).
         string? newAccountEmail = null;
 
-        if (request.IsApproved)
+        // The whole review (status flip, user/student/enrollment creation) commits atomically:
+        // a single SaveChangesAsync inside one transaction. A failure anywhere leaves the
+        // application Submitted with no orphaned Approved+User+no-Student state, so the
+        // registrar can simply retry.
+        await _context.ExecuteInTransactionAsync(async ct =>
         {
-            app.Status = "Approved";
+            app.ReviewedAt = DateTime.UtcNow;
+            app.ReviewNotes = request.Notes;
 
-            Guid? studentSelfUserId = null;
-            Guid? parentUserId = app.ParentUserId; // Already set if an authenticated parent submitted
+            Student? student = null;
 
-            if (app.ApplicationType == "Parent")
+            if (request.IsApproved)
             {
-                if (parentUserId == null)
+                app.Status = "Approved";
+
+                Guid? studentSelfUserId = null;
+                Guid? parentUserId = app.ParentUserId; // Already set if an authenticated parent submitted
+
+                if (app.ApplicationType == "Parent")
                 {
-                    (parentUserId, newAccountEmail) = await ResolveOrCreateParentUserAsync(app, cancellationToken);
+                    if (parentUserId == null)
+                    {
+                        (parentUserId, newAccountEmail) = await ResolveOrCreateParentUserAsync(app, ct);
+                    }
+                }
+                else // "Student"
+                {
+                    (studentSelfUserId, newAccountEmail) = await CreateStudentUserAsync(app, ct);
+                }
+
+                // Approval transcribes data that was already validated at SUBMISSION time against
+                // the tenant's application-form configuration — it must never re-validate.
+                // Dispatching CreateStudentCommand here would run its FluentValidation rules
+                // (e.g. Address NotEmpty) and reject applications whose form never required
+                // those fields, so the Student is constructed directly instead.
+                student = new Student
+                {
+                    LRN = await StudentNumbering.NextLrnAsync(_context, ct),
+                    FirstName = app.FirstName,
+                    MiddleName = app.MiddleName ?? string.Empty,
+                    LastName = app.LastName,
+                    BirthDate = app.DateOfBirth,
+                    Gender = app.Gender,
+                    Address = app.Address ?? string.Empty,
+                    ContactNumber = app.ContactNumber,
+                    Email = app.Email,
+                    GuardianName = app.GuardianName,
+                    GuardianContact = app.GuardianContact,
+                    UserId = studentSelfUserId,
+                    ParentUserId = parentUserId,
+                    TenantId = app.TenantId
+                };
+                _context.Students.Add(student);
+
+                app.StudentId = student.Id;
+                app.ParentUserId = parentUserId;
+
+                var enrollment = new Enrollment
+                {
+                    StudentId = student.Id,
+                    SchoolYear = app.SchoolYear,
+                    GradeLevel = app.GradeLevel,
+                    Status = EnrollmentStatus.Draft,
+                    Remarks = "Auto-created on application approval",
+                    TenantId = app.TenantId
+                };
+                _context.Enrollments.Add(enrollment);
+
+                var templates = await _context.RequirementTemplates
+                    .Where(t => t.IsActive && (t.GradeLevel == null || t.GradeLevel == app.GradeLevel))
+                    .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
+                    .ToListAsync(ct);
+
+                foreach (var template in templates)
+                {
+                    _context.EnrollmentRequirements.Add(new EnrollmentRequirement
+                    {
+                        EnrollmentId = enrollment.Id,
+                        DocumentName = template.DocumentName,
+                        TenantId = app.TenantId
+                    });
                 }
             }
-            else // "Student"
+            else
             {
-                (studentSelfUserId, newAccountEmail) = await CreateStudentUserAsync(app, cancellationToken);
+                app.Status = "Rejected";
             }
 
-            // SaveChanges so the new User has its Id when assigned to Student below.
-            await _context.SaveChangesAsync(cancellationToken);
-
-            var studentDto = await _sender.Send(new CreateStudentCommand(
-                LRN: null,
-                FirstName: app.FirstName,
-                MiddleName: app.MiddleName ?? string.Empty,
-                LastName: app.LastName,
-                BirthDate: app.DateOfBirth,
-                Gender: app.Gender,
-                Address: app.Address ?? string.Empty,
-                ContactNumber: app.ContactNumber,
-                Email: app.Email,
-                GuardianName: app.GuardianName,
-                GuardianContact: app.GuardianContact,
-                UserId: studentSelfUserId,
-                ParentUserId: parentUserId
-            ), cancellationToken);
-
-            app.StudentId = studentDto.Id;
-            app.ParentUserId = parentUserId;
-
-            var enrollment = new Enrollment
+            // Single save for the whole review. Two concurrent approvals can mint the same
+            // auto-generated LRN; the (TenantId, LRN) unique index rejects the loser —
+            // regenerate and retry a couple of times before giving up.
+            const int maxAttempts = 3;
+            for (var attempt = 1; ; attempt++)
             {
-                StudentId = studentDto.Id,
-                SchoolYear = app.SchoolYear,
-                GradeLevel = app.GradeLevel,
-                Status = EnrollmentStatus.Draft,
-                Remarks = "Auto-created on application approval",
-                TenantId = app.TenantId
-            };
-            _context.Enrollments.Add(enrollment);
-
-            var templates = await _context.RequirementTemplates
-                .Where(t => t.IsActive && (t.GradeLevel == null || t.GradeLevel == app.GradeLevel))
-                .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
-                .ToListAsync(cancellationToken);
-
-            foreach (var template in templates)
-            {
-                _context.EnrollmentRequirements.Add(new EnrollmentRequirement
+                try
                 {
-                    EnrollmentId = enrollment.Id,
-                    DocumentName = template.DocumentName,
-                    TenantId = app.TenantId
-                });
+                    await _context.SaveChangesAsync(ct);
+                    break;
+                }
+                catch (DbUpdateException) when (student != null && attempt < maxAttempts)
+                {
+                    student.LRN = await StudentNumbering.NextLrnAsync(_context, ct);
+                }
             }
-        }
-        else
-        {
-            app.Status = "Rejected";
-        }
+        }, cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
-
-        // Best-effort notification after the review has been persisted; IEmailSender never throws.
+        // Best-effort notification AFTER the transaction has committed; IEmailSender never throws.
         await SendReviewOutcomeEmailAsync(app, newAccountEmail, cancellationToken);
 
         Dictionary<string, string?>? custom = null;

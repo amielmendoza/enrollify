@@ -65,6 +65,17 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public Guid CurrentTenantId => _tenantProvider.GetTenantId();
 
+    public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
+    {
+        var strategy = Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+            await operation(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        });
+    }
+
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var tenantId = _tenantProvider.GetTenantId();

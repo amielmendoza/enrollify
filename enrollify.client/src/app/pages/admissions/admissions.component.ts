@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-admissions',
@@ -199,7 +200,7 @@ export class AdmissionsComponent implements OnInit {
         this.selectedApp.set(null);
         this.load();
       },
-      error: (err) => this.notify.error(err.error?.error || 'Failed to review application.')
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to review application.'))
     });
   }
 
@@ -212,7 +213,7 @@ export class AdmissionsComponent implements OnInit {
         this.selectedApp.set(null);
         this.load();
       },
-      error: (err) => this.notify.error(err.error?.error || 'Failed to review application.')
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to review application.'))
     });
   }
 

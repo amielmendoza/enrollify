@@ -2,6 +2,7 @@ using Enrollify.Application.Common.Interfaces;
 using Enrollify.Domain.Interfaces;
 using Enrollify.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Enrollify.Application.Tests;
 
@@ -40,16 +41,19 @@ public static class TestDb
     public static readonly Guid TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     /// <summary>
-    /// A fresh isolated in-memory ApplicationDbContext scoped to <see cref="TenantId"/>.
-    /// Entities saved through it get that TenantId auto-assigned, so the global tenant
-    /// filter behaves exactly as in production.
+    /// A fresh in-memory ApplicationDbContext scoped to <see cref="TenantId"/> — isolated per
+    /// call unless a shared <paramref name="dbName"/> is given (used by tests that verify
+    /// persisted state through a second context). Entities saved through it get that TenantId
+    /// auto-assigned, so the global tenant filter behaves exactly as in production.
     /// </summary>
-    public static ApplicationDbContext Create()
-    {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase($"enrollify-tests-{Guid.NewGuid()}")
-            .Options;
+    public static ApplicationDbContext Create(string? dbName = null) =>
+        new(Options(dbName ?? $"enrollify-tests-{Guid.NewGuid()}"), new FixedTenantProvider(TenantId));
 
-        return new ApplicationDbContext(options, new FixedTenantProvider(TenantId));
-    }
+    public static DbContextOptions<ApplicationDbContext> Options(string dbName) =>
+        new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(dbName)
+            // The InMemory provider has no real transactions; ExecuteInTransactionAsync's
+            // BeginTransaction becomes a no-op instead of throwing.
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .Options;
 }

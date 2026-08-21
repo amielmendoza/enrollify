@@ -7,6 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SchoolYearService } from '../../core/services/school-year.service';
 import { ApplicantData, ApplicationFormField, FormFieldSection, PublicTenant, SubmitApplicationRequest } from '../../core/models';
 import { GRADE_LEVELS } from '../../core/constants';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 type ApplyMode = 'Parent' | 'Student';
 
@@ -677,22 +678,14 @@ export class ApplyComponent {
     });
   }
 
-  /** Turns the API's validation payload into readable, field-level lines.
-   *  The middleware serializes FluentValidation failures with PascalCase keys
-   *  ({ PropertyName, ErrorMessage }) — tolerate both casings. */
+  /** Field-level validation lines via the shared helper, with each line
+   *  prefixed by which applicant it concerns (from Applicants[n] in the path). */
   private formatApiError(err: any): string {
-    const details = err?.error?.details;
-    if (Array.isArray(details) && details.length > 0) {
-      const lines = details.map((d: any) => {
-        const prop: string = d.PropertyName ?? d.propertyName ?? '';
-        const msg: string = d.ErrorMessage ?? d.errorMessage ?? 'Invalid value.';
-        const m = /^Applicants\[(\d+)\]/.exec(prop);
-        const who = m ? `${this.mode() === 'Parent' ? 'Child' : 'Applicant'} ${Number(m[1]) + 1}: ` : '';
-        return `• ${who}${msg}`;
-      });
-      return lines.join('\n');
-    }
-    return err?.error?.error || 'Submission failed. Please check your inputs.';
+    return formatApiError(err, 'Submission failed. Please check your inputs.', (prop, msg) => {
+      const m = /^Applicants\[(\d+)\]/.exec(prop);
+      const who = m ? `${this.mode() === 'Parent' ? 'Child' : 'Applicant'} ${Number(m[1]) + 1}: ` : '';
+      return `• ${who}${msg}`;
+    });
   }
 
   private blankApplicant(): ApplicantData {

@@ -20,6 +20,10 @@ public class UpdateStudentCommandValidator : AbstractValidator<UpdateStudentComm
         RuleFor(x => x.LRN).NotEmpty().MaximumLength(20);
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        // DELIBERATE: Address stays NotEmpty here even though the public application form may
+        // leave it optional (and approval transcribes it as ""). This is the STAFF edit path —
+        // its UI marks Address required, so every staff save backfills records that arrived
+        // without one (a data-quality ratchet). Do not "fix" this to match the application form.
         RuleFor(x => x.Address).NotEmpty().MaximumLength(500);
     }
 }

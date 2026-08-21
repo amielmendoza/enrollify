@@ -29,6 +29,10 @@ public static class DefaultApplicationFormFields
         new FieldDefault("lastName",              "Last Name",                 "Text",     "Student",    "Both",       true,  true,  2,  null),
         new FieldDefault("dateOfBirth",           "Date of Birth",             "Date",     "Student",    "Both",       true,  true,  3,  null),
         new FieldDefault("gender",                "Gender",                    "Dropdown", "Student",    "Both",       true,  true,  4,  "[\"Male\",\"Female\"]"),
+        // Email is core (always visible, not deletable) yet OPTIONAL by design: parent-mode
+        // children don't need a login of their own (the account comes from the parent's email),
+        // and student-mode requiredness is hardcoded in SubmitApplicationCommandValidator
+        // because that email becomes the student's login. Don't flip Required here.
         new FieldDefault("email",                 "Email",                     "Text",     "Student",    "Both",       false, true,  5,  null),
         new FieldDefault("middleName",            "Middle Name",               "Text",     "Student",    "Both",       false, false, 10, null),
         new FieldDefault("contactNumber",         "Contact Number",            "Text",     "Student",    "Both",       false, false, 20, null),

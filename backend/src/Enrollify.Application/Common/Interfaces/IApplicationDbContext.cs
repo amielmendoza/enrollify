@@ -26,4 +26,11 @@ public interface IApplicationDbContext
     DbSet<ApplicationFormField> ApplicationFormFields { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs <paramref name="operation"/> inside a database transaction (via the provider's
+    /// execution strategy) and commits on success. Use for multi-entity mutations that must
+    /// be all-or-nothing, e.g. application approval.
+    /// </summary>
+    Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default);
 }

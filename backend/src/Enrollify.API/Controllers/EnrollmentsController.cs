@@ -26,9 +26,10 @@ public class EnrollmentsController : ControllerBase
     public async Task<IActionResult> GetAll(
         [FromQuery] string? schoolYear, [FromQuery] string? gradeLevel,
         [FromQuery] EnrollmentStatus? status, [FromQuery] string? search,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] bool pendingPaymentsOnly = false)
     {
-        var result = await _sender.Send(new GetEnrollmentsQuery(schoolYear, gradeLevel, status, search, page, pageSize));
+        var result = await _sender.Send(new GetEnrollmentsQuery(schoolYear, gradeLevel, status, search, page, pageSize, pendingPaymentsOnly));
         return Ok(result);
     }
 

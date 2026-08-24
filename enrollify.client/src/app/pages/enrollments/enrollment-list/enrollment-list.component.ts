@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { SchoolYearService } from '../../../core/services/school-year.service';
@@ -40,6 +40,10 @@ import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
             <option value="Enrolled">Enrolled</option>
             <option value="Cancelled">Cancelled</option>
           </select>
+          <label class="inline-flex items-center gap-2 self-center text-sm text-gray-700 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="pendingOnly" (ngModelChange)="onFilterChange()" />
+            Pending payments only
+          </label>
         </div>
 
         <div class="overflow-x-auto">
@@ -62,8 +66,15 @@ import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
                   <td class="px-6 py-4 text-sm text-gray-600">{{ e.gradeLevel }}</td>
                   <td class="px-6 py-4 text-sm text-gray-600">{{ e.sectionName || '-' }}</td>
                   <td class="px-6 py-4">
-                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                          [ngClass]="getStatusClass(getStatusName(e.status))">{{ getStatusName(e.status) }}</span>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                            [ngClass]="getStatusClass(getStatusName(e.status))">{{ getStatusName(e.status) }}</span>
+                      @if ((e.pendingPaymentsCount ?? 0) > 0) {
+                        <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                          {{ e.pendingPaymentsCount }} payment{{ e.pendingPaymentsCount === 1 ? '' : 's' }} pending
+                        </span>
+                      }
+                    </div>
                   </td>
                   <td class="px-6 py-4 text-sm text-right">
                     <a [routerLink]="['/enrollments', e.id]" class="text-[#4361ee] hover:text-[#3a56d4] font-medium">View</a>
@@ -98,13 +109,16 @@ export class EnrollmentListComponent implements OnInit {
   search = '';
   statusFilter = '';
   schoolYearFilter = '';
+  pendingOnly = false;
   page = signal(1);
   totalCount = signal(0);
   totalPages = signal(0);
 
-  constructor(private api: ApiService, private syService: SchoolYearService) {}
+  constructor(private api: ApiService, private syService: SchoolYearService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    // Deep link from the dashboard tile: /enrollments?pendingPaymentsOnly=true
+    this.pendingOnly = this.route.snapshot.queryParamMap.get('pendingPaymentsOnly') === 'true';
     this.syService.ensureLoaded().subscribe(list => {
       this.schoolYears.set(list);
       this.schoolYearFilter = this.syService.activeName() || '';
@@ -117,6 +131,7 @@ export class EnrollmentListComponent implements OnInit {
       search: this.search,
       status: this.statusFilter || undefined,
       schoolYear: this.schoolYearFilter || undefined,
+      pendingPaymentsOnly: this.pendingOnly || undefined,
       page: this.page()
     }).subscribe(r => {
       this.enrollments.set(r.items);

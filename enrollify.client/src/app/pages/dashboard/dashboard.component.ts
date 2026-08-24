@@ -195,14 +195,19 @@ import { ENROLLMENT_STATUS_NAMES } from '../../core/constants';
 
         <!-- Second row stats -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <a routerLink="/enrollments" [queryParams]="{ pendingPaymentsOnly: 'true' }"
+             class="block bg-white rounded-xl border border-gray-200 p-6 hover:border-amber-300 hover:bg-amber-50/30 transition-colors">
             <div class="flex items-start gap-4">
               <div class="text-amber-500 bg-amber-50 rounded-lg p-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg>
               </div>
-              <div><p class="text-sm text-gray-500">Pending Payments</p><p class="text-2xl font-bold text-gray-900 mt-1">{{ stats()?.pendingPayments ?? 0 }}</p></div>
+              <div>
+                <p class="text-sm text-gray-500">Pending Payments</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats()?.pendingPayments ?? 0 }}</p>
+                <p class="text-xs text-amber-600 mt-1 font-medium">Review now &rarr;</p>
+              </div>
             </div>
-          </div>
+          </a>
           <div class="bg-white rounded-xl border border-gray-200 p-6">
             <div class="flex items-start gap-4">
               <div class="text-emerald-500 bg-emerald-50 rounded-lg p-2">

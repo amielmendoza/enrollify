@@ -9,7 +9,8 @@ namespace Enrollify.Application.Features.Enrollments.Queries;
 
 public record GetEnrollmentsQuery(
     string? SchoolYear, string? GradeLevel, EnrollmentStatus? Status,
-    string? Search, int Page = 1, int PageSize = 20
+    string? Search, int Page = 1, int PageSize = 20,
+    bool PendingPaymentsOnly = false
 ) : IRequest<PagedResult<EnrollmentDto>>;
 
 public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, PagedResult<EnrollmentDto>>
@@ -46,6 +47,10 @@ public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, P
                 e.Student.LRN.Contains(search));
         }
 
+        // "Needs attention" view: only enrollments with at least one payment awaiting review.
+        if (request.PendingPaymentsOnly)
+            query = query.Where(e => e.Payments.Any(p => p.Status == "Pending"));
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var enrollments = await query
@@ -56,7 +61,9 @@ public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, P
                 e.Id, e.StudentId,
                 e.Student.LastName + ", " + e.Student.FirstName,
                 e.SchoolYear, e.GradeLevel, e.SectionId, e.Section != null ? e.Section.Name : null,
-                e.Status, e.Remarks, e.PaymentPlan, e.CreatedAt, null))
+                e.Status, e.Remarks, e.PaymentPlan, e.CreatedAt, null,
+                // Projected as a correlated Count subquery — no N+1.
+                e.Payments.Count(p => p.Status == "Pending")))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<EnrollmentDto>

@@ -79,6 +79,21 @@ Follow-ups (non-blocking, from final review):
 - [ ] Settings/super-tenants error handlers still show only the first validation detail — adopt `formatApiError` there too.
 - [ ] "UnderReview" appears in the admissions status filter but nothing ever sets it — wire a "mark under review" action or drop the option.
 
+## Batch 7 — Payment-lifecycle visibility (delivered 2026-08-24, team-lead APPROVED)
+
+Live complaint: a parent's payment was invisible on the registrar's enrollments list, and even after
+approving it the enrollment sat at Approved until a manual "Mark as Paid". Delivered:
+- Auto-advance: approving a payment that satisfies the plan threshold moves the enrollment
+  Approved→Paid in the same save (atomic), with a history row and an email mention. Gate math
+  extracted to a shared `PaymentGate.MinimumRequired` used by BOTH the manual move-step gate and
+  the auto-advance, so they can never disagree. Reject/other statuses never advance.
+- Enrollments list: `pendingPaymentsCount` per row (correlated subquery, paging-correct
+  `pendingPaymentsOnly` filter), amber "{n} payment(s) pending" pill, filter toggle, and the
+  dashboard's Pending Payments tile now deep-links to `/enrollments?pendingPaymentsOnly=true`.
+Tests 86 → 94. Non-blocking footnotes: concurrent double-approval can write a duplicate
+"Auto-advanced" history row (status converges correctly); unchecking the deep-linked filter
+doesn't strip the query param from the URL.
+
 ## Batch 5 — Collections journal (delivered 2026-08-14, team-lead APPROVED after fixes)
 
 Cashier's journal over verified (Approved) payments, date-basis PaymentDate: `GET /api/reports/collections`

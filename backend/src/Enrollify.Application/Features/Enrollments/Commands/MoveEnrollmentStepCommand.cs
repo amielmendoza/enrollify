@@ -88,8 +88,10 @@ public class MoveEnrollmentStepCommandHandler : IRequestHandler<MoveEnrollmentSt
                 .Where(p => p.EnrollmentId == enrollment.Id && p.Status == "Approved")
                 .SumAsync(p => p.Amount, cancellationToken);
 
-            // Thresholds mirror PaymentsCalculator: down payment for installment plans comes from
-            // the tenant's PaymentTerm; a Full payment only owes the discounted effective total.
+            // Thresholds come from the shared PaymentGate helper (mirrors PaymentsCalculator):
+            // installment plans owe the tenant's PaymentTerm down payment; a Full payment only
+            // owes the discounted effective total. ReviewPaymentCommand uses the same helper
+            // to auto-advance, so manual and automatic gating can never disagree.
             // Deliberate choice: this gate stays based on assessed fees only. Manual ledger
             // adjustments (see LedgerCalculator / LedgerAdjustment) change the balance owed,
             // not the down-payment threshold required to mark the enrollment as paid.
@@ -98,12 +100,7 @@ public class MoveEnrollmentStepCommandHandler : IRequestHandler<MoveEnrollmentSt
                     t => t.SchoolYear == enrollment.SchoolYear && t.PlanType == enrollment.PaymentPlan && t.IsActive, cancellationToken)
                 : null;
 
-            var minRequired = enrollment.PaymentPlan switch
-            {
-                "Monthly" => Math.Round(totalFees * (term?.DownPaymentPercent ?? 20m) / 100m, 2),
-                "Quarterly" => Math.Round(totalFees * (term?.DownPaymentPercent ?? 30m) / 100m, 2),
-                _ => totalFees - Math.Round(totalFees * (term?.DiscountPercent ?? 0m) / 100m, 2)
-            };
+            var minRequired = Payments.PaymentGate.MinimumRequired(enrollment.PaymentPlan, totalFees, term);
 
             if (totalApproved < minRequired)
                 throw new InvalidOperationException($"Cannot mark as paid. Minimum required: {minRequired:N2}. Approved so far: {totalApproved:N2}.");

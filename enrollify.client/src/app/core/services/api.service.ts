@@ -41,13 +41,14 @@ export class ApiService {
   }
 
   // Enrollments
-  getEnrollments(filters?: { schoolYear?: string; gradeLevel?: string; status?: string; search?: string; page?: number; pageSize?: number }): Observable<PagedResult<Enrollment>> {
+  getEnrollments(filters?: { schoolYear?: string; gradeLevel?: string; status?: string; search?: string; pendingPaymentsOnly?: boolean; page?: number; pageSize?: number }): Observable<PagedResult<Enrollment>> {
     let params = new HttpParams();
     if (filters) {
       if (filters.schoolYear) params = params.set('schoolYear', filters.schoolYear);
       if (filters.gradeLevel) params = params.set('gradeLevel', filters.gradeLevel);
       if (filters.status) params = params.set('status', filters.status);
       if (filters.search) params = params.set('search', filters.search);
+      if (filters.pendingPaymentsOnly) params = params.set('pendingPaymentsOnly', true);
       params = params.set('page', filters.page ?? 1).set('pageSize', filters.pageSize ?? 20);
     }
     return this.http.get<PagedResult<Enrollment>>(`${this.baseUrl}/enrollments`, { params });

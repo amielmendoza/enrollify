@@ -14,7 +14,8 @@ public record EnrollmentDto(
     string? Remarks,
     string? PaymentPlan,
     DateTime CreatedAt,
-    List<RequirementDto>? Requirements);
+    List<RequirementDto>? Requirements,
+    int PendingPaymentsCount = 0);
 
 public record RequirementDto(
     Guid Id,

@@ -66,6 +66,8 @@ export interface Enrollment {
   createdAt: string;
   paymentPlan: string | null;
   requirements: EnrollmentRequirement[] | null;
+  // Only populated on GET /enrollments list rows (not detail/me/child payloads).
+  pendingPaymentsCount?: number;
 }
 
 export interface CreateEnrollmentRequest {

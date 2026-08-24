@@ -74,9 +74,9 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
           @if (getStatusName() === 'Approved') {
             <div class="mt-4 p-3 bg-purple-50 rounded-lg text-sm text-purple-700">
               @if (hasPendingPayments()) {
-                Approve the pending payment(s) below first, then mark as Paid.
+                Approve the pending payment(s) below — once approved payments cover the plan requirement, the enrollment moves to Paid automatically.
               } @else if (hasApprovedPayments()) {
-                Student has approved payment(s). Mark as Paid to proceed with section assignment.
+                Student has approved payment(s). The enrollment advances to Paid automatically when the required amount is covered — use Mark as Paid below if it hasn't advanced.
               } @else {
                 Waiting for student to submit payment. Once received, approve the payment below.
               }

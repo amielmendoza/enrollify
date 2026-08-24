@@ -483,6 +483,11 @@ public static class ApplicationDbContextSeed
         await context.SaveChangesAsync();
     }
 
+    // Idempotent per (tenant, school year, plan type) — not per tenant. A tenant can end up
+    // with a partial set (e.g. Monthly saved via Settings but Full never created; there is no
+    // delete for payment terms, so a gap is always an accident, not intent) and the parent
+    // payment-plan picker only offers plans that have a term row. Existing rows, including
+    // admin-edited percentages, are never touched.
     private static async Task SeedPaymentTermsAsync(ApplicationDbContext context)
     {
         var tenantIds = await context.Tenants.IgnoreQueryFilters()
@@ -490,11 +495,22 @@ public static class ApplicationDbContextSeed
             .Select(t => t.Id).ToListAsync();
         if (tenantIds.Count == 0) return;
 
-        var tenantsWithTerms = await context.PaymentTerms.IgnoreQueryFilters()
-            .Select(pt => pt.TenantId).Distinct().ToListAsync();
+        var existing = await context.PaymentTerms.IgnoreQueryFilters()
+            .Select(pt => new { pt.TenantId, pt.SchoolYear, pt.PlanType })
+            .ToListAsync();
+        var existingKeys = existing
+            .Select(e => (e.TenantId, e.SchoolYear, e.PlanType))
+            .ToHashSet();
+
+        var defaults = new[]
+        {
+            (PlanType: "Full", Down: 0m, Interest: 0m, Disc: 5m, Count: 1),
+            (PlanType: "Monthly", Down: 20m, Interest: 5m, Disc: 0m, Count: 9),
+            (PlanType: "Quarterly", Down: 30m, Interest: 3m, Disc: 0m, Count: 3),
+        };
 
         var added = false;
-        foreach (var tenantId in tenantIds.Except(tenantsWithTerms))
+        foreach (var tenantId in tenantIds)
         {
             var schoolYearNames = await context.SchoolYears.IgnoreQueryFilters()
                 .Where(sy => sy.TenantId == tenantId)
@@ -502,11 +518,21 @@ public static class ApplicationDbContextSeed
 
             foreach (var syName in schoolYearNames)
             {
-                context.PaymentTerms.AddRange(
-                    new PaymentTerm { TenantId = tenantId, SchoolYear = syName, PlanType = "Full", DownPaymentPercent = 0, InterestRatePercent = 0, DiscountPercent = 5, InstallmentCount = 1 },
-                    new PaymentTerm { TenantId = tenantId, SchoolYear = syName, PlanType = "Monthly", DownPaymentPercent = 20, InterestRatePercent = 5, DiscountPercent = 0, InstallmentCount = 9 },
-                    new PaymentTerm { TenantId = tenantId, SchoolYear = syName, PlanType = "Quarterly", DownPaymentPercent = 30, InterestRatePercent = 3, DiscountPercent = 0, InstallmentCount = 3 });
-                added = true;
+                foreach (var d in defaults)
+                {
+                    if (existingKeys.Contains((tenantId, syName, d.PlanType))) continue;
+                    context.PaymentTerms.Add(new PaymentTerm
+                    {
+                        TenantId = tenantId,
+                        SchoolYear = syName,
+                        PlanType = d.PlanType,
+                        DownPaymentPercent = d.Down,
+                        InterestRatePercent = d.Interest,
+                        DiscountPercent = d.Disc,
+                        InstallmentCount = d.Count
+                    });
+                    added = true;
+                }
             }
         }
 

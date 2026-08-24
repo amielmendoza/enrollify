@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ParentChild } from '../../../core/models';
+import { enrollmentStatusName } from '../../../core/constants';
 
 @Component({
   selector: 'app-parent-dashboard',
@@ -62,7 +63,12 @@ import { ParentChild } from '../../../core/models';
               @if (c.source === 'Student' && c.studentId) {
                 <div class="mt-5 grid grid-cols-3 gap-2">
                   <a [routerLink]="['/parent/children', c.studentId, 'enrollment']" class="text-center rounded-lg border border-gray-200 px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">Enrollment</a>
-                  <a [routerLink]="['/parent/children', c.studentId, 'payments']" class="text-center rounded-lg border border-gray-200 px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">Payments</a>
+                  @if (paymentsReady(c)) {
+                    <a [routerLink]="['/parent/children', c.studentId, 'payments']" class="text-center rounded-lg border border-gray-200 px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">Payments</a>
+                  } @else {
+                    <span class="text-center rounded-lg border border-gray-100 bg-gray-50 px-2 py-2 text-xs font-medium text-gray-300 cursor-not-allowed select-none"
+                          title="Payments open once the enrollment is approved by the registrar.">Payments</span>
+                  }
                   <a [routerLink]="['/parent/children', c.studentId, 'profile']" class="text-center rounded-lg border border-gray-200 px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">Profile</a>
                 </div>
               } @else {
@@ -90,6 +96,13 @@ export class ParentDashboardComponent implements OnInit {
 
   childKey(c: ParentChild): string {
     return c.studentId ?? c.applicationId ?? c.fullName;
+  }
+
+  /** Payment happens AT the Approved stage (plan selection + down payment take the
+   *  enrollment to Paid, then Enrolled), so the Payments page opens from Approved on. */
+  paymentsReady(c: ParentChild): boolean {
+    const s = enrollmentStatusName(c.status ?? '');
+    return s === 'Approved' || s === 'Paid' || s === 'Enrolled';
   }
 
   initials(c: ParentChild): string {

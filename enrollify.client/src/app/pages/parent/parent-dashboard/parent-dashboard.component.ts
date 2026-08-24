@@ -41,7 +41,10 @@ import { ParentChild } from '../../../core/models';
         </div>
       } @else {
         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          @for (c of children(); track c.studentId ?? c.applicationId) {
+          <!-- track must not use `??` — Angular compiles track expressions into a separate
+               function and the nullish-coalescing temp var isn't emitted there
+               (ReferenceError: tmp_x_y is not defined at runtime). Use a method instead. -->
+          @for (c of children(); track childKey(c)) {
             <div class="bg-white rounded-xl border border-gray-200 p-5 flex flex-col">
               <div class="flex items-start justify-between">
                 <div class="flex items-center gap-3">
@@ -83,6 +86,10 @@ export class ParentDashboardComponent implements OnInit {
       next: (list) => { this.children.set(list); this.loading.set(false); },
       error: () => this.loading.set(false)
     });
+  }
+
+  childKey(c: ParentChild): string {
+    return c.studentId ?? c.applicationId ?? c.fullName;
   }
 
   initials(c: ParentChild): string {

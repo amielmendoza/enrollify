@@ -7,78 +7,80 @@ import { ApplicationStatusDto, PublicTenant } from '../../core/models';
 
 /// Anonymous application-status lookup. Applicants land here from the apply success screen
 /// (or a bookmark) and check progress using the application number they were given.
+/// Folio document language: the result is the applicant's record card, and the current
+/// status lands on it as a rubber stamp.
 @Component({
   selector: 'app-application-status',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, DatePipe],
   template: `
-    <div class="min-h-screen bg-[#f8f9fc] px-6 py-12">
+    <div class="folio min-h-screen px-6 py-8 sm:py-12">
       <div class="mx-auto max-w-xl">
-        <div class="flex items-center gap-3 mb-8">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#4361ee]">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <div class="mb-10 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#0038A8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814" />
             </svg>
+            <span class="folio-display text-lg font-extrabold tracking-tight">Enrollify</span>
           </div>
-          <span class="text-lg font-bold text-gray-900">Enrollify</span>
+          <a routerLink="/login" class="text-sm font-semibold text-[#0038A8] hover:underline">Sign in</a>
         </div>
 
-        <h1 class="text-3xl font-bold text-gray-900">Application status</h1>
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="folio-eyebrow mb-3">Application status</p>
+        <h1 class="folio-display text-3xl sm:text-4xl font-black tracking-tight leading-none">Check your application.</h1>
+        <p class="mt-3 text-sm text-gray-500">
           @if (school()) { {{ school()!.name }} — }
-          Enter the application number from your confirmation screen (e.g. APP-20260731-A1B2C3).
+          enter the application number from your confirmation screen.
         </p>
 
         <form class="mt-6 flex gap-2" (ngSubmit)="lookup()">
           <input type="text" [(ngModel)]="applicationNumber" name="applicationNumber" required
                  placeholder="APP-YYYYMMDD-XXXXXX"
-                 class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-[#4361ee] focus:outline-none font-mono" />
+                 class="folio-mono flex-1 rounded-md border border-[#D8D0BB] bg-white px-4 py-2.5 text-sm tracking-wide outline-none transition-colors focus:border-[#0038A8] focus:shadow-[0_0_0_3px_rgba(0,56,168,0.14)]" />
           <button type="submit" [disabled]="loading() || !applicationNumber.trim()"
-                  class="rounded-lg bg-[#4361ee] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#3a53d4] disabled:opacity-50">
+                  class="rounded-md bg-[#0038A8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#002B85] disabled:opacity-50">
             {{ loading() ? 'Checking…' : 'Check status' }}
           </button>
         </form>
 
         @if (error()) {
-          <div class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
+          <div class="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error() }}</div>
         }
 
         @if (result(); as r) {
-          <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-              <p class="font-mono text-xs text-gray-400">{{ r.applicationNumber }}</p>
-              <span class="rounded-full px-3 py-1 text-xs font-semibold"
-                    [class]="statusBadgeClass(r.status)">{{ r.status }}</span>
+          <div class="mt-8">
+            <span class="folder-tab">{{ r.applicationNumber }}</span>
+            <div class="folio-card relative rounded-tl-none p-6 pt-8">
+              <span class="stamp stamp-animate absolute -top-3 right-4" [class]="stampClass(r.status)">{{ stampLabel(r.status) }}</span>
+              <p class="folio-display mt-2 text-xl font-bold">{{ r.applicantName }}</p>
+              <p class="mt-0.5 text-sm text-gray-500">{{ r.gradeLevel }} · SY {{ r.schoolYear }}</p>
+              <div class="folio-mono mt-4 space-y-1 border-t border-[#EFE9D8] pt-4 text-[13px] text-[#56617C]">
+                <p>Submitted&nbsp;&nbsp;{{ r.submittedAt | date:'mediumDate' }}</p>
+                @if (r.reviewedAt) { <p>Reviewed&nbsp;&nbsp;&nbsp;{{ r.reviewedAt | date:'mediumDate' }}</p> }
+              </div>
+              @if (r.reviewNotes) { <p class="mt-3 text-sm text-gray-500">Notes: {{ r.reviewNotes }}</p> }
+
+              @if (r.status === 'Approved') {
+                <div class="mt-5 rounded-md border-l-4 border-[#0E7A4E] bg-[#F0F7F3] px-4 py-3 text-sm text-[#155239]">
+                  Your application was approved. An account was created with the email you provided and the temporary password from your confirmation screen.
+                  <a routerLink="/login" class="font-semibold underline">Sign in</a>, change your password, then upload the enrollment requirements.
+                </div>
+              } @else if (r.status === 'Rejected') {
+                <div class="mt-5 rounded-md border-l-4 border-[#CE1126] bg-red-50 px-4 py-3 text-sm text-red-800">
+                  This application was not approved. Please contact the school for details.
+                </div>
+              } @else {
+                <div class="mt-5 rounded-md border-l-4 border-[#0038A8] bg-[#F0F4FF] px-4 py-3 text-sm text-[#1D3B7A]">
+                  Your application is with the registrar for review. Check back here for updates.
+                </div>
+              }
             </div>
-            <p class="mt-3 text-lg font-semibold text-gray-900">{{ r.applicantName }}</p>
-            <p class="text-sm text-gray-500">{{ r.gradeLevel }} · {{ r.schoolYear }}</p>
-            <div class="mt-4 border-t border-gray-100 pt-4 text-sm text-gray-600 space-y-1">
-              <p>Submitted: {{ r.submittedAt | date:'mediumDate' }}</p>
-              @if (r.reviewedAt) { <p>Reviewed: {{ r.reviewedAt | date:'mediumDate' }}</p> }
-              @if (r.reviewNotes) { <p class="text-gray-500">Notes: {{ r.reviewNotes }}</p> }
-            </div>
-            @if (r.status === 'Approved') {
-              <div class="mt-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
-                Your application was approved! A parent/student account was created with the email you
-                provided and the temporary password shown on your application confirmation screen.
-                <a routerLink="/login" class="font-medium underline">Sign in</a> and change your password,
-                then upload the enrollment requirements.
-              </div>
-            } @else if (r.status === 'Rejected') {
-              <div class="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                Unfortunately this application was not approved. Please contact the school for details.
-              </div>
-            } @else {
-              <div class="mt-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
-                Your application is being reviewed by the registrar. Check back here for updates.
-              </div>
-            }
           </div>
         }
 
-        <p class="mt-8 text-sm text-gray-500">
-          <a [routerLink]="['/', slug, 'apply']" class="text-[#4361ee] font-medium hover:underline">Submit another application</a>
-          · <a routerLink="/login" class="text-[#4361ee] font-medium hover:underline">Sign in</a>
+        <p class="mt-10 text-sm text-gray-500">
+          <a [routerLink]="['/', slug, 'apply']" class="font-semibold text-[#0038A8] hover:underline">Submit another application</a>
+          · <a routerLink="/login" class="font-semibold text-[#0038A8] hover:underline">Sign in</a>
         </p>
       </div>
     </div>
@@ -121,11 +123,20 @@ export class ApplicationStatusComponent implements OnInit {
     });
   }
 
-  statusBadgeClass(status: string): string {
+  stampLabel(status: string): string {
     switch (status) {
-      case 'Approved': return 'bg-green-100 text-green-700';
-      case 'Rejected': return 'bg-red-100 text-red-700';
-      default: return 'bg-blue-100 text-blue-700';
+      case 'Approved': return 'Approved';
+      case 'Rejected': return 'Rejected';
+      case 'UnderReview': return 'In review';
+      default: return 'Received';
+    }
+  }
+
+  stampClass(status: string): string {
+    switch (status) {
+      case 'Approved': return 'stamp stamp-green stamp-animate absolute -top-3 right-4';
+      case 'Rejected': return 'stamp stamp-red stamp-animate absolute -top-3 right-4';
+      default: return 'stamp stamp-blue stamp-animate absolute -top-3 right-4';
     }
   }
 }

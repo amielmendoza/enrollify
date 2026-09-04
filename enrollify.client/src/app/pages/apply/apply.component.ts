@@ -16,58 +16,42 @@ type ApplyMode = 'Parent' | 'Student';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="flex min-h-screen">
-      <!-- LEFT: Branding -->
-      <div class="hidden lg:flex lg:w-5/12 flex-col justify-between bg-[#4361ee] p-10">
-        <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+    <div class="folio min-h-screen px-6 py-8 sm:py-12">
+      <div class="mx-auto max-w-2xl">
+        <div class="mb-10 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#0038A8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814" />
             </svg>
+            <span class="folio-display text-lg font-extrabold tracking-tight">Enrollify</span>
           </div>
-          <span class="text-lg font-bold text-white">Enrollify</span>
-        </div>
-        <div class="mb-8">
-          <h1 class="text-4xl font-bold leading-tight text-white">Start your<br />enrollment journey.</h1>
-          <p class="mt-4 text-base leading-relaxed text-white/70">Submit an application online. Once approved, login credentials will be sent so you can complete the enrollment process.</p>
-        </div>
-        <p class="text-sm text-white/40">&copy; 2026 Enrollify. All rights reserved.</p>
-      </div>
-
-      <!-- RIGHT: Application Form -->
-      <div class="flex-1 overflow-y-auto bg-[#f8f9fc] px-6 py-10">
-        <div class="mx-auto max-w-2xl">
-          <!-- Mobile logo -->
-          <div class="mb-6 flex items-center gap-3 lg:hidden">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#4361ee]">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-              </svg>
-            </div>
-            <span class="text-lg font-bold text-gray-900">Enrollify</span>
-          </div>
-
-          @if (tenant()) {
-            <p class="mb-4 text-xs uppercase tracking-wider text-gray-400">Applying to</p>
-            <p class="-mt-3 mb-6 text-sm font-semibold text-[#4361ee]">{{ tenant()!.name }}</p>
+          @if (isParentLoggedIn()) {
+            <a routerLink="/parent/dashboard" class="text-sm font-semibold text-[#0038A8] hover:underline">Back to dashboard</a>
+          } @else {
+            <a routerLink="/login" class="text-sm font-semibold text-[#0038A8] hover:underline">Sign in</a>
           }
+        </div>
+
+        <span class="folder-tab">{{ tenant()?.name || 'Enrollment application' }}</span>
           @if (submitted()) {
-            <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <div class="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            <div class="folio-card rounded-tl-none p-8 text-center sm:p-10">
+              <div class="mb-6 mt-2">
+                <span class="stamp stamp-blue stamp-animate">Received</span>
               </div>
-              <h2 class="text-2xl font-bold text-gray-900">{{ submittedAppNumbers().length === 1 ? 'Application Submitted!' : 'Applications Submitted!' }}</h2>
-              <p class="mt-2 text-sm text-gray-500">
+              <h2 class="folio-display text-2xl font-black tracking-tight sm:text-3xl">{{ submittedAppNumbers().length === 1 ? 'Application received.' : 'Applications received.' }}</h2>
+              <p class="mt-3 text-sm text-gray-500">
                 @if (submittedAppNumbers().length === 1) {
-                  Your application number is <span class="font-mono font-semibold text-[#4361ee]">{{ submittedAppNumbers()[0] }}</span>
+                  Your application number:
                 } @else {
                   {{ submittedAppNumbers().length }} applications were submitted:
                 }
               </p>
-              @if (submittedAppNumbers().length > 1) {
-                <ul class="mt-3 text-sm text-gray-700 inline-block text-left">
+              @if (submittedAppNumbers().length === 1) {
+                <p class="folio-mono mx-auto mt-3 inline-block rounded-md border border-dashed border-[#C9BE9F] bg-[#F7F2E1] px-5 py-2.5 text-base font-semibold tracking-wide text-[#4A3F1E]">{{ submittedAppNumbers()[0] }}</p>
+              } @else {
+                <ul class="mt-3 inline-block space-y-1.5 text-left">
                   @for (n of submittedAppNumbers(); track n) {
-                    <li class="font-mono text-[#4361ee]">{{ n }}</li>
+                    <li class="folio-mono rounded-md border border-dashed border-[#C9BE9F] bg-[#F7F2E1] px-4 py-1.5 text-sm font-semibold tracking-wide text-[#4A3F1E]">{{ n }}</li>
                   }
                 </ul>
               }
@@ -85,13 +69,15 @@ type ApplyMode = 'Parent' | 'Student';
               }
             </div>
           } @else {
-            @if (isParentLoggedIn()) {
-              <h2 class="text-2xl font-bold text-gray-900">Enroll {{ applicants().length === 1 ? 'Another Child' : 'Children' }}</h2>
-              <p class="mt-1 text-sm text-gray-500">Add one or more children to enroll under your existing parent account.</p>
-            } @else {
-              <h2 class="text-2xl font-bold text-gray-900">Application Form</h2>
-              <p class="mt-1 text-sm text-gray-500">Fill in the details below to apply for enrollment</p>
-            }
+            <div class="folio-card rounded-tl-none p-6 sm:p-8">
+              @if (isParentLoggedIn()) {
+                <h2 class="folio-display text-2xl font-black tracking-tight sm:text-3xl">Enroll {{ applicants().length === 1 ? 'another child' : 'children' }}</h2>
+                <p class="mt-2 text-sm text-gray-500">Add one or more children under your existing parent account.</p>
+              } @else {
+                <h2 class="folio-display text-2xl font-black tracking-tight sm:text-3xl">Application for enrollment</h2>
+                <p class="mt-2 text-sm text-gray-500">Fill this out completely. Fields marked <span class="font-semibold text-[#CE1126]">*</span> are required.</p>
+              }
+            </div>
 
             @if (error()) {
               <div class="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 whitespace-pre-line">{{ error() }}</div>
@@ -100,15 +86,16 @@ type ApplyMode = 'Parent' | 'Student';
             <form (ngSubmit)="onSubmit()" class="mt-6 space-y-6">
               <!-- Mode toggle (anonymous applicants only) -->
               @if (!isParentLoggedIn()) {
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
-                  <h3 class="text-base font-semibold text-gray-900 mb-1">Who is applying?</h3>
-                  <p class="text-xs text-gray-500 mb-4">Pick the option that matches you. This decides what kind of account is created on approval.</p>
+                <div class="folio-card p-6">
+                  <p class="folio-eyebrow mb-1.5">Applicant type</p>
+                  <h3 class="folio-display text-lg font-bold mb-1">Who is applying?</h3>
+                  <p class="text-xs text-gray-500 mb-4">This decides what kind of account is created on approval.</p>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button type="button" (click)="setMode('Parent')"
-                            class="relative border-2 rounded-xl p-4 text-left transition-all"
-                            [class]="mode() === 'Parent' ? 'border-[#4361ee] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                            class="relative border-2 rounded-md p-4 text-left transition-all"
+                            [class]="mode() === 'Parent' ? 'border-[#0038A8] bg-[#F0F4FF]' : 'border-gray-200 hover:border-[#C9BE9F]'">
                       @if (mode() === 'Parent') {
-                        <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white bg-[#4361ee]">
+                        <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white bg-[#0038A8]">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                         </div>
                       }
@@ -116,10 +103,10 @@ type ApplyMode = 'Parent' | 'Student';
                       <p class="text-xs text-gray-500 mt-1">I'm enrolling one or more children. I'll be able to manage all of them from one parent account.</p>
                     </button>
                     <button type="button" (click)="setMode('Student')"
-                            class="relative border-2 rounded-xl p-4 text-left transition-all"
-                            [class]="mode() === 'Student' ? 'border-[#4361ee] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                            class="relative border-2 rounded-md p-4 text-left transition-all"
+                            [class]="mode() === 'Student' ? 'border-[#0038A8] bg-[#F0F4FF]' : 'border-gray-200 hover:border-[#C9BE9F]'">
                       @if (mode() === 'Student') {
-                        <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white bg-[#4361ee]">
+                        <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white bg-[#0038A8]">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                         </div>
                       }
@@ -132,9 +119,9 @@ type ApplyMode = 'Parent' | 'Student';
 
               <!-- Parent Account section (Parent mode only, anonymous only) -->
               @if (mode() === 'Parent' && !isParentLoggedIn()) {
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
-                  <h3 class="text-base font-semibold text-gray-900 mb-1">Parent Information</h3>
-                  <p class="text-xs text-gray-500 mb-4">A single parent account will be created on approval and will be linked to all children below. The parent will also be listed as the guardian for each child. Default password: <span class="font-mono">ChangeMe123!</span></p>
+                <div class="folio-card p-6">
+                  <p class="folio-eyebrow mb-1.5">Parent information</p>
+                  <p class="text-xs text-gray-500 mb-4">One parent account covers every child below, and you'll be listed as each child's guardian. Temporary password on approval: <span class="folio-mono font-semibold">ChangeMe123!</span></p>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label class="form-label">{{ fieldLabel('parentFirstName', 'Parent First Name') }} *</label>
@@ -212,15 +199,15 @@ type ApplyMode = 'Parent' | 'Student';
 
               <!-- Applicants (children in Parent mode, single student in Student mode) -->
               @for (a of applicants(); track $index; let i = $index) {
-                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="folio-card p-6">
                   <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-base font-semibold text-gray-900">
+                    <span class="folio-mono inline-flex items-center rounded border border-[#E2D9C2] bg-[#F7F2E1] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B5D33]">
                       @if (mode() === 'Parent') {
-                        Child {{ i + 1 }}
+                        Learner {{ i + 1 }}
                       } @else {
-                        Student Information
+                        Learner information
                       }
-                    </h3>
+                    </span>
                     @if (mode() === 'Parent' && applicants().length > 1) {
                       <button type="button" (click)="removeApplicant(i)"
                               class="text-sm text-red-500 hover:text-red-700 font-medium inline-flex items-center gap-1">
@@ -299,8 +286,8 @@ type ApplyMode = 'Parent' | 'Student';
                     </div>
                   }
 
-                  <hr class="my-5 border-gray-100" />
-                  <p class="text-sm font-medium text-gray-700 mb-3">Enrollment Details</p>
+                  <hr class="my-5 border-[#EFE9D8]" />
+                  <p class="folio-eyebrow mb-3">Enrollment details</p>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label class="form-label">{{ fieldLabel('gradeLevel', 'Grade Level') }} *</label>
@@ -346,8 +333,8 @@ type ApplyMode = 'Parent' | 'Student';
                   }
 
                   @if (mode() === 'Student') {
-                    <hr class="my-5 border-gray-100" />
-                    <p class="text-sm font-medium text-gray-700 mb-3">Guardian Information</p>
+                    <hr class="my-5 border-[#EFE9D8]" />
+                    <p class="folio-eyebrow mb-3">Guardian information</p>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                       @if (isFieldVisible('guardianName')) {
                         <div>
@@ -388,7 +375,7 @@ type ApplyMode = 'Parent' | 'Student';
                       </div>
                     }
                   } @else {
-                    <hr class="my-5 border-gray-100" />
+                    <hr class="my-5 border-[#EFE9D8]" />
                     <p class="text-sm text-gray-500 italic">Guardian: the parent above will be set as this child's guardian automatically.</p>
                   }
                 </div>
@@ -397,7 +384,7 @@ type ApplyMode = 'Parent' | 'Student';
               <!-- Add Another Child (Parent mode only) -->
               @if (mode() === 'Parent') {
                 <button type="button" (click)="addApplicant()"
-                        class="w-full rounded-xl border-2 border-dashed border-gray-300 hover:border-[#4361ee] hover:bg-blue-50/30 transition-colors py-4 text-sm font-medium text-gray-600 hover:text-[#4361ee] inline-flex items-center justify-center gap-2">
+                        class="w-full rounded-md border-2 border-dashed border-[#C9BE9F] hover:border-[#0038A8] hover:bg-[#F0F4FF] transition-colors py-4 text-sm font-medium text-gray-600 hover:text-[#0038A8] inline-flex items-center justify-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                   Add Another Child
                 </button>
@@ -410,7 +397,7 @@ type ApplyMode = 'Parent' | 'Student';
                   <a routerLink="/login" class="text-sm text-gray-500 hover:text-gray-700">Already have an account? Sign in</a>
                 }
                 <button type="submit" [disabled]="saving()"
-                        class="flex items-center gap-2 rounded-xl bg-[#4361ee] px-8 py-3 text-sm font-semibold text-white hover:bg-[#3a56d4] transition-colors disabled:opacity-60">
+                        class="flex items-center gap-2 rounded-md bg-[#0038A8] px-8 py-3 text-sm font-semibold text-white hover:bg-[#002B85] transition-colors disabled:opacity-60">
                   @if (saving()) {
                     <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                     Submitting...
@@ -422,7 +409,6 @@ type ApplyMode = 'Parent' | 'Student';
               </div>
             </form>
           }
-        </div>
       </div>
     </div>
   `

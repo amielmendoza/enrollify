@@ -100,3 +100,112 @@ body {
   color: #4361ee !important;
   font-weight: 500;
 }
+
+/* ===================================================================
+   Folio — the public enrollment flow's document language.
+   PH enrollment lives in manila folders, typed forms, and rubber
+   stamps; these pages wear that identity. Scoped under .folio so the
+   staff app keeps its own look.
+   Ink #22304A · Paper #FAF8F2 · Manila #EAD9AC · Seal #0038A8
+   Stamp red #CE1126 · Record green #0E7A4E
+   =================================================================== */
+.folio {
+  font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+  background-color: #FAF8F2;
+  color: #22304A;
+}
+.folio-display { font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif; }
+.folio-mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace; }
+
+/* Typed section label — the typewritten form-part heading */
+.folio-eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8A7B4F;
+}
+
+.folio-card {
+  background: #fff;
+  border: 1px solid #E2D9C2;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(34 48 74 / 0.04);
+}
+
+/* The signature: a manila folder tab sitting on the document sheet */
+.folder-tab {
+  display: inline-block;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #EAD9AC;
+  color: #4A3F1E;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.5rem 1.9rem 0.55rem 1rem;
+  border-radius: 6px 0 0 0;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 100%, 0 100%);
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Rubber-stamp status language */
+.stamp {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border: 3px double currentColor;
+  border-radius: 6px;
+  padding: 0.45rem 1rem 0.45rem 1.15rem;
+  transform: rotate(-5deg);
+  opacity: 0.92;
+}
+.stamp-blue { color: #0038A8; }
+.stamp-green { color: #0E7A4E; }
+.stamp-red { color: #CE1126; }
+.stamp-animate { animation: stamp-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes stamp-in {
+  0% { transform: rotate(-5deg) scale(1.7); opacity: 0; }
+  65% { transform: rotate(-5deg) scale(0.94); opacity: 0.92; }
+  100% { transform: rotate(-5deg) scale(1); opacity: 0.92; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp-animate { animation: none; }
+}
+
+/* Form controls inside the folio inherit the document look */
+.folio .form-input {
+  border-radius: 6px;
+  border-color: #D8D0BB;
+  box-shadow: none;
+}
+.folio .form-input:focus {
+  border-color: #0038A8;
+  box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.14);
+}
+.folio .form-label {
+  color: #56617C;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.folio .form-label > span { color: #CE1126; }
+.folio .btn { border-radius: 6px; }
+.folio .btn-primary { background-color: #0038A8; }
+.folio .btn-primary:hover { background-color: #002B85; }
+.folio .btn-secondary { background-color: #EFEAD9; color: #22304A; }
+.folio .btn-secondary:hover { background-color: #E2D9C2; }
+.folio a:focus-visible,
+.folio button:focus-visible {
+  outline: 2px solid #0038A8;
+  outline-offset: 2px;
+}

@@ -23,7 +23,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
       @if (enrollment()) {
         <!-- Progress Tracker -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
           <h2 class="font-semibold text-gray-900 mb-4">Enrollment Progress</h2>
           <div class="flex items-center justify-between">
             @for (s of statusNames; track s; let i = $index) {
@@ -31,7 +31,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
                 @if (stepIndex() > i) {
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-emerald-500 text-white shadow-sm">&#10003;</div>
                 } @else if (stepIndex() === i) {
-                  <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm" style="background-color: #4361ee;">{{ i + 1 }}</div>
+                  <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm" style="background-color: #0038A8;">{{ i + 1 }}</div>
                 } @else {
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold bg-gray-100 text-gray-400 border border-gray-200">{{ i + 1 }}</div>
                 }
@@ -46,7 +46,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
         <!-- STEP: Draft - Upload Requirements -->
         @if (statusName() === 'Draft') {
-          <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
             <h2 class="font-semibold text-gray-900 mb-2">Upload Requirements</h2>
             <p class="text-sm text-gray-500 mb-4">Please upload all required documents before submitting your enrollment.</p>
 
@@ -81,7 +81,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
                     </div>
                     @if (!req.isSubmitted) {
                       <button (click)="uploadRequirement(req.id, req.documentName)"
-                              class="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors" style="color: #4361ee;">
+                              class="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors" style="color: #0038A8;">
                         Upload
                       </button>
                     }
@@ -92,7 +92,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
               @if (allRequirementsUploaded()) {
                 <div class="mt-6">
                   <button (click)="submitEnrollment()" [disabled]="submitting()"
-                          class="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60" style="background-color: #4361ee;">
+                          class="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60" style="background-color: #0038A8;">
                     @if (submitting()) {
                       <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                     }
@@ -108,7 +108,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
         <!-- STEP: Submitted/Assessed - Waiting for admin -->
         @if (statusName() === 'Submitted') {
-          <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -122,7 +122,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
         }
 
         @if (statusName() === 'Assessed') {
-          <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -137,7 +137,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
         <!-- STEP: Approved - Select Payment Plan & Pay -->
         @if (statusName() === 'Approved') {
-          <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
             <h2 class="font-semibold text-gray-900 mb-4">Payment</h2>
 
             @if (!enrollment()!.paymentPlan) {
@@ -146,15 +146,15 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
                 @for (plan of paymentPlans(); track plan.value) {
                   <button (click)="selectPlan(plan.value)"
                           class="relative border-2 rounded-xl p-5 text-left transition-all cursor-pointer"
-                          [class]="selectedPlan() === plan.value ? 'border-[#4361ee] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                          [class]="selectedPlan() === plan.value ? 'border-[#0038A8] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
                     @if (selectedPlan() === plan.value) {
-                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white" style="background-color: #4361ee;">
+                      <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white" style="background-color: #0038A8;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                       </div>
                     }
                     <p class="text-base font-semibold text-gray-900">{{ plan.label }}</p>
                     <p class="text-sm text-gray-500 mt-1">{{ plan.description }}</p>
-                    <p class="text-lg font-bold mt-2" style="color: #4361ee;">{{ getPaymentCount(plan.value) }} payment{{ getPaymentCount(plan.value) > 1 ? 's' : '' }}</p>
+                    <p class="text-lg font-bold mt-2" style="color: #0038A8;">{{ getPaymentCount(plan.value) }} payment{{ getPaymentCount(plan.value) > 1 ? 's' : '' }}</p>
                   </button>
                 }
               </div>
@@ -208,7 +208,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
               <div class="mt-4 flex justify-end">
                 <button (click)="confirmPaymentPlan()" [disabled]="!selectedPlan() || confirmingPlan()"
-                        class="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60 transition-colors" style="background-color: #4361ee;">
+                        class="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60 transition-colors" style="background-color: #0038A8;">
                   @if (confirmingPlan()) {
                     <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                   }
@@ -217,22 +217,22 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
               </div>
             } @else {
               <p class="text-sm text-gray-500 mb-4">Payment plan: <span class="font-semibold text-gray-900">{{ enrollment()!.paymentPlan }}</span></p>
-              <p class="text-sm text-gray-500">Go to <a [routerLink]="['/parent/children', studentId, 'payments']" class="font-medium" style="color: #4361ee;">Payments</a> to view schedule and make payments.</p>
+              <p class="text-sm text-gray-500">Go to <a [routerLink]="['/parent/children', studentId, 'payments']" class="font-medium" style="color: #0038A8;">Payments</a> to view schedule and make payments.</p>
             }
           </div>
 
           <!-- Balance -->
           @if (balance()) {
             <div class="mt-6 grid grid-cols-3 gap-4">
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-xl border border-[#E2D9C2] p-4 text-center">
                 <p class="text-sm text-gray-500">Total Fees</p>
                 <p class="text-xl font-bold text-gray-900 mt-1">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</p>
               </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-xl border border-[#E2D9C2] p-4 text-center">
                 <p class="text-sm text-gray-500">Paid</p>
                 <p class="text-xl font-bold text-emerald-700 mt-1">\u20B1{{ balance()!.totalPaid | number:'1.2-2' }}</p>
               </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+              <div class="bg-white rounded-xl border border-[#E2D9C2] p-4 text-center">
                 <p class="text-sm text-gray-500">Balance</p>
                 <p class="text-xl font-bold mt-1" [class]="balance()!.balance > 0 ? 'text-orange-600' : 'text-emerald-700'">\u20B1{{ balance()!.balance | number:'1.2-2' }}</p>
               </div>
@@ -242,7 +242,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
         <!-- STEP: Paid - Waiting for section assignment -->
         @if (statusName() === 'Paid') {
-          <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -257,7 +257,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
         <!-- STEP: Enrolled - Complete -->
         @if (statusName() === 'Enrolled') {
-          <div class="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -272,7 +272,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
         <!-- Balance summary for Paid/Enrolled -->
         @if ((statusName() === 'Paid' || statusName() === 'Enrolled') && balance()) {
-          <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+          <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="font-semibold text-gray-900 mb-3">Tuition Summary</h2>
             <div class="grid grid-cols-3 gap-4">
               <div class="bg-gray-50 p-4 rounded-lg text-center">
@@ -292,10 +292,10 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
         }
 
       } @else {
-        <div class="mt-6 bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-12 text-center">
           <p class="text-gray-400 mb-4">No enrollment found for this child for the active school year.</p>
           <button (click)="requestEnrollment()" [disabled]="requesting()"
-                  class="inline-flex items-center gap-2 rounded-xl bg-[#4361ee] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3a56d4] disabled:opacity-60">
+                  class="inline-flex items-center gap-2 rounded-xl bg-[#0038A8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#002B85] disabled:opacity-60">
             @if (requesting()) {
               <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
             }

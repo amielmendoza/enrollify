@@ -29,7 +29,7 @@ import { TenantUser, PublicTenant } from '../../core/models';
             }
           </p>
         </div>
-        <button (click)="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-[#4361ee] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a56d4]">
+        <button (click)="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-[#0038A8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002B85]">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
           Add Admin
         </button>
@@ -42,7 +42,7 @@ import { TenantUser, PublicTenant } from '../../core/models';
         <div class="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700">{{ notice() }}</div>
       }
 
-      <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] overflow-hidden">
         <table class="w-full">
           <thead class="bg-gray-50">
             <tr>
@@ -106,7 +106,7 @@ import { TenantUser, PublicTenant } from '../../core/models';
               @if (!editing()) {
                 <div>
                   <label class="form-label">Initial Password *</label>
-                  <input type="text" [(ngModel)]="form.password" class="form-input font-mono" placeholder="At least 8 characters" />
+                  <input type="text" [(ngModel)]="form.password" class="form-input folio-mono" placeholder="At least 8 characters" />
                   <p class="text-xs text-gray-400 mt-1">The admin can change this on their first sign-in.</p>
                 </div>
               }
@@ -120,7 +120,7 @@ import { TenantUser, PublicTenant } from '../../core/models';
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeUserModal()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="saveUser()" [disabled]="saving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="saveUser()" [disabled]="saving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ saving() ? 'Saving...' : (editing() ? 'Save' : 'Add Admin') }}
               </button>
             </div>
@@ -137,13 +137,13 @@ import { TenantUser, PublicTenant } from '../../core/models';
 
             <div class="mt-4">
               <label class="form-label">New Password *</label>
-              <input type="text" [(ngModel)]="resetPassword" class="form-input font-mono" placeholder="At least 8 characters" />
+              <input type="text" [(ngModel)]="resetPassword" class="form-input folio-mono" placeholder="At least 8 characters" />
               <p class="text-xs text-gray-400 mt-1">Communicate this password to the user out of band.</p>
             </div>
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeReset()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="confirmReset()" [disabled]="saving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="confirmReset()" [disabled]="saving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ saving() ? 'Saving...' : 'Reset Password' }}
               </button>
             </div>

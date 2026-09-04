@@ -17,11 +17,11 @@ import { CreateStudentRequest } from '../../../core/models';
         <div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">{{ error() }}</div>
       }
 
-      <form (ngSubmit)="onSubmit()" class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <form (ngSubmit)="onSubmit()" class="bg-white rounded-xl border border-[#E2D9C2] p-6 space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="form-label">LRN *</label>
-            <input type="text" [(ngModel)]="form.lrn" name="lrn" required class="form-input" />
+            <input type="text" [(ngModel)]="form.lrn" name="lrn" required class="form-input folio-mono" />
           </div>
           <div>
             <label class="form-label">Gender</label>

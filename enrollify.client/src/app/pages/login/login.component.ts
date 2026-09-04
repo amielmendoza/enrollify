@@ -9,39 +9,23 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <div class="flex min-h-screen">
-      <!-- LEFT: Blue branding panel -->
-      <div class="hidden lg:flex lg:w-1/2 flex-col justify-between bg-[#4361ee] p-10">
-        <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
+    <div class="folio min-h-screen px-6 py-8 sm:py-12">
+      <div class="mx-auto flex min-h-[80vh] w-full max-w-md flex-col">
+        <div class="mb-10 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#0038A8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814" />
             </svg>
+            <span class="folio-display text-lg font-extrabold tracking-tight">Enrollify</span>
           </div>
-          <span class="text-lg font-bold text-white">Enrollify</span>
+          <a routerLink="/tenants" class="text-sm font-semibold text-[#0038A8] hover:underline">Find your school</a>
         </div>
-        <div class="mb-8">
-          <h1 class="text-4xl font-bold leading-tight text-white">Enrollment made<br />simple and modern.</h1>
-          <p class="mt-4 text-base leading-relaxed text-white/70">A streamlined enrollment experience for students, registrars, and administrators across Philippine K-12 schools.</p>
-        </div>
-        <p class="text-sm text-white/40">&copy; 2026 Enrollify. All rights reserved.</p>
-      </div>
 
-      <!-- RIGHT: Login form -->
-      <div class="flex flex-1 items-center justify-center bg-[#f8f9fc] px-6 py-12">
-        <div class="w-full max-w-md">
-          <!-- Mobile logo -->
-          <div class="mb-8 flex items-center gap-3 lg:hidden">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#4361ee]">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-              </svg>
-            </div>
-            <span class="text-lg font-bold text-gray-900">Enrollify</span>
-          </div>
-
-          <h2 class="text-2xl font-bold text-gray-900">Welcome back</h2>
-          <p class="mt-1 text-sm text-gray-500">Sign in to your portal</p>
+        <div class="my-auto">
+          <span class="folder-tab">Sign in</span>
+          <div class="folio-card rounded-tl-none p-6 sm:p-8">
+          <h2 class="folio-display text-2xl font-black tracking-tight sm:text-3xl">Welcome back.</h2>
+          <p class="mt-1.5 text-sm text-gray-500">Sign in to your portal.</p>
 
           @if (error()) {
             <div class="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-start gap-2">
@@ -64,7 +48,7 @@ import { AuthService } from '../../core/services/auth.service';
                      class="form-input" placeholder="Enter your password" />
             </div>
             <button type="submit" [disabled]="loading()"
-                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4361ee] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#3a56d4] focus:outline-none focus:ring-2 focus:ring-[#4361ee]/50 focus:ring-offset-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                    class="flex w-full items-center justify-center gap-2 rounded-md bg-[#0038A8] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#002B85] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
               @if (loading()) {
                 <svg class="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -80,11 +64,14 @@ import { AuthService } from '../../core/services/auth.service';
             </button>
           </form>
 
-          <div class="mt-8 text-center text-sm text-gray-400 space-y-1">
-            <p>SuperAdmin: super&#64;enrollify.app / SuperAdmin123!</p>
-            <p>Admin: admin&#64;mshs.edu.ph / Admin123!</p>
-            <p>Parent: pedro.delacruz&#64;example.com / Parent123!</p>
-            <p class="pt-2"><a routerLink="/apply" class="text-[#4361ee] font-medium hover:underline">New parent? Enroll your child &rarr;</a></p>
+          </div>
+
+          <p class="mt-6 text-center text-sm text-gray-500">New parent? <a routerLink="/tenants" class="font-semibold text-[#0038A8] hover:underline">Enroll your child &rarr;</a></p>
+
+          <div class="folio-mono mt-8 space-y-1 text-center text-[11px] tracking-wide text-gray-400">
+            <p>super&#64;enrollify.app / SuperAdmin123!</p>
+            <p>admin&#64;mshs.edu.ph / Admin123!</p>
+            <p>pedro.delacruz&#64;example.com / Parent123!</p>
           </div>
         </div>
       </div>

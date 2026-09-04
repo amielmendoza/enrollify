@@ -35,14 +35,14 @@ import { NotificationService } from '../services/notification.service';
     <!-- Confirm dialog -->
     @if (notify.confirmState(); as c) {
       <div class="fixed inset-0 z-[110] flex items-center justify-center bg-gray-900/50 p-4" (click)="notify.resolveConfirm(false)">
-        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" (click)="$event.stopPropagation()">
+        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold text-gray-900">{{ c.title }}</h3>
           <p class="mt-2 whitespace-pre-line text-sm text-gray-600">{{ c.message }}</p>
           <div class="mt-6 flex items-center justify-end gap-3">
             <button (click)="notify.resolveConfirm(false)" class="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">{{ c.cancelLabel }}</button>
             <button (click)="notify.resolveConfirm(true)"
                     class="rounded-lg px-5 py-2 text-sm font-semibold text-white"
-                    [class]="c.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#4361ee] hover:bg-[#3a56d4]'">
+                    [class]="c.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#0038A8] hover:bg-[#002B85]'">
               {{ c.confirmLabel }}
             </button>
           </div>
@@ -53,7 +53,7 @@ import { NotificationService } from '../services/notification.service';
     <!-- Prompt dialog -->
     @if (notify.promptState(); as p) {
       <div class="fixed inset-0 z-[110] flex items-center justify-center bg-gray-900/50 p-4" (click)="notify.resolvePrompt(null)">
-        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" (click)="$event.stopPropagation()">
+        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" (click)="$event.stopPropagation()">
           <h3 class="text-lg font-semibold text-gray-900">{{ p.title }}</h3>
           <p class="mt-2 whitespace-pre-line text-sm text-gray-600">{{ p.message }}</p>
           <input type="text" [(ngModel)]="promptValue" (keyup.enter)="submitPrompt()"
@@ -65,7 +65,7 @@ import { NotificationService } from '../services/notification.service';
             <button (click)="notify.resolvePrompt(null)" class="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">{{ p.cancelLabel }}</button>
             <button (click)="submitPrompt()" [disabled]="p.required && !promptValue.trim()"
                     class="rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                    [class]="p.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#4361ee] hover:bg-[#3a56d4]'">
+                    [class]="p.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-[#0038A8] hover:bg-[#002B85]'">
               {{ p.confirmLabel }}
             </button>
           </div>

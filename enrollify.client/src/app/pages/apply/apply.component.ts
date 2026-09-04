@@ -59,7 +59,7 @@ type ApplyMode = 'Parent' | 'Student';
                 <p class="mt-4 text-sm text-gray-500">Once approved, the {{ submittedAppNumbers().length === 1 ? 'child' : 'children' }} will appear in your dashboard.</p>
                 <a routerLink="/parent/dashboard" class="inline-block mt-6 btn btn-primary px-8">Back to Dashboard</a>
               } @else {
-                <p class="mt-4 text-sm text-gray-500">Save your application {{ submittedAppNumbers().length === 1 ? 'number' : 'numbers' }} — you'll need {{ submittedAppNumbers().length === 1 ? 'it' : 'them' }} to check your status. Once approved, an account is created with the email you provided and the temporary password <span class="font-mono font-medium">ChangeMe123!</span> (change it after your first login).</p>
+                <p class="mt-4 text-sm text-gray-500">Save your application {{ submittedAppNumbers().length === 1 ? 'number' : 'numbers' }} — you'll need {{ submittedAppNumbers().length === 1 ? 'it' : 'them' }} to check your status. Once approved, an account is created with the email you provided and the temporary password <span class="folio-mono font-semibold">ChangeMe123!</span> (change it after your first login).</p>
                 <div class="mt-6 flex items-center justify-center gap-3">
                   @if (statusSlug()) {
                     <a [routerLink]="['/', statusSlug(), 'status']" [queryParams]="{ ref: submittedAppNumbers()[0] }" class="inline-block btn btn-primary px-8">Check Status</a>

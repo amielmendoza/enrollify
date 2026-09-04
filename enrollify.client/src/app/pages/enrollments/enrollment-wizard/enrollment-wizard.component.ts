@@ -19,17 +19,17 @@ import { GRADE_LEVELS } from '../../../core/constants';
         <div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">{{ error() }}</div>
       }
 
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
         <!-- Step indicator -->
         <div class="flex items-center mb-8">
           @for (s of stepLabels; track s; let i = $index) {
             <div class="flex items-center" [class.flex-1]="i < 2">
               <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                   [ngClass]="step() > i ? 'bg-[#4361ee] text-white' : step() === i ? 'bg-blue-50 text-[#4361ee] ring-2 ring-[#4361ee]' : 'bg-gray-200 text-gray-500'">
+                   [ngClass]="step() > i ? 'bg-[#0038A8] text-white' : step() === i ? 'bg-blue-50 text-[#0038A8] ring-2 ring-[#0038A8]' : 'bg-gray-200 text-gray-500'">
                 {{ i + 1 }}
               </div>
               <span class="ml-2 text-sm font-medium" [ngClass]="step() >= i ? 'text-gray-900' : 'text-gray-400'">{{ s }}</span>
-              @if (i < 2) { <div class="flex-1 h-px mx-4" [ngClass]="step() > i ? 'bg-[#4361ee]' : 'bg-gray-200'"></div> }
+              @if (i < 2) { <div class="flex-1 h-px mx-4" [ngClass]="step() > i ? 'bg-[#0038A8]' : 'bg-gray-200'"></div> }
             </div>
           }
         </div>
@@ -43,9 +43,9 @@ import { GRADE_LEVELS } from '../../../core/constants';
             <div class="space-y-2 max-h-60 overflow-auto">
               @for (s of studentResults(); track s.id) {
                 <button (click)="selectStudent(s)" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-blue-50 transition-colors"
-                        [class.border-[#4361ee]]="selectedStudent()?.id === s.id" [class.bg-blue-50]="selectedStudent()?.id === s.id">
+                        [class.border-[#0038A8]]="selectedStudent()?.id === s.id" [class.bg-blue-50]="selectedStudent()?.id === s.id">
                   <span class="font-medium text-gray-900">{{ s.fullName }}</span>
-                  <span class="text-gray-400 text-sm ml-2">LRN: {{ s.lrn }}</span>
+                  <span class="text-gray-400 text-sm ml-2">LRN: <span class="folio-mono">{{ s.lrn }}</span></span>
                 </button>
               }
             </div>
@@ -84,7 +84,7 @@ import { GRADE_LEVELS } from '../../../core/constants';
           <div class="space-y-3">
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <p class="text-sm text-gray-500">Student</p>
-              <p class="font-medium text-gray-900">{{ selectedStudent()?.fullName }} ({{ selectedStudent()?.lrn }})</p>
+              <p class="font-medium text-gray-900">{{ selectedStudent()?.fullName }} (<span class="folio-mono text-sm">{{ selectedStudent()?.lrn }}</span>)</p>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <p class="text-sm text-gray-500">School Year</p>

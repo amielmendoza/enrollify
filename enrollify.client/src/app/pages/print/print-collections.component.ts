@@ -21,6 +21,8 @@ interface DayGroup {
   standalone: true,
   imports: [CommonModule],
   styles: [`
+    .document { font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif; }
+    .doc-title { font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif; }
     @media print {
       .no-print { display: none !important; }
       .print-root { background: white !important; }
@@ -48,11 +50,11 @@ interface DayGroup {
       }
 
       @if (report(); as r) {
-        <div class="document mx-auto my-8 max-w-[800px] bg-white border border-gray-200 shadow-sm p-12">
+        <div class="document mx-auto my-8 max-w-[800px] bg-white border border-[#E2D9C2] shadow-sm p-12">
           <!-- School header -->
           <div class="text-center border-b-2 border-gray-900 pb-5">
             <h1 class="text-2xl font-bold text-gray-900">{{ tenant()?.name || '' }}</h1>
-            <p class="mt-2 text-base font-semibold uppercase tracking-[0.25em] text-gray-800">Collections Journal</p>
+            <p class="doc-title mt-2 text-base font-semibold uppercase tracking-[0.25em] text-gray-800">Collections Journal</p>
             <p class="mt-1 text-sm text-gray-500">
               From {{ from | date:'mediumDate' }} to {{ to | date:'mediumDate' }}
               @if (method) { · {{ method }} only }
@@ -81,17 +83,17 @@ interface DayGroup {
               @for (g of groups(); track g.key) {
                 <tr class="border-b border-gray-300 bg-gray-50">
                   <td colspan="6" class="py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-600">{{ g.date | date:'EEEE, MMM d, y' }}</td>
-                  <td class="py-1.5 text-right text-xs font-semibold text-gray-700">₱{{ g.amount | number:'1.2-2' }}</td>
+                  <td class="py-1.5 text-right text-xs font-semibold text-gray-700 folio-mono">₱{{ g.amount | number:'1.2-2' }}</td>
                 </tr>
                 @for (row of g.rows; track row.paymentId) {
                   <tr class="border-b border-gray-100">
-                    <td class="py-1.5 whitespace-nowrap text-gray-700">{{ row.paymentDate | date:'h:mm a' }}</td>
+                    <td class="py-1.5 whitespace-nowrap text-gray-700 folio-mono">{{ row.paymentDate | date:'h:mm a' }}</td>
                     <td class="py-1.5 text-gray-900">{{ row.studentName }}</td>
                     <td class="py-1.5 text-gray-700">{{ row.gradeLevel }}</td>
                     <td class="py-1.5 text-gray-700">{{ row.paymentMethod }}</td>
-                    <td class="py-1.5 text-gray-700">{{ row.referenceNumber || '—' }}</td>
+                    <td class="py-1.5 text-gray-700 folio-mono">{{ row.referenceNumber || '—' }}</td>
                     <td class="py-1.5 text-gray-700">{{ row.receivedBy || '—' }}</td>
-                    <td class="py-1.5 text-right text-gray-900">₱{{ row.amount | number:'1.2-2' }}</td>
+                    <td class="py-1.5 text-right text-gray-900 folio-mono">₱{{ row.amount | number:'1.2-2' }}</td>
                   </tr>
                 }
               }
@@ -102,7 +104,7 @@ interface DayGroup {
             <tfoot>
               <tr class="border-t-2 border-gray-900">
                 <td colspan="6" class="py-2.5 font-bold text-gray-900">Grand Total</td>
-                <td class="py-2.5 text-right font-bold text-gray-900">₱{{ r.summary.totalAmount | number:'1.2-2' }}</td>
+                <td class="py-2.5 text-right font-bold text-gray-900 folio-mono">₱{{ r.summary.totalAmount | number:'1.2-2' }}</td>
               </tr>
             </tfoot>
           </table>
@@ -116,12 +118,12 @@ interface DayGroup {
                   @for (m of r.summary.byMethod; track m.method) {
                     <tr class="border-b border-gray-100">
                       <td class="py-1.5 text-gray-700">{{ m.method }} <span class="text-gray-400">({{ m.count }})</span></td>
-                      <td class="py-1.5 text-right text-gray-900">₱{{ m.amount | number:'1.2-2' }}</td>
+                      <td class="py-1.5 text-right text-gray-900 folio-mono">₱{{ m.amount | number:'1.2-2' }}</td>
                     </tr>
                   }
                   <tr class="border-t border-gray-900">
                     <td class="py-1.5 font-bold text-gray-900">Total ({{ r.summary.totalCount }})</td>
-                    <td class="py-1.5 text-right font-bold text-gray-900">₱{{ r.summary.totalAmount | number:'1.2-2' }}</td>
+                    <td class="py-1.5 text-right font-bold text-gray-900 folio-mono">₱{{ r.summary.totalAmount | number:'1.2-2' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -137,7 +139,7 @@ interface DayGroup {
             </div>
           </div>
 
-          <p class="mt-10 text-xs text-gray-400">Date printed: {{ today | date:'medium' }}</p>
+          <p class="mt-10 text-xs text-gray-400">Date printed: <span class="folio-mono">{{ today | date:'medium' }}</span></p>
         </div>
       }
     </div>

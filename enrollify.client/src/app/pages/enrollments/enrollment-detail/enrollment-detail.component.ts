@@ -37,7 +37,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
         </div>
 
         <!-- Workflow Progress -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <h3 class="font-semibold text-gray-900 mb-4">Enrollment Progress</h3>
           @if (getStatusName() === 'Cancelled') {
             <div class="p-3 bg-red-50 rounded-lg text-sm text-red-700">
@@ -51,7 +51,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
                 @if (getStepIndex() > i) {
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-emerald-500 text-white shadow-sm">&#10003;</div>
                 } @else if (getStepIndex() === i) {
-                  <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm" style="background-color: #4361ee;">{{ i + 1 }}</div>
+                  <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm" style="background-color: #0038A8;">{{ i + 1 }}</div>
                 } @else {
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold bg-gray-100 text-gray-400 border border-gray-200">{{ i + 1 }}</div>
                 }
@@ -104,7 +104,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
         </div>
 
         <!-- Section Assignment -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <h3 class="font-semibold text-gray-900 mb-4">Section Assignment</h3>
           @if (enrollment()!.sectionName) {
             <p class="text-gray-600">Assigned to: <span class="font-medium text-gray-900">{{ enrollment()!.sectionName }}</span></p>
@@ -125,11 +125,11 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
         </div>
 
         <!-- Requirements Review (Admin) -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-900">Requirements</h3>
             @if (isAdmin()) {
-              <p class="text-xs text-gray-500">Manage the catalog in <a href="/settings" class="text-[#4361ee] hover:underline">Settings &rsaquo; Requirements</a></p>
+              <p class="text-xs text-gray-500">Manage the catalog in <a href="/settings" class="text-[#0038A8] hover:underline">Settings &rsaquo; Requirements</a></p>
             }
           </div>
 
@@ -153,7 +153,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
                       <div class="flex-1">
                         <p class="text-sm font-medium text-gray-900">{{ req.documentName }}</p>
                         @if (req.fileName && req.notes) {
-                          <button type="button" (click)="openFile(req.notes!)" class="text-xs text-[#4361ee] hover:underline">{{ req.fileName }}</button>
+                          <button type="button" (click)="openFile(req.notes!)" class="text-xs text-[#0038A8] hover:underline">{{ req.fileName }}</button>
                         } @else if (req.fileName) {
                           <p class="text-xs text-gray-500">{{ req.fileName }}</p>
                         }
@@ -195,12 +195,12 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
               }
             </div>
           } @else {
-            <p class="text-sm text-gray-500">No requirements configured. Add some in <a href="/settings" class="text-[#4361ee] hover:underline">Settings &rsaquo; Requirements</a>.</p>
+            <p class="text-sm text-gray-500">No requirements configured. Add some in <a href="/settings" class="text-[#0038A8] hover:underline">Settings &rsaquo; Requirements</a>.</p>
           }
         </div>
 
         <!-- Balance & Payments -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <h3 class="font-semibold text-gray-900 mb-4">Fees & Payments</h3>
           @if (balance()) {
             <div class="grid grid-cols-3 gap-4 mb-4">
@@ -254,9 +254,9 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
                       </div>
                       <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                         <span>{{ p.paymentDate | date:'medium' }}</span>
-                        @if (p.referenceNumber) { <span>Ref: {{ p.referenceNumber }}</span> }
+                        @if (p.referenceNumber) { <span>Ref: <span class="folio-mono">{{ p.referenceNumber }}</span></span> }
                         @if (p.receiptFileUrl) {
-                          <button type="button" (click)="openFile(p.receiptFileUrl!)" class="text-[#4361ee] font-medium hover:underline">View receipt</button>
+                          <button type="button" (click)="openFile(p.receiptFileUrl!)" class="text-[#0038A8] font-medium hover:underline">View receipt</button>
                         } @else { <span class="text-gray-400 italic">No receipt attached</span> }
                         @if (p.remarks) { <span>{{ p.remarks }}</span> }
                         @if (p.reviewedBy) { <span>Reviewed by: {{ p.reviewedBy }}</span> }
@@ -290,13 +290,13 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
         </div>
 
         <!-- Ledger (statement of account) -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-900">Ledger</h3>
             @if (isAdmin()) {
               <div class="flex gap-2">
                 <button (click)="openPrintDoc('soa')" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">Print SOA</button>
-                <button (click)="openAdjustment()" class="rounded-lg bg-[#4361ee] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#3a56d4]">Add Adjustment</button>
+                <button (click)="openAdjustment()" class="rounded-lg bg-[#0038A8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#002B85]">Add Adjustment</button>
               </div>
             }
           </div>
@@ -323,7 +323,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
                         @if (en.voided) {
                           <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Voided</span>
                         }
-                        @if (en.reference) { <p class="text-xs text-gray-400 mt-0.5">Ref: {{ en.reference }}</p> }
+                        @if (en.reference) { <p class="text-xs text-gray-400 mt-0.5">Ref: <span class="folio-mono">{{ en.reference }}</span></p> }
                       </td>
                       <td class="py-2.5 pr-4 text-right text-gray-900" [class.line-through]="en.voided">
                         @if (en.debit != null) { ₱{{ en.debit | number:'1.2-2' }} }
@@ -357,13 +357,13 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
         </div>
 
         <!-- Status History -->
-        <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <h3 class="font-semibold text-gray-900 mb-4">History</h3>
           @if (history().length > 0) {
             <ol class="relative ml-2 border-l border-gray-200">
               @for (h of history(); track $index) {
                 <li class="relative ml-5 pb-5 last:pb-0">
-                  <span class="absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full ring-4 ring-white" style="background-color: #4361ee;"></span>
+                  <span class="absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full ring-4 ring-white" style="background-color: #0038A8;"></span>
                   <p class="text-sm font-medium text-gray-900">{{ h.fromStatus }} &rarr; {{ h.toStatus }}</p>
                   <p class="text-xs text-gray-500 mt-0.5">{{ h.transitionDate | date:'medium' }}</p>
                   @if (h.remarks) {
@@ -393,13 +393,13 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
               <div class="grid grid-cols-2 gap-3">
                 <button type="button" (click)="adjForm.type = 'Debit'"
                         class="border-2 rounded-xl p-3 text-left transition-all"
-                        [class]="adjForm.type === 'Debit' ? 'border-[#4361ee] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                        [class]="adjForm.type === 'Debit' ? 'border-[#0038A8] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
                   <p class="text-sm font-semibold text-gray-900">Debit</p>
                   <p class="text-xs text-gray-500 mt-0.5">Additional charge</p>
                 </button>
                 <button type="button" (click)="adjForm.type = 'Credit'"
                         class="border-2 rounded-xl p-3 text-left transition-all"
-                        [class]="adjForm.type === 'Credit' ? 'border-[#4361ee] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                        [class]="adjForm.type === 'Credit' ? 'border-[#0038A8] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
                   <p class="text-sm font-semibold text-gray-900">Credit</p>
                   <p class="text-xs text-gray-500 mt-0.5">Deduction / discount</p>
                 </button>
@@ -416,7 +416,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeAdjustment()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="saveAdjustment()" [disabled]="adjSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="saveAdjustment()" [disabled]="adjSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ adjSaving() ? 'Saving...' : 'Add Adjustment' }}
               </button>
             </div>

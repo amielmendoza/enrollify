@@ -20,7 +20,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
       </div>
 
       <!-- Filters -->
-      <div class="bg-white rounded-xl border border-gray-200 mt-6">
+      <div class="bg-white rounded-xl border border-[#E2D9C2] mt-6">
         <div class="p-4 border-b border-gray-100 flex flex-wrap gap-3">
           <input type="text" [(ngModel)]="search" (ngModelChange)="onFilterChange()" placeholder="Search by name or application #..."
                  class="form-input max-w-sm" />
@@ -48,7 +48,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
             <tbody class="divide-y divide-gray-100">
               @for (app of applications(); track app.id) {
                 <tr class="hover:bg-gray-50">
-                  <td class="px-6 py-4 text-sm font-mono">{{ app.applicationNumber }}</td>
+                  <td class="px-6 py-4 text-sm folio-mono">{{ app.applicationNumber }}</td>
                   <td class="px-6 py-4">
                     <p class="text-sm font-medium text-gray-900">{{ app.fullName }}</p>
                     <p class="text-xs text-gray-500">{{ app.email }}</p>
@@ -59,7 +59,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">{{ app.createdAt | date:'mediumDate' }}</td>
                   <td class="px-6 py-4 text-sm text-right space-x-2">
-                    <button (click)="viewDetail(app.id)" class="text-[#4361ee] hover:text-[#3a56d4] font-medium">View</button>
+                    <button (click)="viewDetail(app.id)" class="text-[#0038A8] hover:text-[#002B85] font-medium">View</button>
                     @if (app.status === 'Submitted') {
                       <button (click)="approve(app.id)" class="text-emerald-600 hover:text-emerald-700 font-medium">Approve</button>
                       <button (click)="reject(app.id)" class="text-red-600 hover:text-red-700 font-medium">Reject</button>
@@ -93,7 +93,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
           <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
             <div class="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h2 class="text-lg font-semibold text-gray-900">{{ selectedApp()!.applicationNumber }}</h2>
+                <h2 class="text-lg font-semibold text-gray-900 folio-mono tracking-wide">{{ selectedApp()!.applicationNumber }}</h2>
                 <span class="badge mt-1" [class]="getStatusBadge(selectedApp()!.status)">{{ selectedApp()!.status }}</span>
               </div>
               <button (click)="selectedApp.set(null)" class="p-2 hover:bg-gray-100 rounded-lg">
@@ -115,7 +115,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
               </div>
               @if (selectedApp()!.parentEmail || selectedApp()!.parentContactNumber) {
                 <div class="border-t border-gray-100 pt-4">
-                  <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Parent Contact</p>
+                  <p class="folio-eyebrow mb-3">Parent Contact</p>
                   <div class="grid grid-cols-2 gap-4">
                     @if (selectedApp()!.parentEmail) {
                       <div><p class="text-xs text-gray-500">Parent Email</p><p class="text-sm font-medium">{{ selectedApp()!.parentEmail }}</p></div>
@@ -128,7 +128,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
               }
               @if (customFieldEntries().length > 0) {
                 <div class="border-t border-gray-100 pt-4">
-                  <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional Information</p>
+                  <p class="folio-eyebrow mb-3">Additional Information</p>
                   <div class="grid grid-cols-2 gap-4">
                     @for (entry of customFieldEntries(); track entry.key) {
                       <div><p class="text-xs text-gray-500">{{ formatFieldKey(entry.key) }}</p><p class="text-sm font-medium">{{ entry.value || '-' }}</p></div>

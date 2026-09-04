@@ -17,7 +17,7 @@ import { Student } from '../../core/models';
       <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Profile Info -->
         <div class="lg:col-span-2">
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Personal Information</h2>
 
             @if (profileSuccess()) {
@@ -33,7 +33,7 @@ import { Student } from '../../core/models';
                   </div>
                   <div>
                     <label class="form-label">LRN</label>
-                    <input type="text" [value]="student()!.lrn" disabled class="form-input bg-gray-50 cursor-not-allowed" />
+                    <input type="text" [value]="student()!.lrn" disabled class="form-input folio-mono bg-gray-50 cursor-not-allowed" />
                   </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -75,7 +75,7 @@ import { Student } from '../../core/models';
                   </div>
                 </div>
                 <button (click)="saveProfile()" [disabled]="savingProfile()"
-                        class="rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60" style="background-color: #4361ee;">
+                        class="rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60" style="background-color: #0038A8;">
                   {{ savingProfile() ? 'Saving...' : 'Save Changes' }}
                 </button>
               </div>
@@ -85,7 +85,7 @@ import { Student } from '../../core/models';
 
         <!-- Change Password -->
         <div>
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
 
             @if (pwSuccess()) {
@@ -109,7 +109,7 @@ import { Student } from '../../core/models';
                 <input type="password" [(ngModel)]="confirmPw" class="form-input" />
               </div>
               <button (click)="changePassword()" [disabled]="changingPw() || !currentPw || !newPw || newPw !== confirmPw"
-                      class="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60" style="background-color: #4361ee;">
+                      class="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60" style="background-color: #0038A8;">
                 {{ changingPw() ? 'Changing...' : 'Change Password' }}
               </button>
               @if (newPw && confirmPw && newPw !== confirmPw) {

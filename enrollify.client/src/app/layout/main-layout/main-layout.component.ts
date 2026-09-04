@@ -9,29 +9,27 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
   template: `
-    <div class="flex h-screen overflow-hidden bg-[#f8f9fc]">
+    <div class="flex h-screen overflow-hidden bg-[#FAF8F2]">
 
       @if (sidebarOpen()) {
         <div class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" (click)="sidebarOpen.set(false)"></div>
       }
 
       <aside
-        class="fixed inset-y-0 left-0 z-50 flex w-[208px] flex-col bg-white border-r border-gray-200 transition-transform duration-300 lg:static lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 flex w-[208px] flex-col bg-white border-r border-[#E9E2CE] transition-transform duration-300 lg:static lg:translate-x-0"
         [class.-translate-x-full]="!sidebarOpen()"
         [class.translate-x-0]="sidebarOpen()"
       >
         <div class="flex h-14 items-center gap-2.5 px-4">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4361ee]">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-            </svg>
-          </div>
-          <span class="text-base font-bold text-gray-900">Enrollify</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#0038A8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814" />
+          </svg>
+          <span class="folio-display text-base font-extrabold tracking-tight text-gray-900">Enrollify</span>
         </div>
 
         <nav class="flex-1 overflow-y-auto px-3 pt-2">
           @if (isSuperAdmin()) {
-            <p class="px-3 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Platform</p>
+            <p class="folio-eyebrow px-3 mt-4 mb-2">Platform</p>
             <a routerLink="/super/tenants" routerLinkActive="active-nav" class="nav-item" (click)="sidebarOpen.set(false)">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
@@ -39,7 +37,7 @@ import { CommonModule } from '@angular/common';
               <span>Schools</span>
             </a>
           } @else if (isParent()) {
-            <p class="px-3 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Parent</p>
+            <p class="folio-eyebrow px-3 mt-4 mb-2">Parent</p>
 
             <a routerLink="/parent/dashboard" routerLinkActive="active-nav" class="nav-item" (click)="sidebarOpen.set(false)">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -55,7 +53,7 @@ import { CommonModule } from '@angular/common';
               <span>Enroll a Child</span>
             </a>
           } @else if (isStudent()) {
-            <p class="px-3 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Student</p>
+            <p class="folio-eyebrow px-3 mt-4 mb-2">Student</p>
 
             <a routerLink="/dashboard" routerLinkActive="active-nav" [routerLinkActiveOptions]="{ exact: true }" class="nav-item" (click)="sidebarOpen.set(false)">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -85,7 +83,7 @@ import { CommonModule } from '@angular/common';
               <span>My Profile</span>
             </a>
           } @else {
-            <p class="px-3 mt-4 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">General</p>
+            <p class="folio-eyebrow px-3 mt-4 mb-2">General</p>
 
             <a routerLink="/dashboard" routerLinkActive="active-nav" [routerLinkActiveOptions]="{ exact: true }" class="nav-item" (click)="sidebarOpen.set(false)">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -123,7 +121,7 @@ import { CommonModule } from '@angular/common';
             </a>
 
             @if (isAdmin()) {
-              <p class="px-3 mt-6 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Management</p>
+              <p class="folio-eyebrow px-3 mt-6 mb-2">Management</p>
 
               <a routerLink="/settings" routerLinkActive="active-nav" class="nav-item" (click)="sidebarOpen.set(false)">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -147,7 +145,7 @@ import { CommonModule } from '@angular/common';
       </aside>
 
       <div class="flex flex-1 flex-col overflow-hidden">
-        <header class="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
+        <header class="flex h-14 items-center justify-between border-b border-[#E9E2CE] bg-white px-6">
           <button class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden" (click)="sidebarOpen.set(true)">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -157,19 +155,19 @@ import { CommonModule } from '@angular/common';
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
             </svg>
-            <span>S.Y. {{ syService.activeName() || '---' }}</span>
+            <span class="folio-mono text-xs tracking-wide">S.Y. {{ syService.activeName() || '---' }}</span>
           </div>
           <div class="flex items-center gap-3">
             <div class="text-right hidden sm:block">
               <p class="text-sm font-medium text-gray-900 leading-tight">{{ auth.user()?.fullName }}</p>
               <p class="text-xs text-gray-500">{{ auth.user()?.role }}</p>
             </div>
-            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#4361ee] text-white text-sm font-semibold">
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#0038A8] text-white text-sm font-semibold">
               {{ userInitials() }}
             </div>
           </div>
         </header>
-        <main class="flex-1 overflow-y-auto bg-[#f8f9fc] p-6 lg:p-8">
+        <main class="flex-1 overflow-y-auto bg-[#FAF8F2] p-6 lg:p-8">
           <router-outlet />
         </main>
       </div>

@@ -20,7 +20,7 @@ import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
         </a>
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200">
+      <div class="bg-white rounded-xl border border-[#E2D9C2]">
         <div class="p-4 border-b border-gray-200 flex flex-wrap gap-3">
           <input type="text" [(ngModel)]="search" (ngModelChange)="onFilterChange()" placeholder="Search student..."
                  class="form-input max-w-sm" />
@@ -77,7 +77,7 @@ import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
                     </div>
                   </td>
                   <td class="px-6 py-4 text-sm text-right">
-                    <a [routerLink]="['/enrollments', e.id]" class="text-[#4361ee] hover:text-[#3a56d4] font-medium">View</a>
+                    <a [routerLink]="['/enrollments', e.id]" class="text-[#0038A8] hover:text-[#002B85] font-medium">View</a>
                   </td>
                 </tr>
               }

@@ -18,7 +18,7 @@ import { Student } from '../../../core/models';
         </a>
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200">
+      <div class="bg-white rounded-xl border border-[#E2D9C2]">
         <div class="p-4 border-b border-gray-200">
           <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search by name or LRN..."
                  class="form-input max-w-sm" />
@@ -39,13 +39,13 @@ import { Student } from '../../../core/models';
             <tbody class="divide-y divide-gray-200">
               @for (student of students(); track student.id) {
                 <tr class="hover:bg-gray-50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-mono text-gray-700">{{ student.lrn }}</td>
+                  <td class="px-6 py-4 text-sm folio-mono text-gray-700">{{ student.lrn }}</td>
                   <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ student.fullName }}</td>
                   <td class="px-6 py-4 text-sm text-gray-600">{{ student.gender }}</td>
                   <td class="px-6 py-4 text-sm text-gray-600">{{ student.contactNumber }}</td>
                   <td class="px-6 py-4 text-sm text-gray-600">{{ student.guardianName }}</td>
                   <td class="px-6 py-4 text-sm text-right">
-                    <a [routerLink]="['/students', student.id, 'edit']" class="text-[#4361ee] hover:text-[#3a56d4] font-medium">Edit</a>
+                    <a [routerLink]="['/students', student.id, 'edit']" class="text-[#0038A8] hover:text-[#002B85] font-medium">Edit</a>
                   </td>
                 </tr>
               }

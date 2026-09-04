@@ -19,9 +19,9 @@ type SelectedInstallment = Installment | null;
       @if (balance()) {
         <!-- Balance Summary -->
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <div class="flex items-start gap-4">
-              <div class="text-[#4361ee] bg-blue-50 rounded-lg p-2">
+              <div class="text-[#0038A8] bg-blue-50 rounded-lg p-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
               </div>
               <div>
@@ -30,7 +30,7 @@ type SelectedInstallment = Installment | null;
               </div>
             </div>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <div class="flex items-start gap-4">
               <div class="text-emerald-500 bg-emerald-50 rounded-lg p-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -41,7 +41,7 @@ type SelectedInstallment = Installment | null;
               </div>
             </div>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <div class="flex items-start gap-4">
               <div class="rounded-lg p-2" [class]="balance()!.balance > 0 ? 'text-orange-500 bg-orange-50' : 'text-emerald-500 bg-emerald-50'">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
@@ -56,7 +56,7 @@ type SelectedInstallment = Installment | null;
 
         <!-- Tuition Breakdown -->
         @if (fees().length > 0) {
-          <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+          <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Tuition Breakdown</h2>
             <div class="space-y-3">
               @for (f of fees(); track f.name) {
@@ -78,28 +78,28 @@ type SelectedInstallment = Installment | null;
 
         <!-- Payment Plan Selection -->
         @if (!paymentPlan() && balance()!.balance > 0) {
-          <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+          <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-2">Select Payment Plan</h2>
             <p class="text-sm text-gray-500 mb-4">Choose how you'd like to pay your tuition. This cannot be changed after your first payment.</p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               @for (plan of planOptions; track plan.value) {
                 <button (click)="selectedPlan = plan.value"
                         class="relative border-2 rounded-xl p-5 text-left transition-all cursor-pointer"
-                        [class]="selectedPlan === plan.value ? 'border-[#4361ee] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                        [class]="selectedPlan === plan.value ? 'border-[#0038A8] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
                   @if (selectedPlan === plan.value) {
-                    <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white" style="background-color: #4361ee;">
+                    <div class="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-white" style="background-color: #0038A8;">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                     </div>
                   }
                   <p class="text-base font-semibold text-gray-900">{{ plan.label }}</p>
                   <p class="text-sm text-gray-500 mt-1">{{ plan.description }}</p>
-                  <p class="text-lg font-bold mt-3" style="color: #4361ee;">{{ plan.detail }}</p>
+                  <p class="text-lg font-bold mt-3" style="color: #0038A8;">{{ plan.detail }}</p>
                 </button>
               }
             </div>
             <div class="mt-4 flex justify-end">
               <button (click)="confirmPlan()" [disabled]="!selectedPlan || selectingPlan()"
-                      class="flex items-center gap-2 rounded-xl bg-[#4361ee] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#3a56d4] transition-colors disabled:opacity-60">
+                      class="flex items-center gap-2 rounded-xl bg-[#0038A8] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#002B85] transition-colors disabled:opacity-60">
                 @if (selectingPlan()) {
                   <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                 }
@@ -111,7 +111,7 @@ type SelectedInstallment = Installment | null;
 
         <!-- Payment Schedule (shown after plan selected) -->
         @if (paymentPlan() && schedule().length > 0) {
-          <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+          <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-lg font-semibold text-gray-900">Payment Schedule</h2>
               <span class="badge badge-info">{{ paymentPlan() }} Payment</span>
@@ -133,7 +133,7 @@ type SelectedInstallment = Installment | null;
                         (click)="isNextDue(inst) && !hasPendingPayment() && selectInstallment(inst)">
                       <td class="px-4 py-3 text-sm font-medium text-gray-600">
                         @if (!inst.isPaid && selectedInstallment()?.number === inst.number) {
-                          <div class="w-5 h-5 rounded border-2 flex items-center justify-center" style="border-color: #4361ee; background-color: #4361ee;">
+                          <div class="w-5 h-5 rounded border-2 flex items-center justify-center" style="border-color: #0038A8; background-color: #0038A8;">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                           </div>
                         } @else if (!inst.isPaid) {
@@ -154,7 +154,7 @@ type SelectedInstallment = Installment | null;
                         } @else if (isNextDue(inst) && hasPendingPayment()) {
                           <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700">Pending Review</span>
                         } @else if (selectedInstallment()?.number === inst.number && !hasPendingPayment()) {
-                          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white" style="background-color: #4361ee;">Selected</span>
+                          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white" style="background-color: #0038A8;">Selected</span>
                         } @else {
                           <span class="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-700">Upcoming</span>
                         }
@@ -176,7 +176,7 @@ type SelectedInstallment = Installment | null;
 
         <!-- Make Payment Form -->
         @if (paymentPlan() && balance()!.balance > 0) {
-          <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+          <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Make a Payment</h2>
 
             @if (hasPendingPayment()) {
@@ -205,7 +205,7 @@ type SelectedInstallment = Installment | null;
                 Select an installment from the schedule above to make a payment.
               </div>
             } @else {
-              <div class="mb-4 p-3 rounded-lg text-sm font-medium" style="background-color: #eef2ff; color: #4361ee;">
+              <div class="mb-4 p-3 rounded-lg text-sm font-medium" style="background-color: #F0F4FF; color: #0038A8;">
                 Paying: {{ selectedInstallment()!.label }} &mdash; \u20B1{{ selectedInstallment()!.amount | number:'1.2-2' }}
               </div>
 
@@ -234,12 +234,12 @@ type SelectedInstallment = Installment | null;
               <div class="mt-4">
                 <label class="form-label">Proof of Payment (Receipt) *</label>
                 @if (!receiptFile()) {
-                  <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[#4361ee] hover:bg-blue-50/30 transition-colors">
+                  <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[#0038A8] hover:bg-blue-50/30 transition-colors">
                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
                       </svg>
-                      <p class="text-sm text-gray-500"><span class="font-medium" style="color: #4361ee;">Click to upload</span> or drag and drop</p>
+                      <p class="text-sm text-gray-500"><span class="font-medium" style="color: #0038A8;">Click to upload</span> or drag and drop</p>
                       <p class="text-xs text-gray-400 mt-1">PNG, JPG, or PDF (max 10MB)</p>
                     </div>
                     <input type="file" class="hidden" accept="image/*,.pdf" (change)="onFileSelected($event)" />
@@ -268,7 +268,7 @@ type SelectedInstallment = Installment | null;
 
               <div class="mt-4">
                 <button (click)="submitPayment()" [disabled]="paying() || !receiptFile()"
-                        class="flex items-center justify-center gap-2 rounded-xl bg-[#4361ee] px-8 py-2.5 text-sm font-semibold text-white hover:bg-[#3a56d4] transition-colors disabled:opacity-60">
+                        class="flex items-center justify-center gap-2 rounded-xl bg-[#0038A8] px-8 py-2.5 text-sm font-semibold text-white hover:bg-[#002B85] transition-colors disabled:opacity-60">
                   @if (paying()) {
                     <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                   }
@@ -283,7 +283,7 @@ type SelectedInstallment = Installment | null;
       }
 
       <!-- Payment History -->
-      <div class="mt-6 bg-white rounded-xl border border-gray-200">
+      <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2]">
         <div class="p-6 border-b border-gray-100">
           <h2 class="text-lg font-semibold text-gray-900">Payment History</h2>
         </div>
@@ -311,7 +311,7 @@ type SelectedInstallment = Installment | null;
                       {{ p.paymentMethod }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-sm font-mono text-gray-500">{{ p.referenceNumber || '-' }}</td>
+                  <td class="px-6 py-4 text-sm folio-mono text-gray-500">{{ p.referenceNumber || '-' }}</td>
                   <td class="px-6 py-4 text-sm text-right font-semibold">\u20B1{{ p.amount | number:'1.2-2' }}</td>
                   <td class="px-6 py-4 text-center">
                     @if (p.status === 'Pending') {
@@ -333,7 +333,7 @@ type SelectedInstallment = Installment | null;
       </div>
 
       <!-- Account Ledger (read-only statement of account) -->
-      <div class="mt-6 bg-white rounded-xl border border-gray-200">
+      <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2]">
         <div class="p-6 border-b border-gray-100">
           <h2 class="text-lg font-semibold text-gray-900">Account Ledger</h2>
           <p class="text-sm text-gray-500 mt-1">All charges, discounts, and payments on your account, in order.</p>
@@ -359,7 +359,7 @@ type SelectedInstallment = Installment | null;
                       @if (en.voided) {
                         <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Voided</span>
                       }
-                      @if (en.reference) { <p class="text-xs text-gray-400 mt-0.5">Ref: {{ en.reference }}</p> }
+                      @if (en.reference) { <p class="text-xs text-gray-400 mt-0.5">Ref: <span class="folio-mono">{{ en.reference }}</span></p> }
                     </td>
                     <td class="px-6 py-3 text-sm text-right text-gray-900" [class.line-through]="en.voided">
                       @if (en.debit != null) { ₱{{ en.debit | number:'1.2-2' }} }

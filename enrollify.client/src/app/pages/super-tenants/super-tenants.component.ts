@@ -17,7 +17,7 @@ import { Tenant } from '../../core/models';
           <h1 class="text-2xl font-bold text-gray-900">Schools</h1>
           <p class="mt-1 text-sm text-gray-500">All schools using the Enrollify platform. Create new schools, deactivate ones that are no longer using the system, or update their contact info.</p>
         </div>
-        <button (click)="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-[#4361ee] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a56d4]">
+        <button (click)="openCreate()" class="inline-flex items-center gap-2 rounded-xl bg-[#0038A8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002B85]">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
           Add School
         </button>
@@ -27,7 +27,7 @@ import { Tenant } from '../../core/models';
         <div class="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{{ error() }}</div>
       }
 
-      <div class="mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] overflow-hidden">
         <table class="w-full">
           <thead class="bg-gray-50">
             <tr>
@@ -45,7 +45,7 @@ import { Tenant } from '../../core/models';
                   <p class="font-medium text-gray-900">{{ t.name }}</p>
                   <p class="text-xs text-gray-500">{{ t.address || '—' }}</p>
                 </td>
-                <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ t.subdomain }}</td>
+                <td class="px-4 py-3 text-sm folio-mono text-gray-600">{{ t.subdomain }}</td>
                 <td class="px-4 py-3 text-sm text-gray-600">
                   <p>{{ t.contactEmail || '—' }}</p>
                   <p class="text-xs text-gray-400">{{ t.contactPhone || '' }}</p>
@@ -84,7 +84,7 @@ import { Tenant } from '../../core/models';
               </div>
               <div>
                 <label class="form-label">Subdomain *</label>
-                <input type="text" [(ngModel)]="form.subdomain" class="form-input font-mono" placeholder="qcshs" />
+                <input type="text" [(ngModel)]="form.subdomain" class="form-input folio-mono" placeholder="qcshs" />
                 <p class="text-xs text-gray-400 mt-1">Lowercase letters, digits, hyphens. Used as a stable identifier — change with care.</p>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -111,7 +111,7 @@ import { Tenant } from '../../core/models';
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="close()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="save()" [disabled]="saving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="save()" [disabled]="saving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ saving() ? 'Saving...' : (editing() ? 'Save' : 'Add School') }}
               </button>
             </div>

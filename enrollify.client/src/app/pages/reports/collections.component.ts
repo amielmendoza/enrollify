@@ -35,14 +35,14 @@ interface DayGroup {
             {{ exporting() ? 'Exporting...' : 'Export CSV' }}
           </button>
           <button (click)="printJournal()"
-                  class="rounded-lg bg-[#4361ee] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a56d4]">
+                  class="rounded-lg bg-[#0038A8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002B85]">
             Print Journal
           </button>
         </div>
       </div>
 
       <!-- Filters -->
-      <div class="mt-6 bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap items-end gap-3">
+      <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-4 flex flex-wrap items-end gap-3">
         <div>
           <label class="form-label">From</label>
           <input type="date" [(ngModel)]="from" (ngModelChange)="onDatesChanged()" class="form-input" />
@@ -53,11 +53,11 @@ interface DayGroup {
         </div>
         <div class="flex gap-1">
           <button (click)="setPreset('today')" class="px-3 py-2 rounded-lg text-xs font-semibold border transition-colors"
-                  [class]="activePreset() === 'today' ? 'border-[#4361ee] bg-blue-50 text-[#4361ee]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">Today</button>
+                  [class]="activePreset() === 'today' ? 'border-[#0038A8] bg-blue-50 text-[#0038A8]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">Today</button>
           <button (click)="setPreset('week')" class="px-3 py-2 rounded-lg text-xs font-semibold border transition-colors"
-                  [class]="activePreset() === 'week' ? 'border-[#4361ee] bg-blue-50 text-[#4361ee]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">This Week</button>
+                  [class]="activePreset() === 'week' ? 'border-[#0038A8] bg-blue-50 text-[#0038A8]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">This Week</button>
           <button (click)="setPreset('month')" class="px-3 py-2 rounded-lg text-xs font-semibold border transition-colors"
-                  [class]="activePreset() === 'month' ? 'border-[#4361ee] bg-blue-50 text-[#4361ee]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">This Month</button>
+                  [class]="activePreset() === 'month' ? 'border-[#0038A8] bg-blue-50 text-[#0038A8]' : 'border-gray-200 text-gray-600 hover:bg-gray-50'">This Month</button>
         </div>
         <div>
           <label class="form-label">Method</label>
@@ -71,15 +71,15 @@ interface DayGroup {
       <!-- Summary tiles -->
       @if (report(); as r) {
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white rounded-xl border border-gray-200 p-5">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-5">
             <p class="text-sm text-gray-500">Total Collected</p>
             <p class="text-2xl font-bold text-gray-900 mt-1">₱{{ r.summary.totalAmount | number:'1.2-2' }}</p>
           </div>
-          <div class="bg-white rounded-xl border border-gray-200 p-5">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-5">
             <p class="text-sm text-gray-500">Transactions</p>
             <p class="text-2xl font-bold text-gray-900 mt-1">{{ r.summary.totalCount }}</p>
           </div>
-          <div class="sm:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
+          <div class="sm:col-span-2 bg-white rounded-xl border border-[#E2D9C2] p-5">
             <p class="text-sm text-gray-500 mb-2">By Method</p>
             <div class="flex flex-wrap gap-2">
               @for (m of r.summary.byMethod; track m.method) {
@@ -96,7 +96,7 @@ interface DayGroup {
       }
 
       <!-- Journal table -->
-      <div class="mt-6 bg-white rounded-xl border border-gray-200">
+      <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2]">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50">
@@ -120,11 +120,11 @@ interface DayGroup {
                   <tr class="hover:bg-gray-50">
                     <td class="px-6 py-3 text-sm text-gray-500 whitespace-nowrap">{{ row.paymentDate | date:'MMM d, h:mm a' }}</td>
                     <td class="px-6 py-3 text-sm">
-                      <a [routerLink]="['/enrollments', row.enrollmentId]" class="font-medium text-[#4361ee] hover:text-[#3a56d4]">{{ row.studentName }}</a>
+                      <a [routerLink]="['/enrollments', row.enrollmentId]" class="font-medium text-[#0038A8] hover:text-[#002B85]">{{ row.studentName }}</a>
                     </td>
                     <td class="px-6 py-3 text-sm text-gray-600">{{ row.gradeLevel }}</td>
                     <td class="px-6 py-3 text-sm text-gray-600">{{ row.paymentMethod }}</td>
-                    <td class="px-6 py-3 text-sm font-mono text-gray-500">{{ row.referenceNumber || '-' }}</td>
+                    <td class="px-6 py-3 text-sm folio-mono text-gray-500">{{ row.referenceNumber || '-' }}</td>
                     <td class="px-6 py-3 text-sm text-gray-600">{{ row.receivedBy || '-' }}</td>
                     <td class="px-6 py-3 text-sm text-right font-semibold text-gray-900">₱{{ row.amount | number:'1.2-2' }}</td>
                   </tr>

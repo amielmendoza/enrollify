@@ -17,6 +17,8 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
   standalone: true,
   imports: [CommonModule],
   styles: [`
+    .document { font-family: 'Public Sans', ui-sans-serif, system-ui, sans-serif; }
+    .doc-title { font-family: 'Archivo', ui-sans-serif, system-ui, sans-serif; }
     @media print {
       .no-print { display: none !important; }
       .print-root { background: white !important; }
@@ -44,12 +46,12 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
       }
 
       @if (enrollment(); as e) {
-        <div class="document mx-auto my-8 max-w-[800px] bg-white border border-gray-200 shadow-sm p-12">
+        <div class="document mx-auto my-8 max-w-[800px] bg-white border border-[#E2D9C2] shadow-sm p-12">
           <!-- School header -->
           <div class="text-center border-b-2 border-gray-900 pb-5">
             <h1 class="text-2xl font-bold text-gray-900">{{ tenant()?.name || '' }}</h1>
-            <p class="mt-2 text-base font-semibold uppercase tracking-[0.25em] text-gray-800">{{ docTitle() }}</p>
-            <p class="mt-1 text-sm text-gray-500">School Year {{ e.schoolYear }}</p>
+            <p class="doc-title mt-2 text-base font-semibold uppercase tracking-[0.25em] text-gray-800">{{ docTitle() }}</p>
+            <p class="mt-1 text-sm text-gray-500">School Year <span class="folio-mono">{{ e.schoolYear }}</span></p>
           </div>
 
           <!-- Certificate of Registration -->
@@ -76,7 +78,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                   </tr>
                   <tr class="border-b border-gray-200">
                     <td class="py-2.5 text-gray-500">School Year</td>
-                    <td class="py-2.5 font-medium text-gray-900">{{ e.schoolYear }}</td>
+                    <td class="py-2.5 font-medium text-gray-900 folio-mono">{{ e.schoolYear }}</td>
                   </tr>
                   <tr class="border-b border-gray-200">
                     <td class="py-2.5 text-gray-500">Enrollment Status</td>
@@ -120,7 +122,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                   @for (f of fees(); track $index) {
                     <tr class="border-b border-gray-100">
                       <td class="py-2 text-gray-900">{{ f.name }}@if (f.description) {<span class="text-gray-400"> — {{ f.description }}</span>}</td>
-                      <td class="py-2 text-right text-gray-900">₱{{ f.amount | number:'1.2-2' }}</td>
+                      <td class="py-2 text-right text-gray-900 folio-mono">₱{{ f.amount | number:'1.2-2' }}</td>
                     </tr>
                   }
                   @empty {
@@ -130,7 +132,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                 <tfoot>
                   <tr class="border-t-2 border-gray-900">
                     <td class="py-2.5 font-bold text-gray-900">Total</td>
-                    <td class="py-2.5 text-right font-bold text-gray-900">₱{{ feesTotal() | number:'1.2-2' }}</td>
+                    <td class="py-2.5 text-right font-bold text-gray-900 folio-mono">₱{{ feesTotal() | number:'1.2-2' }}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -139,15 +141,15 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                 <div class="grid grid-cols-3 gap-4 mt-8 text-sm">
                   <div class="border border-gray-300 rounded p-3 text-center">
                     <p class="text-xs text-gray-500">Total Assessed</p>
-                    <p class="font-bold text-gray-900 mt-1">₱{{ b.totalFees | number:'1.2-2' }}</p>
+                    <p class="font-bold text-gray-900 mt-1 folio-mono">₱{{ b.totalFees | number:'1.2-2' }}</p>
                   </div>
                   <div class="border border-gray-300 rounded p-3 text-center">
                     <p class="text-xs text-gray-500">Total Paid</p>
-                    <p class="font-bold text-gray-900 mt-1">₱{{ b.totalPaid | number:'1.2-2' }}</p>
+                    <p class="font-bold text-gray-900 mt-1 folio-mono">₱{{ b.totalPaid | number:'1.2-2' }}</p>
                   </div>
                   <div class="border border-gray-300 rounded p-3 text-center">
                     <p class="text-xs text-gray-500">Balance</p>
-                    <p class="font-bold text-gray-900 mt-1">₱{{ b.balance | number:'1.2-2' }}</p>
+                    <p class="font-bold text-gray-900 mt-1 folio-mono">₱{{ b.balance | number:'1.2-2' }}</p>
                   </div>
                 </div>
                 <p class="mt-2 text-xs text-gray-400">Balance may include a payment-plan discount or installment interest, so it can differ from Total Assessed minus Total Paid.</p>
@@ -167,13 +169,13 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                   </div>
                   <div class="text-right">
                     <p class="text-xs text-gray-500">Payment Date</p>
-                    <p class="font-medium text-gray-900">{{ p.paymentDate | date:'mediumDate' }}</p>
+                    <p class="font-medium text-gray-900 folio-mono">{{ p.paymentDate | date:'mediumDate' }}</p>
                   </div>
                 </div>
 
                 <div class="mt-8 border-2 border-gray-900 rounded p-6 text-center">
                   <p class="text-xs uppercase tracking-wider text-gray-500">Amount Received</p>
-                  <p class="mt-1 text-3xl font-bold text-gray-900">₱{{ p.amount | number:'1.2-2' }}</p>
+                  <p class="mt-1 text-3xl font-bold text-gray-900 folio-mono">₱{{ p.amount | number:'1.2-2' }}</p>
                 </div>
 
                 <table class="w-full mt-8">
@@ -184,7 +186,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                     </tr>
                     <tr class="border-b border-gray-200">
                       <td class="py-2.5 text-gray-500">Reference Number</td>
-                      <td class="py-2.5 font-medium text-gray-900">{{ p.referenceNumber || '—' }}</td>
+                      <td class="py-2.5 font-medium text-gray-900 folio-mono">{{ p.referenceNumber || '—' }}</td>
                     </tr>
                     <tr class="border-b border-gray-200">
                       <td class="py-2.5 text-gray-500">Reviewed By</td>
@@ -192,7 +194,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                     </tr>
                     <tr class="border-b border-gray-200">
                       <td class="py-2.5 text-gray-500">Receipt / Payment ID</td>
-                      <td class="py-2.5 font-mono text-xs text-gray-900">{{ p.id }}</td>
+                      <td class="py-2.5 folio-mono text-xs text-gray-900">{{ p.id }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -234,14 +236,14 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                 <tbody>
                   @for (en of soaEntries(); track $index) {
                     <tr class="border-b border-gray-100">
-                      <td class="py-2 whitespace-nowrap text-gray-700">{{ en.date | date:'MM/dd/yyyy' }}</td>
+                      <td class="py-2 whitespace-nowrap text-gray-700 folio-mono">{{ en.date | date:'MM/dd/yyyy' }}</td>
                       <td class="py-2 text-gray-900">
                         {{ en.description }}
-                        @if (en.reference) { <span class="text-gray-400"> — Ref: {{ en.reference }}</span> }
+                        @if (en.reference) { <span class="text-gray-400"> — Ref: <span class="folio-mono">{{ en.reference }}</span></span> }
                       </td>
-                      <td class="py-2 text-right text-gray-900">@if (en.debit != null) { ₱{{ en.debit | number:'1.2-2' }} }</td>
-                      <td class="py-2 text-right text-gray-900">@if (en.credit != null) { ₱{{ en.credit | number:'1.2-2' }} }</td>
-                      <td class="py-2 text-right text-gray-900">₱{{ en.balance | number:'1.2-2' }}</td>
+                      <td class="py-2 text-right text-gray-900 folio-mono">@if (en.debit != null) { ₱{{ en.debit | number:'1.2-2' }} }</td>
+                      <td class="py-2 text-right text-gray-900 folio-mono">@if (en.credit != null) { ₱{{ en.credit | number:'1.2-2' }} }</td>
+                      <td class="py-2 text-right text-gray-900 folio-mono">₱{{ en.balance | number:'1.2-2' }}</td>
                     </tr>
                   }
                   @empty {
@@ -252,9 +254,9 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                   <tfoot>
                     <tr class="border-t-2 border-gray-900">
                       <td colspan="2" class="py-2.5 font-bold text-gray-900">Totals</td>
-                      <td class="py-2.5 text-right font-bold text-gray-900">₱{{ l.totalDebits | number:'1.2-2' }}</td>
-                      <td class="py-2.5 text-right font-bold text-gray-900">₱{{ l.totalCredits | number:'1.2-2' }}</td>
-                      <td class="py-2.5 text-right font-bold text-gray-900">₱{{ l.balance | number:'1.2-2' }}</td>
+                      <td class="py-2.5 text-right font-bold text-gray-900 folio-mono">₱{{ l.totalDebits | number:'1.2-2' }}</td>
+                      <td class="py-2.5 text-right font-bold text-gray-900 folio-mono">₱{{ l.totalCredits | number:'1.2-2' }}</td>
+                      <td class="py-2.5 text-right font-bold text-gray-900 folio-mono">₱{{ l.balance | number:'1.2-2' }}</td>
                     </tr>
                   </tfoot>
                 }
@@ -264,7 +266,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                 <div class="mt-6 flex justify-end">
                   <div class="border border-gray-900 rounded px-6 py-3 text-right">
                     <p class="text-xs uppercase tracking-wider text-gray-500">Ending Balance</p>
-                    <p class="mt-0.5 text-xl font-bold text-gray-900">₱{{ l.balance | number:'1.2-2' }}</p>
+                    <p class="mt-0.5 text-xl font-bold text-gray-900 folio-mono">₱{{ l.balance | number:'1.2-2' }}</p>
                   </div>
                 </div>
               }
@@ -279,7 +281,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
             </div>
           }
 
-          <p class="mt-10 text-xs text-gray-400">Date printed: {{ today | date:'medium' }} · Enrollment ID: {{ e.id }}</p>
+          <p class="mt-10 text-xs text-gray-400">Date printed: <span class="folio-mono">{{ today | date:'medium' }}</span> · Enrollment ID: <span class="folio-mono">{{ e.id }}</span></p>
         </div>
       }
     </div>

@@ -17,7 +17,7 @@ import { enrollmentStatusName } from '../../../core/constants';
           <h1 class="text-2xl font-bold text-gray-900">Welcome, {{ auth.user()?.fullName }}</h1>
           <p class="mt-1 text-sm text-gray-500">Manage your children's enrollments, requirements, and payments from one place.</p>
         </div>
-        <a routerLink="/apply" class="inline-flex items-center gap-2 rounded-xl bg-[#4361ee] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3a56d4] transition-colors">
+        <a routerLink="/apply" class="inline-flex items-center gap-2 rounded-xl bg-[#0038A8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#002B85] transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -26,19 +26,19 @@ import { enrollmentStatusName } from '../../../core/constants';
       </div>
 
       @if (loading()) {
-        <div class="mt-6 bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
+        <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-12 text-center text-gray-400">
           Loading children...
         </div>
       } @else if (children().length === 0) {
-        <div class="mt-6 bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-12 text-center">
           <div class="mx-auto w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#4361ee]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#0038A8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
             </svg>
           </div>
           <h2 class="text-lg font-semibold text-gray-900">No children yet</h2>
           <p class="mt-1 text-sm text-gray-500">Submit an application to enroll your first child.</p>
-          <a routerLink="/apply" class="inline-block mt-4 rounded-xl bg-[#4361ee] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3a56d4]">Start Application</a>
+          <a routerLink="/apply" class="inline-block mt-4 rounded-xl bg-[#0038A8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#002B85]">Start Application</a>
         </div>
       } @else {
         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -46,10 +46,10 @@ import { enrollmentStatusName } from '../../../core/constants';
                separate function and the nullish-coalescing temp var isn't emitted there
                (ReferenceError: tmp_x_y is not defined at runtime). Use a method instead. -->
           @for (c of children(); track childKey(c)) {
-            <div class="bg-white rounded-xl border border-gray-200 p-5 flex flex-col">
+            <div class="bg-white rounded-xl border border-[#E2D9C2] p-5 flex flex-col">
               <div class="flex items-start justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="flex h-11 w-11 items-center justify-center rounded-full bg-[#4361ee]/10 text-[#4361ee] text-sm font-semibold">
+                  <div class="flex h-11 w-11 items-center justify-center rounded-full bg-[#0038A8]/10 text-[#0038A8] text-sm font-semibold">
                     {{ initials(c) }}
                   </div>
                   <div>

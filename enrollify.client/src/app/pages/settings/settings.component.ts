@@ -22,7 +22,7 @@ import { GRADE_LEVELS } from '../../core/constants';
           @for (tab of tabs; track tab.id) {
             <button (click)="activeTab = tab.id"
                     class="pb-3 text-sm font-medium border-b-2 transition-colors"
-                    [class]="activeTab === tab.id ? 'border-[#4361ee] text-[#4361ee]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+                    [class]="activeTab === tab.id ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
               {{ tab.label }}
             </button>
           }
@@ -33,7 +33,7 @@ import { GRADE_LEVELS } from '../../core/constants';
       @if (activeTab === 'school-year') {
         <div class="mt-6 space-y-6">
           <!-- Add School Year Form -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Add School Year</h2>
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
@@ -50,7 +50,7 @@ import { GRADE_LEVELS } from '../../core/constants';
               </div>
               <div class="flex items-end">
                 <button (click)="addSchoolYear()" [disabled]="!newSchoolYear.name || !newSchoolYear.startDate || !newSchoolYear.endDate"
-                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #4361ee;">
+                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #0038A8;">
                   Add
                 </button>
               </div>
@@ -58,7 +58,7 @@ import { GRADE_LEVELS } from '../../core/constants';
           </div>
 
           <!-- School Year List -->
-          <div class="bg-white rounded-xl border border-gray-200">
+          <div class="bg-white rounded-xl border border-[#E2D9C2]">
             <div class="p-4 border-b border-gray-100">
               <h2 class="text-lg font-semibold text-gray-900">School Years</h2>
               <p class="text-sm text-gray-500 mt-1">Manage school years and set the active one for enrollment.</p>
@@ -89,7 +89,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                       </td>
                       <td class="px-6 py-4 text-right space-x-2">
                         @if (!sy.isActive) {
-                          <button (click)="setActiveSchoolYear(sy.id)" class="text-xs text-[#4361ee] hover:text-[#3a56d4] font-medium">Set Active</button>
+                          <button (click)="setActiveSchoolYear(sy.id)" class="text-xs text-[#0038A8] hover:text-[#002B85] font-medium">Set Active</button>
                           <button (click)="deleteSchoolYear(sy.id)" class="text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>
                         }
                       </td>
@@ -105,7 +105,7 @@ import { GRADE_LEVELS } from '../../core/constants';
 
           <!-- Summary for active school year -->
           @if (syService.active()) {
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
               <h3 class="text-sm font-medium text-gray-900 mb-3">Summary for {{ syService.activeName() }}</h3>
               <div class="grid grid-cols-3 gap-4">
                 <div>
@@ -130,7 +130,7 @@ import { GRADE_LEVELS } from '../../core/constants';
       @if (activeTab === 'fees') {
         <div class="mt-6 space-y-6">
           <!-- Add Fee Form -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Fee</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
@@ -155,7 +155,7 @@ import { GRADE_LEVELS } from '../../core/constants';
               </div>
               <div class="flex items-end">
                 <button (click)="addFee()" [disabled]="!newFee.name || !newFee.amount"
-                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #4361ee;">
+                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #0038A8;">
                   Add Fee
                 </button>
               </div>
@@ -167,7 +167,7 @@ import { GRADE_LEVELS } from '../../core/constants';
           </div>
 
           <!-- Fee List -->
-          <div class="bg-white rounded-xl border border-gray-200">
+          <div class="bg-white rounded-xl border border-[#E2D9C2]">
             <div class="p-4 border-b border-gray-100 flex items-center justify-between">
               <h2 class="text-lg font-semibold text-gray-900">Fee Schedule</h2>
               <select [(ngModel)]="feeFilter" (ngModelChange)="loadFees()" class="form-input w-auto text-sm">
@@ -202,7 +202,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                       <td class="px-6 py-4 text-sm">{{ f.schoolYear }}</td>
                       <td class="px-6 py-4 text-sm text-right font-semibold">\u20B1{{ f.amount | number:'1.2-2' }}</td>
                       <td class="px-6 py-4 text-right space-x-2">
-                        <button (click)="openEditFee(f)" class="text-xs text-[#4361ee] hover:text-[#3a56d4] font-medium">Edit</button>
+                        <button (click)="openEditFee(f)" class="text-xs text-[#0038A8] hover:text-[#002B85] font-medium">Edit</button>
                         <button (click)="deleteFee(f.id)" class="text-xs text-red-600 hover:text-red-700 font-medium">Delete</button>
                       </td>
                     </tr>
@@ -221,7 +221,7 @@ import { GRADE_LEVELS } from '../../core/constants';
       @if (activeTab === 'sections') {
         <div class="mt-6 space-y-6">
           <!-- Add Section Form -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Section</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
               <div>
@@ -250,7 +250,7 @@ import { GRADE_LEVELS } from '../../core/constants';
               </div>
               <div class="flex items-end">
                 <button (click)="addSection()" [disabled]="!newSection.name || !newSection.capacity"
-                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #4361ee;">
+                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #0038A8;">
                   Add
                 </button>
               </div>
@@ -258,7 +258,7 @@ import { GRADE_LEVELS } from '../../core/constants';
           </div>
 
           <!-- Section List -->
-          <div class="bg-white rounded-xl border border-gray-200">
+          <div class="bg-white rounded-xl border border-[#E2D9C2]">
             <div class="p-4 border-b border-gray-100 flex items-center justify-between">
               <h2 class="text-lg font-semibold text-gray-900">Sections</h2>
               <div class="flex gap-2">
@@ -287,7 +287,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                         <p class="text-xs text-gray-500">{{ s.gradeLevel }} &bull; {{ s.schoolYear }}</p>
                       </div>
                       <div class="flex items-center">
-                        <button (click)="openEditSection(s)" class="text-xs text-[#4361ee] hover:text-[#3a56d4] p-1" title="Edit section">
+                        <button (click)="openEditSection(s)" class="text-xs text-[#0038A8] hover:text-[#002B85] p-1" title="Edit section">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                         </button>
                         <button (click)="deleteSection(s.id)" class="text-xs text-red-500 hover:text-red-700 p-1" title="Delete section">
@@ -301,7 +301,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                         <span class="font-medium text-gray-900">{{ s.currentCount }} / {{ s.capacity }}</span>
                       </div>
                       <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="h-2 rounded-full transition-all" style="background-color: #4361ee;" [style.width.%]="s.capacity > 0 ? (s.currentCount / s.capacity) * 100 : 0"></div>
+                        <div class="h-2 rounded-full transition-all" style="background-color: #0038A8;" [style.width.%]="s.capacity > 0 ? (s.currentCount / s.capacity) * 100 : 0"></div>
                       </div>
                     </div>
                     @if (s.adviser) { <p class="text-xs text-gray-400 mt-2">Adviser: {{ s.adviser }}</p> }
@@ -319,7 +319,7 @@ import { GRADE_LEVELS } from '../../core/constants';
       <!-- Payment Terms Tab -->
       @if (activeTab === 'payment-terms') {
         <div class="mt-6 space-y-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <div class="flex items-center justify-between mb-4">
               <div>
                 <h2 class="text-lg font-semibold text-gray-900">Payment Terms</h2>
@@ -341,7 +341,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                     <input type="number" [(ngModel)]="ptFull.discountPercent" class="form-input" min="0" max="100" step="0.5" />
                   </div>
                 </div>
-                <button (click)="savePaymentTerm('Full')" class="mt-4 w-full rounded-xl py-2 text-sm font-semibold text-white transition-colors" style="background-color: #4361ee;">
+                <button (click)="savePaymentTerm('Full')" class="mt-4 w-full rounded-xl py-2 text-sm font-semibold text-white transition-colors" style="background-color: #0038A8;">
                   Save
                 </button>
               </div>
@@ -364,7 +364,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                     <input type="number" [(ngModel)]="ptMonthly.installmentCount" class="form-input" min="1" max="12" step="1" />
                   </div>
                 </div>
-                <button (click)="savePaymentTerm('Monthly')" class="mt-4 w-full rounded-xl py-2 text-sm font-semibold text-white transition-colors" style="background-color: #4361ee;">
+                <button (click)="savePaymentTerm('Monthly')" class="mt-4 w-full rounded-xl py-2 text-sm font-semibold text-white transition-colors" style="background-color: #0038A8;">
                   Save
                 </button>
               </div>
@@ -387,7 +387,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                     <input type="number" [(ngModel)]="ptQuarterly.installmentCount" class="form-input" min="1" max="4" step="1" />
                   </div>
                 </div>
-                <button (click)="savePaymentTerm('Quarterly')" class="mt-4 w-full rounded-xl py-2 text-sm font-semibold text-white transition-colors" style="background-color: #4361ee;">
+                <button (click)="savePaymentTerm('Quarterly')" class="mt-4 w-full rounded-xl py-2 text-sm font-semibold text-white transition-colors" style="background-color: #0038A8;">
                   Save
                 </button>
               </div>
@@ -399,7 +399,7 @@ import { GRADE_LEVELS } from '../../core/constants';
       <!-- Requirements Tab -->
       @if (activeTab === 'requirements') {
         <div class="mt-6 space-y-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-1">Add Requirement</h2>
             <p class="text-sm text-gray-500 mb-4">These documents are auto-attached to every new enrollment as the default checklist.</p>
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
@@ -420,7 +420,7 @@ import { GRADE_LEVELS } from '../../core/constants';
               </div>
               <div class="sm:col-span-2">
                 <button (click)="addRequirementTemplate()" [disabled]="!newRequirement.documentName"
-                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #4361ee;">
+                        class="w-full rounded-xl py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #0038A8;">
                   Add
                 </button>
               </div>
@@ -430,7 +430,7 @@ import { GRADE_LEVELS } from '../../core/constants';
             }
           </div>
 
-          <div class="bg-white rounded-xl border border-gray-200">
+          <div class="bg-white rounded-xl border border-[#E2D9C2]">
             <div class="p-4 border-b border-gray-100">
               <h2 class="text-lg font-semibold text-gray-900">Requirement Templates</h2>
               <p class="text-sm text-gray-500 mt-1">Toggle Active to control which requirements seed new enrollments.</p>
@@ -460,7 +460,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                         }
                       </td>
                       <td class="px-6 py-4 text-right text-sm">
-                        <button (click)="toggleRequirementTemplate(t)" class="text-[#4361ee] hover:underline mr-3">
+                        <button (click)="toggleRequirementTemplate(t)" class="text-[#0038A8] hover:underline mr-3">
                           {{ t.isActive ? 'Deactivate' : 'Activate' }}
                         </button>
                         <button (click)="deleteRequirementTemplate(t)" class="text-red-600 hover:underline">Delete</button>
@@ -480,7 +480,7 @@ import { GRADE_LEVELS } from '../../core/constants';
       <!-- Workflows Tab -->
       @if (activeTab === 'workflows') {
         <div class="mt-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Enrollment Workflow</h2>
             <p class="text-sm text-gray-500 mb-4">The enrollment process follows these steps in order.</p>
             @for (w of workflows(); track w.id) {
@@ -495,7 +495,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                 <div class="space-y-2">
                   @for (s of w.steps; track s.id) {
                     <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style="background-color: #4361ee;">{{ s.stepOrder }}</div>
+                      <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style="background-color: #0038A8;">{{ s.stepOrder }}</div>
                       <div class="flex-1">
                         <p class="text-sm font-medium text-gray-900">{{ s.stepName }}</p>
                         <p class="text-xs text-gray-500">{{ getStatusLabel(s.fromStatus) }} &rarr; {{ getStatusLabel(s.toStatus) }}
@@ -515,12 +515,12 @@ import { GRADE_LEVELS } from '../../core/constants';
       <!-- Registrars Tab -->
       @if (activeTab === 'users') {
         <div class="mt-6 space-y-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-start justify-between gap-4 flex-wrap">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-5 flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h2 class="text-lg font-semibold text-gray-900">Registrars</h2>
               <p class="text-sm text-gray-500 mt-1">Registrars handle day-to-day enrollment operations: reviewing applications, verifying requirements, processing payments. They cannot change school settings.</p>
             </div>
-            <button (click)="openCreateRegistrar()" class="inline-flex items-center gap-2 rounded-xl bg-[#4361ee] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a56d4]">
+            <button (click)="openCreateRegistrar()" class="inline-flex items-center gap-2 rounded-xl bg-[#0038A8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002B85]">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
               Add Registrar
             </button>
@@ -533,7 +533,7 @@ import { GRADE_LEVELS } from '../../core/constants';
             <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700">{{ regNotice() }}</div>
           }
 
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] overflow-hidden">
             <table class="w-full">
               <thead class="bg-gray-50">
                 <tr>
@@ -597,7 +597,7 @@ import { GRADE_LEVELS } from '../../core/constants';
               @if (!regEditing()) {
                 <div>
                   <label class="form-label">Initial Password *</label>
-                  <input type="text" [(ngModel)]="regForm.password" class="form-input font-mono" placeholder="At least 8 characters" />
+                  <input type="text" [(ngModel)]="regForm.password" class="form-input folio-mono" placeholder="At least 8 characters" />
                   <p class="text-xs text-gray-400 mt-1">Communicate this to the registrar so they can sign in and change it.</p>
                 </div>
               }
@@ -611,7 +611,7 @@ import { GRADE_LEVELS } from '../../core/constants';
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeRegistrarModal()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="saveRegistrar()" [disabled]="regSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="saveRegistrar()" [disabled]="regSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ regSaving() ? 'Saving...' : (regEditing() ? 'Save' : 'Add Registrar') }}
               </button>
             </div>
@@ -628,12 +628,12 @@ import { GRADE_LEVELS } from '../../core/constants';
 
             <div class="mt-4">
               <label class="form-label">New Password *</label>
-              <input type="text" [(ngModel)]="regResetPassword" class="form-input font-mono" placeholder="At least 8 characters" />
+              <input type="text" [(ngModel)]="regResetPassword" class="form-input folio-mono" placeholder="At least 8 characters" />
             </div>
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeResetRegistrar()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="confirmResetRegistrar()" [disabled]="regSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="confirmResetRegistrar()" [disabled]="regSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ regSaving() ? 'Saving...' : 'Reset Password' }}
               </button>
             </div>
@@ -644,7 +644,7 @@ import { GRADE_LEVELS } from '../../core/constants';
       <!-- Application Form Tab -->
       @if (activeTab === 'application-form') {
         <div class="mt-6 space-y-6">
-          <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-start justify-between gap-4 flex-wrap">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-5 flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h2 class="text-lg font-semibold text-gray-900">Application Form Fields</h2>
               <p class="text-sm text-gray-500 mt-1">Control which fields appear on the public /apply form. Toggle visibility and required state, rename labels, and add custom fields. Default fields can be hidden but not deleted.</p>
@@ -657,7 +657,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                 }
                 Restore Defaults
               </button>
-              <button (click)="openAddField()" class="inline-flex items-center gap-2 rounded-xl bg-[#4361ee] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3a56d4]">
+              <button (click)="openAddField()" class="inline-flex items-center gap-2 rounded-xl bg-[#0038A8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002B85]">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Add Custom Field
               </button>
@@ -675,7 +675,7 @@ import { GRADE_LEVELS } from '../../core/constants';
           }
 
           @for (group of formFieldsBySection(); track group.section) {
-            <div class="bg-white rounded-xl border border-gray-200">
+            <div class="bg-white rounded-xl border border-[#E2D9C2]">
               <div class="p-4 border-b border-gray-100 flex items-center gap-2">
                 <h3 class="text-base font-semibold text-gray-900">{{ group.section }} section</h3>
                 <span class="text-xs text-gray-500">({{ group.fields.length }} {{ group.fields.length === 1 ? 'field' : 'fields' }})</span>
@@ -694,7 +694,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                           }
                         </div>
                         <p class="text-xs text-gray-500 mt-0.5">
-                          <span class="font-mono">{{ f.fieldKey }}</span>
+                          <span class="folio-mono">{{ f.fieldKey }}</span>
                           &middot; {{ f.fieldType }}
                           &middot; Applies: {{ f.appliesTo }}
                         </p>
@@ -740,7 +740,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                 </div>
                 <div>
                   <label class="form-label">Field Key *</label>
-                  <input type="text" [(ngModel)]="ffNew.fieldKey" class="form-input font-mono" placeholder="allergies" />
+                  <input type="text" [(ngModel)]="ffNew.fieldKey" class="form-input folio-mono" placeholder="allergies" />
                   <p class="text-xs text-gray-400 mt-1">Lowercase letters, digits, underscores only.</p>
                 </div>
               </div>
@@ -793,7 +793,7 @@ import { GRADE_LEVELS } from '../../core/constants';
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeAddField()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="saveNewField()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4]">Add Field</button>
+              <button (click)="saveNewField()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85]">Add Field</button>
             </div>
           </div>
         </div>
@@ -823,7 +823,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                 <div>
                   <label class="form-label">Field Key</label>
                   <input type="text" [ngModel]="ffEditing()!.fieldKey" (ngModelChange)="ffEditing()!.fieldKey = $event"
-                         class="form-input font-mono"
+                         class="form-input folio-mono"
                          [disabled]="ffEditing()!.isBuiltIn" />
                 </div>
               </div>
@@ -876,7 +876,7 @@ import { GRADE_LEVELS } from '../../core/constants';
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeEditField()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="saveEditField()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4]">Save</button>
+              <button (click)="saveEditField()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85]">Save</button>
             </div>
           </div>
         </div>
@@ -927,7 +927,7 @@ import { GRADE_LEVELS } from '../../core/constants';
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeEditFee()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="saveEditFee()" [disabled]="feeEditSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="saveEditFee()" [disabled]="feeEditSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ feeEditSaving() ? 'Saving...' : 'Save' }}
               </button>
             </div>
@@ -982,7 +982,7 @@ import { GRADE_LEVELS } from '../../core/constants';
 
             <div class="mt-6 flex items-center justify-end gap-3">
               <button (click)="closeEditSection()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
-              <button (click)="saveEditSection()" [disabled]="sectionEditSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#4361ee] text-white font-semibold hover:bg-[#3a56d4] disabled:opacity-60">
+              <button (click)="saveEditSection()" [disabled]="sectionEditSaving()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
                 {{ sectionEditSaving() ? 'Saving...' : 'Save' }}
               </button>
             </div>

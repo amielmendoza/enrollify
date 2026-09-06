@@ -97,7 +97,11 @@ export class LoginComponent {
       next: (res) => this.router.navigate([this.landingRouteForRole(res.role)]),
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err.error?.error || 'Login failed. Please check your credentials.');
+        // status 0 = the request never reached the server (API down / network) —
+        // don't blame the user's credentials for that.
+        this.error.set(err.status === 0
+          ? "Can't reach the server. Please try again in a moment."
+          : (err.error?.error || 'Login failed. Please check your credentials.'));
       }
     });
   }

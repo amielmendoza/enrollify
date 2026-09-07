@@ -32,6 +32,9 @@ type SelectedInstallment = Installment | null;
               <div>
                 <p class="text-sm text-gray-500">Total Fees</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</p>
+                @if (hasDiscountEntry()) {
+                  <p class="text-xs text-gray-400 mt-1">Assessed fees before plan discount.</p>
+                }
               </div>
             </div>
           </div>
@@ -54,11 +57,44 @@ type SelectedInstallment = Installment | null;
               <div>
                 <p class="text-sm text-gray-500">Remaining Balance</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">\u20B1{{ balance()!.balance | number:'1.2-2' }}</p>
+                @if (adjustmentsNet() !== 0) {
+                  <p class="text-xs text-gray-400 mt-1">Includes \u20B1{{ (adjustmentsNet() < 0 ? -adjustmentsNet() : adjustmentsNet()) | number:'1.2-2' }} in {{ adjustmentsNet() > 0 ? 'added charges' : 'credits' }} &mdash; see the Ledger tab.</p>
+                }
               </div>
             </div>
           </div>
         </div>
+      }
 
+      <!-- Tabs -->
+      <div class="mt-6 border-b border-gray-200">
+        <nav class="flex gap-6">
+          <button (click)="activeTab.set('pay')"
+                  class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                  [class]="activeTab() === 'pay' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+            Make a payment
+            @if (hasPendingPayment()) {
+              <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{{ pendingCount() }} pending</span>
+            }
+          </button>
+          <button (click)="activeTab.set('history')"
+                  class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                  [class]="activeTab() === 'history' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+            History
+            @if (payments().length > 0) {
+              <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 folio-mono">{{ payments().length }}</span>
+            }
+          </button>
+          <button (click)="activeTab.set('ledger')"
+                  class="pb-3 text-sm font-medium border-b-2 transition-colors"
+                  [class]="activeTab() === 'ledger' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+            Ledger
+          </button>
+        </nav>
+      </div>
+
+      @if (activeTab() === 'pay') {
+      @if (balance()) {
         <!-- Tuition Breakdown -->
         @if (fees().length > 0) {
           <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
@@ -286,8 +322,10 @@ type SelectedInstallment = Installment | null;
           </div>
         }
       }
+      }
 
       <!-- Payment History -->
+      @if (activeTab() === 'history') {
       <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2]">
         <div class="p-6 border-b border-gray-100">
           <h2 class="text-lg font-semibold text-gray-900">Payment History</h2>
@@ -337,7 +375,10 @@ type SelectedInstallment = Installment | null;
         </div>
       </div>
 
+      }
+
       <!-- Account Ledger (read-only statement of account) -->
+      @if (activeTab() === 'ledger') {
       <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2]">
         <div class="p-6 border-b border-gray-100">
           <h2 class="text-lg font-semibold text-gray-900">Account Ledger</h2>
@@ -390,6 +431,7 @@ type SelectedInstallment = Installment | null;
           <p class="px-6 py-8 text-center text-sm text-gray-500">Ledger opens once the enrollment is assessed.</p>
         }
       </div>
+      }
     </div>
   `
 })
@@ -405,6 +447,15 @@ export class ChildPaymentsComponent implements OnInit {
   selectedInstallment = signal<SelectedInstallment>(null);
 
   hasPendingPayment = computed(() => this.payments().some(p => p.status === 'Pending'));
+
+  activeTab = signal<'pay' | 'history' | 'ledger'>('pay');
+  pendingCount = computed(() => this.payments().filter(p => p.status === 'Pending').length);
+  // Net effect of manual (non-voided) adjustments — lets the Balance tile explain
+  // why it can differ from the assessed Total Fees. Discounts get their own caption.
+  adjustmentsNet = computed(() => (this.ledger()?.entries ?? [])
+    .filter(en => en.type === 'Adjustment' && !en.voided)
+    .reduce((sum, en) => sum + (en.debit ?? 0) - (en.credit ?? 0), 0));
+  hasDiscountEntry = computed(() => (this.ledger()?.entries ?? []).some(en => en.type === 'Discount' && !en.voided));
 
   nextInstallment = computed(() => {
     const s = this.schedule();

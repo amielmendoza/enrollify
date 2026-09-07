@@ -211,7 +211,7 @@ type SelectedInstallment = Installment | null;
         }
 
         <!-- Make Payment Form -->
-        @if (paymentPlan() && balance()!.balance > 0) {
+        @if (paymentPlan() && balance()) {
           <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Make a Payment</h2>
 
@@ -221,6 +221,16 @@ type SelectedInstallment = Installment | null;
                 <div>
                   <p class="text-sm font-medium text-yellow-800">Payment under review</p>
                   <p class="text-sm text-yellow-700 mt-1">Your previous payment is being reviewed by the registrar. You can submit a new payment once it has been approved or rejected.</p>
+                </div>
+              </div>
+            }
+
+            @else if (settled()) {
+              <div class="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                <div>
+                  <p class="text-sm font-medium text-emerald-800">Fully paid &mdash; no outstanding balance.</p>
+                  <button type="button" (click)="activeTab.set('history')" class="mt-1 text-sm font-medium text-[#0038A8] hover:underline">View payment history</button>
                 </div>
               </div>
             }
@@ -236,20 +246,30 @@ type SelectedInstallment = Installment | null;
               <div class="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{{ payError() }}</div>
             }
 
-            @if (!selectedInstallment()) {
+            @if (!selectedInstallment() && !payingRemainder()) {
               <div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-500 text-center">
                 Select an installment from the schedule above to make a payment.
               </div>
             } @else {
-              <div class="mb-4 p-3 rounded-lg text-sm font-medium" style="background-color: #F0F4FF; color: #0038A8;">
-                Paying: {{ selectedInstallment()!.label }} &mdash; \u20B1{{ selectedInstallment()!.amount | number:'1.2-2' }}
-              </div>
+              @if (selectedInstallment()) {
+                <div class="mb-4 p-3 rounded-lg text-sm font-medium" style="background-color: #F0F4FF; color: #0038A8;">
+                  Paying: {{ selectedInstallment()!.label }} &mdash; \u20B1{{ selectedInstallment()!.amount | number:'1.2-2' }}
+                </div>
+              } @else {
+                <div class="mb-4 p-3 rounded-lg text-sm font-medium" style="background-color: #F0F4FF; color: #0038A8;">
+                  Remaining balance: \u20B1{{ balance()!.balance | number:'1.2-2' }} &mdash; includes charges added after assessment (see the Ledger tab).
+                </div>
+              }
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label class="form-label">Amount</label>
-                  <input type="number" [ngModel]="payAmount" disabled
-                         class="form-input bg-gray-50 text-gray-700 cursor-not-allowed" />
+                  @if (payingRemainder()) {
+                    <input type="number" [(ngModel)]="payAmount" class="form-input" />
+                  } @else {
+                    <input type="number" [ngModel]="payAmount" disabled
+                           class="form-input bg-gray-50 text-gray-700 cursor-not-allowed" />
+                  }
                 </div>
                 <div>
                   <label class="form-label">Payment Method *</label>
@@ -450,6 +470,14 @@ export class MyPaymentsComponent implements OnInit {
     .filter(en => en.type === 'Adjustment' && !en.voided)
     .reduce((sum, en) => sum + (en.debit ?? 0) - (en.credit ?? 0), 0));
   hasDiscountEntry = computed(() => (this.ledger()?.entries ?? []).some(en => en.type === 'Discount' && !en.voided));
+  // Nothing left to pay and nothing awaiting review.
+  settled = computed(() => (this.balance()?.balance ?? 0) <= 0 && !this.hasPendingPayment());
+  // All schedule rows paid (or no schedule) yet a balance remains — e.g. a post-assessment
+  // adjustment. The form then pays the remainder directly instead of an installment.
+  payingRemainder = computed(() =>
+    !this.selectedInstallment()
+    && (this.balance()?.balance ?? 0) > 0
+    && !this.schedule().some(i => !i.isPaid));
 
   nextInstallment = computed(() => {
     const s = this.schedule();
@@ -520,7 +548,9 @@ export class MyPaymentsComponent implements OnInit {
           this.selectInstallment(next);
         } else {
           this.selectedInstallment.set(null);
-          this.payAmount = 0;
+          // No unpaid installment left but a balance remains (e.g. a post-assessment
+          // adjustment) — preset the remainder so it can still be paid.
+          this.payAmount = !hasPending && !next && res.balance.balance > 0 ? res.balance.balance : 0;
         }
       },
       error: () => {

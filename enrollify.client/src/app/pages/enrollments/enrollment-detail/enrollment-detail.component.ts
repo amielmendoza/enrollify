@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -124,7 +124,40 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
           }
         </div>
 
+        <!-- Tabs -->
+        <div class="mb-6 border-b border-gray-200">
+          <nav class="flex gap-6">
+            <button (click)="activeTab.set('requirements')"
+                    class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                    [class]="activeTab() === 'requirements' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+              Requirements
+              @if (toVerifyCount() > 0) {
+                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{{ toVerifyCount() }} to verify</span>
+              }
+            </button>
+            <button (click)="activeTab.set('payments')"
+                    class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                    [class]="activeTab() === 'payments' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+              Payments
+              @if (pendingPaymentsCount() > 0) {
+                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{{ pendingPaymentsCount() }} pending</span>
+              }
+            </button>
+            <button (click)="activeTab.set('ledger')"
+                    class="pb-3 text-sm font-medium border-b-2 transition-colors"
+                    [class]="activeTab() === 'ledger' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+              Ledger
+            </button>
+            <button (click)="activeTab.set('history')"
+                    class="pb-3 text-sm font-medium border-b-2 transition-colors"
+                    [class]="activeTab() === 'history' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+              History
+            </button>
+          </nav>
+        </div>
+
         <!-- Requirements Review (Admin) -->
+        @if (activeTab() === 'requirements') {
         <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-900">Requirements</h3>
@@ -198,8 +231,10 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
             <p class="text-sm text-gray-500">No requirements configured. Add some in <a href="/settings" class="text-[#0038A8] hover:underline">Settings &rsaquo; Requirements</a>.</p>
           }
         </div>
+        }
 
         <!-- Balance & Payments -->
+        @if (activeTab() === 'payments') {
         <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <h3 class="font-semibold text-gray-900 mb-4">Fees & Payments</h3>
           @if (balance()) {
@@ -288,8 +323,10 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
             </div>
           }
         </div>
+        }
 
         <!-- Ledger (statement of account) -->
+        @if (activeTab() === 'ledger') {
         <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-900">Ledger</h3>
@@ -355,8 +392,10 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
             <p class="text-sm text-gray-500">Ledger opens once the enrollment is assessed.</p>
           }
         </div>
+        }
 
         <!-- Status History -->
+        @if (activeTab() === 'history') {
         <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <h3 class="font-semibold text-gray-900 mb-4">History</h3>
           @if (history().length > 0) {
@@ -376,6 +415,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
             <p class="text-sm text-gray-500">No history recorded.</p>
           }
         </div>
+        }
       }
 
       <!-- Add Adjustment modal -->
@@ -434,6 +474,12 @@ export class EnrollmentDetailComponent implements OnInit {
   history = signal<EnrollmentHistoryItem[]>([]);
   ledger = signal<EnrollmentLedger | null>(null);
 
+  // Tabbed workbench: workflow controls stay above the tabs; review surfaces live inside them.
+  activeTab = signal<'requirements' | 'payments' | 'ledger' | 'history'>('payments');
+  private defaultTabSet = false;
+  toVerifyCount = computed(() => (this.enrollment()?.requirements ?? []).filter(r => r.isSubmitted && !r.isVerified).length);
+  pendingPaymentsCount = computed(() => this.payments().filter(p => p.status === 'Pending').length);
+
   // Add Adjustment modal state
   adjShowModal = signal(false);
   adjForm = { type: 'Debit' as 'Debit' | 'Credit', description: '', amount: 0 };
@@ -468,6 +514,13 @@ export class EnrollmentDetailComponent implements OnInit {
   loadAll(): void {
     this.api.getEnrollment(this.enrollmentId).subscribe(e => {
       this.enrollment.set(e);
+      // Land the registrar where the action is — set once on first load only, so
+      // reloads after approve/void/advance don't yank the user's chosen tab away.
+      if (!this.defaultTabSet) {
+        this.defaultTabSet = true;
+        const status = this.getStatusName();
+        this.activeTab.set(status === 'Draft' || status === 'Submitted' ? 'requirements' : 'payments');
+      }
       this.api.getSections(e.schoolYear, e.gradeLevel).subscribe(s => this.sections.set(s));
     });
     this.api.getBalance(this.enrollmentId).subscribe(b => this.balance.set(b));

@@ -30,10 +30,10 @@ type SelectedInstallment = Installment | null;
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
               </div>
               <div>
-                <p class="text-sm text-gray-500">Total Fees</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</p>
-                @if (hasDiscountEntry()) {
-                  <p class="text-xs text-gray-400 mt-1">Assessed fees before plan discount.</p>
+                <p class="text-sm text-gray-500">Total Charges</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">\u20B1{{ totalCharges() | number:'1.2-2' }}</p>
+                @if (chargesBreakdown()) {
+                  <p class="text-xs text-gray-400 mt-1">{{ chargesBreakdown() }}</p>
                 }
               </div>
             </div>
@@ -57,9 +57,6 @@ type SelectedInstallment = Installment | null;
               <div>
                 <p class="text-sm text-gray-500">Remaining Balance</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">\u20B1{{ balance()!.balance | number:'1.2-2' }}</p>
-                @if (adjustmentsNet() !== 0) {
-                  <p class="text-xs text-gray-400 mt-1">Includes \u20B1{{ (adjustmentsNet() < 0 ? -adjustmentsNet() : adjustmentsNet()) | number:'1.2-2' }} in {{ adjustmentsNet() > 0 ? 'added charges' : 'credits' }} &mdash; see the Ledger tab.</p>
-                }
               </div>
             </div>
           </div>
@@ -95,10 +92,10 @@ type SelectedInstallment = Installment | null;
 
       @if (activeTab() === 'pay') {
       @if (balance()) {
-        <!-- Tuition Breakdown -->
+        <!-- Fees & Charges: the account's charge statement \u2014 reconciles with the Total Charges tile -->
         @if (fees().length > 0) {
           <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Tuition Breakdown</h2>
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Fees &amp; Charges</h2>
             <div class="space-y-3">
               @for (f of fees(); track f.name) {
                 <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
@@ -109,9 +106,38 @@ type SelectedInstallment = Installment | null;
                   <p class="text-sm font-semibold text-gray-900">\u20B1{{ f.amount | number:'1.2-2' }}</p>
                 </div>
               }
+              <div class="flex items-center justify-between pt-2 border-t border-gray-200">
+                <p class="text-sm text-gray-500">Assessed fees</p>
+                <p class="text-sm text-gray-500">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</p>
+              </div>
+              @if ((discountAmount() ?? 0) > 0) {
+                <div class="flex items-center justify-between py-1">
+                  <p class="text-sm text-gray-700">Payment plan discount</p>
+                  <p class="text-sm font-medium text-emerald-600">&minus; \u20B1{{ discountAmount()! | number:'1.2-2' }}</p>
+                </div>
+              }
+              @if ((interestAmount() ?? 0) > 0) {
+                <div class="flex items-center justify-between py-1">
+                  <p class="text-sm text-gray-700">Installment interest</p>
+                  <p class="text-sm font-medium text-gray-900">+ \u20B1{{ interestAmount()! | number:'1.2-2' }}</p>
+                </div>
+              }
+              @if (adjustmentEntries().length > 0) {
+                <p class="folio-eyebrow pt-1">Added charges</p>
+                @for (en of adjustmentEntries(); track $index) {
+                  <div class="flex items-center justify-between py-1">
+                    <p class="text-sm text-gray-700">{{ en.description }}</p>
+                    @if (en.credit != null && en.credit > 0) {
+                      <p class="text-sm font-medium text-emerald-600">&minus; \u20B1{{ en.credit | number:'1.2-2' }}</p>
+                    } @else {
+                      <p class="text-sm font-medium text-gray-900">+ \u20B1{{ (en.debit ?? 0) | number:'1.2-2' }}</p>
+                    }
+                  </div>
+                }
+              }
               <div class="flex items-center justify-between pt-2 border-t-2 border-gray-200">
                 <p class="text-sm font-bold text-gray-900">Total</p>
-                <p class="text-base font-bold text-gray-900">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</p>
+                <p class="text-base font-bold text-gray-900">\u20B1{{ totalCharges() | number:'1.2-2' }}</p>
               </div>
             </div>
           </div>
@@ -205,8 +231,8 @@ type SelectedInstallment = Installment | null;
                 </tbody>
                 <tfoot class="bg-gray-50">
                   <tr>
-                    <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-900">Total</td>
-                    <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</td>
+                    <td colspan="3" class="px-4 py-3 text-sm font-bold text-gray-900">Plan total</td>
+                    <td class="px-4 py-3 text-sm text-right font-bold text-gray-900">\u20B1{{ planTotal() | number:'1.2-2' }}</td>
                     <td></td>
                   </tr>
                 </tfoot>
@@ -475,7 +501,35 @@ export class ChildPaymentsComponent implements OnInit {
   adjustmentsNet = computed(() => (this.ledger()?.entries ?? [])
     .filter(en => en.type === 'Adjustment' && !en.voided)
     .reduce((sum, en) => sum + (en.debit ?? 0) - (en.credit ?? 0), 0));
-  hasDiscountEntry = computed(() => (this.ledger()?.entries ?? []).some(en => en.type === 'Discount' && !en.voided));
+  discountAmount = signal<number | null>(null);
+  interestAmount = signal<number | null>(null);
+  // Overall charges on the account: paid + outstanding reconstructs the effective
+  // total (assessed ± plan discount/interest ± adjustments) with no extra API data.
+  totalCharges = computed(() => {
+    const b = this.balance();
+    return b ? b.totalPaid + b.balance : 0;
+  });
+  // One-line reconciliation under the Total Charges tile; empty when the total
+  // is just the assessment (nothing to explain).
+  chargesBreakdown = computed(() => {
+    const b = this.balance();
+    if (!b) return '';
+    const discount = this.discountAmount() ?? 0;
+    const interest = this.interestAmount() ?? 0;
+    const adj = this.adjustmentsNet();
+    if (discount === 0 && interest === 0 && adj === 0) return '';
+    const fmt = (n: number) => '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const parts = [`${fmt(b.totalFees)} assessed`];
+    if (discount > 0) parts.push(`− ${fmt(discount)} discount`);
+    if (interest > 0) parts.push(`+ ${fmt(interest)} interest`);
+    if (adj > 0) parts.push(`+ ${fmt(adj)} added charges`);
+    if (adj < 0) parts.push(`− ${fmt(-adj)} credits`);
+    return parts.join(' ');
+  });
+  // Line items for the Fees & Charges card's "Added charges" section.
+  adjustmentEntries = computed(() => (this.ledger()?.entries ?? []).filter(en => en.type === 'Adjustment' && !en.voided));
+  // What the schedule actually schedules — the account-wide total lives in Fees & Charges.
+  planTotal = computed(() => this.schedule().reduce((sum, i) => sum + i.amount, 0));
   // Nothing left to pay and nothing awaiting review.
   settled = computed(() => (this.balance()?.balance ?? 0) <= 0 && !this.hasPendingPayment());
   // All schedule rows paid (or no schedule) yet a balance remains — e.g. a post-assessment
@@ -548,6 +602,8 @@ export class ChildPaymentsComponent implements OnInit {
         this.paymentPlan.set(res.paymentPlan);
         this.fees.set(res.fees);
         this.schedule.set(res.schedule);
+        this.discountAmount.set(res.discountAmount);
+        this.interestAmount.set(res.interestAmount);
         // Auto-select next unpaid installment only if no pending payments
         const hasPending = res.payments.some(p => p.status === 'Pending');
         const next = res.schedule.find(i => !i.isPaid);

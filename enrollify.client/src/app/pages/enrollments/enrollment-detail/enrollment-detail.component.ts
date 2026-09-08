@@ -240,8 +240,11 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
           @if (balance()) {
             <div class="grid grid-cols-3 gap-4 mb-4">
               <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center">
-                <p class="text-sm text-gray-500">Total Fees</p>
-                <p class="text-xl font-bold text-gray-900">{{ balance()!.totalFees | number:'1.2-2' }}</p>
+                <p class="text-sm text-gray-500">Total Charges</p>
+                <p class="text-xl font-bold text-gray-900">{{ totalCharges() | number:'1.2-2' }}</p>
+                @if (totalCharges() !== balance()!.totalFees) {
+                  <p class="text-xs text-gray-400 mt-1">₱{{ balance()!.totalFees | number:'1.2-2' }} assessed &mdash; see Ledger tab for the breakdown</p>
+                }
               </div>
               <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg text-center">
                 <p class="text-sm text-gray-500">Total Paid</p>
@@ -479,6 +482,12 @@ export class EnrollmentDetailComponent implements OnInit {
   private defaultTabSet = false;
   toVerifyCount = computed(() => (this.enrollment()?.requirements ?? []).filter(r => r.isSubmitted && !r.isVerified).length);
   pendingPaymentsCount = computed(() => this.payments().filter(p => p.status === 'Pending').length);
+  // Overall charges on the account: paid + outstanding reconstructs the effective
+  // total (assessed ± plan discount/interest ± adjustments) with no extra API data.
+  totalCharges = computed(() => {
+    const b = this.balance();
+    return b ? b.totalPaid + b.balance : 0;
+  });
 
   // Add Adjustment modal state
   adjShowModal = signal(false);

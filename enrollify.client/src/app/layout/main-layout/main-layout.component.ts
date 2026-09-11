@@ -120,7 +120,7 @@ import { CommonModule } from '@angular/common';
               <span>Collections</span>
             </a>
 
-            @if (isAdmin()) {
+            @if (isStaff()) {
               <p class="folio-eyebrow px-3 mt-6 mb-2">Management</p>
 
               <a routerLink="/settings" routerLinkActive="active-nav" class="nav-item" (click)="sidebarOpen.set(false)">
@@ -187,6 +187,8 @@ export class MainLayoutComponent implements OnInit {
   isStudent = computed(() => this.auth.userRole() === 'Student');
   isSuperAdmin = computed(() => this.auth.userRole() === 'SuperAdmin');
   isAdmin = computed(() => this.auth.userRole() === 'Admin');
+  // The /settings route admits Registrars too — the nav must match the route guard.
+  isStaff = computed(() => this.auth.userRole() === 'Admin' || this.auth.userRole() === 'Registrar');
 
   userInitials = computed(() => {
     const name = this.auth.user()?.fullName ?? '';

@@ -1,5 +1,79 @@
 # MVP Backlog
 
+## Batches A+B — Deploy unblock + Year-2 pack (delivered 2026-09-11, team-lead APPROVED after one fix)
+
+Closes probe themes T3 (deployability) and most of T1 (year lifecycle):
+- Deploy: angular.json fileReplacements (prod bundle verified zero-localhost), demo credentials gated
+  to dev, connection-string fail-fast (Production), /health endpoint with DB check,
+  appsettings.Production.json placeholders, DEPLOYMENT.md runbook, Registrar sees Settings nav.
+- Year lifecycle: creating a SchoolYear always ensures payment terms (copy-from > most-recent >
+  defaults) and can copy active fees/sections from a prior year (Settings UI); bulk re-enrollment
+  (Enrolled in fromYear → promoted Draft in toYear, skips Grade 12 + already-enrolled, template
+  requirements, atomic, target-year existence guard) with Settings UI + result counts; admin
+  CreateEnrollment now uses RequirementTemplates; parent dashboard prefers active-year status with
+  "Re-enroll for {SY}" CTA and year-labeled badges; payments/ledger endpoints accept ?schoolYear=
+  with otherYears balances (shared BuildStudentViewAsync helper — twins structurally identical);
+  amber prior-year-outstanding notices + year switcher on both payments pages; dashboard stats
+  year-scoped; sections: cancelled enrollments no longer hold seats, cancel frees the seat,
+  assign-section validates year/grade; proper Delete commands for fees/sections (FK 500 → clear 400).
+  Review caught the ChildPaymentsDto contract break (parent twin would have shipped inert) — fixed
+  via the shared helper. Tests 94 → 121; both frontend build configs verified.
+
+Still open from the probe: T2 (money corrections: void payment, cancel/refund semantics,
+requirement-rejection-after-assessment recovery), T4 (password self-service, forced first-login
+change, staff change-password, refresh tokens, duplicate-student dedup, createStudentAccount UI,
+student deactivate), T5 (error/loading/mobile sweep, enrollment register export, section roster,
+entity cross-links, collections deep-link params), plus T1 leftovers (arrears carryover entity,
+CreateTenant calendar-year guess, free-text SY/grade vocabulary checks) and T3 leftovers
+(structured logging, rate limiting, CI/container, FileDocuments lifecycle).
+
+## Gap probe 2026-09-11 (post-delivery, fresh-eyes) — headline findings
+
+Full detail in the probe reports; prioritized themes:
+
+**T1 — Year 2 doesn't work.** New SchoolYear is an empty shell (PaymentTerms only backfill at boot;
+real tenants never get Fees in any year → zero-fee guard blocks all assessment; consumers silently
+fall back to hardcoded 20/30% when terms are missing). No batch re-enrollment (promotion unreachable
+from the admin path; CreateEnrollmentCommand also ignores RequirementTemplates — hardcoded list). At
+rollover: prior-year arrears vanish from every family-facing surface once a new enrollment exists;
+parent dashboard shows last year's "Enrolled" as current with no re-enroll CTA; child-payments shows a
+stale year unlabeled; admin dashboard stats are lifetime-cumulative. Sections: no copy-forward,
+AssignSection doesn't check year/grade, cancelled enrollments hold seats forever (CurrentCount counts
+all rows). Settings requires ~78 hand-entered fee rows per year (no copy-to-new-year).
+
+**T2 — Money corrections don't exist.** Approved payments are irreversible (no void/un-approve; a
+fat-fingered ₱50,000 stays in the journal and TotalRevenue forever, and auto-advance can't be walked
+back — only exit from Paid is Cancelled). Cancelling a Paid/Enrolled enrollment: approved cash stays
+in the collections journal, ledger still claims a balance owed, no refund concept, SectionId kept.
+Staff CreatePayment accepts any status incl. Cancelled; adjustments postable on cancelled enrollments.
+Requirement rejection after assessment = family dead end (uploads only in Draft); re-assessment
+unreachable (no path back to Submitted, snapshot frozen).
+
+**T3 — Deployment impossible today.** angular.json has NO fileReplacements → every prod build ships
+environment.ts (localhost apiUrl + demo tenantId); login page renders seeded credentials unguarded;
+committed dev JWT key with no appsettings.Production/user-secrets/deploy doc; no connection-string
+fail-fast; no health endpoint / rate limiting / structured logging / request logs; migrate+seed on
+boot (races on multi-instance, seeds under hardcoded demo tenant); no CI/Dockerfile/backup runbook.
+FileDocuments: varbinary(max), no TenantId index, nothing ever deletes blobs, re-uploads orphan them.
+
+**T4 — Account/identity gaps.** No forgot-password (full-stack) and no forced first-login change
+despite plaintext admin-issued temp passwords; Admin/Registrar/SuperAdmin have NO change-password
+surface at all; 8h JWT with no refresh = hard logout mid-workday; duplicate-student on family re-apply
+(no identity dedup, second LRN splits history); createStudentAccount endpoint has zero UI (and DTOs
+omit UserId so UI can't know who has logins); Student.IsActive can never be set false (roster grows
+forever).
+
+**T5 — Quality.** formatApiError adopted on 2/24 pages (student-form shows bare "Save failed" for
+field validation); 19/24 pages have no loading state (enrollment/student lists flash "No X found";
+dashboard shows confident zeros); mobile: all 4 tab bars non-scrollable (Settings' 8 tabs unreachable
+at 375px), money-tile grids lack mobile breakpoints, Registrars table missing overflow wrapper;
+Registrar authorized for /settings but has no nav link; Pending Applications dashboard tile not
+clickable (Pending Payments is); no enrollment register export/print (collections is the template);
+no per-section roster (advisers can't list their class); student/enrollment/application never
+cross-linked; collections page ignores its own deep-link params; Fees/Sections DELETE bypass CQRS and
+500 on FK violations; seeder grade list still local; LRN starvation bound still open; "UnderReview"
+still written by nothing.
+
 Gap analysis of the enrollment process (2026-07-31). Ordered by priority; check items off as they land.
 
 ## Blockers (process-breaking) — ALL DONE 2026-07-31

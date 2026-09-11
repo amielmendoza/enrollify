@@ -158,7 +158,10 @@ import { ENROLLMENT_STATUS_NAMES } from '../../core/constants';
 
       } @else {
         <!-- ADMIN DASHBOARD -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+        @if (stats()?.schoolYear) {
+          <p class="folio-eyebrow mt-6">S.Y. {{ stats()!.schoolYear }}</p>
+        }
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-3">
           <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <div class="flex items-start gap-4">
               <div class="text-[#0038A8] bg-blue-50 rounded-lg p-2">
@@ -175,14 +178,19 @@ import { ENROLLMENT_STATUS_NAMES } from '../../core/constants';
               <div><p class="text-sm text-gray-500">Active Enrollments</p><p class="text-2xl font-bold text-gray-900 mt-1">{{ stats()?.totalEnrollments ?? 0 }}</p></div>
             </div>
           </div>
-          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
+          <a routerLink="/admissions"
+             class="block bg-white rounded-xl border border-[#E2D9C2] p-6 hover:border-orange-300 hover:bg-orange-50/30 transition-colors">
             <div class="flex items-start gap-4">
               <div class="text-orange-500 bg-orange-50 rounded-lg p-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
               </div>
-              <div><p class="text-sm text-gray-500">Pending Applications</p><p class="text-2xl font-bold text-gray-900 mt-1">{{ stats()?.pendingApplications ?? 0 }}</p></div>
+              <div>
+                <p class="text-sm text-gray-500">Pending Applications</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats()?.pendingApplications ?? 0 }}</p>
+                <p class="text-xs text-orange-600 mt-1 font-medium">Review now &rarr;</p>
+              </div>
             </div>
-          </div>
+          </a>
           <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
             <div class="flex items-start gap-4">
               <div class="text-violet-500 bg-violet-50 rounded-lg p-2">

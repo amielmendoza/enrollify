@@ -104,18 +104,9 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, T
             IsActive = true
         });
 
-        foreach (var plan in new[] { ("Full", 0m, 0m, 5m, 1), ("Monthly", 20m, 5m, 0m, 9), ("Quarterly", 30m, 3m, 0m, 3) })
+        foreach (var term in SchoolYears.DefaultPaymentTerms.Build(nextSyName, tenant.Id))
         {
-            ctx.PaymentTerms.Add(new PaymentTerm
-            {
-                TenantId = tenant.Id,
-                SchoolYear = nextSyName,
-                PlanType = plan.Item1,
-                DownPaymentPercent = plan.Item2,
-                InterestRatePercent = plan.Item3,
-                DiscountPercent = plan.Item4,
-                InstallmentCount = plan.Item5
-            });
+            ctx.PaymentTerms.Add(term);
         }
 
         var defaultRequirements = new[] { "PSA Birth Certificate", "Form 138 (Report Card)", "Good Moral Certificate", "2x2 ID Photo" };

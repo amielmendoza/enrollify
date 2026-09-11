@@ -55,6 +55,26 @@ import { GRADE_LEVELS } from '../../core/constants';
                 </button>
               </div>
             </div>
+            <div class="mt-4 flex flex-wrap items-end gap-x-5 gap-y-3">
+              <div>
+                <label class="form-label">Copy setup from</label>
+                <select [(ngModel)]="copySetup.fromYear" class="form-input w-auto">
+                  <option value="">None</option>
+                  @for (sy of schoolYearNames(); track sy) { <option [value]="sy">{{ sy }}</option> }
+                </select>
+              </div>
+              @if (copySetup.fromYear) {
+                <label class="inline-flex items-center gap-2 pb-3 text-sm text-gray-700">
+                  <input type="checkbox" [(ngModel)]="copySetup.includeFees" />
+                  Copy fees
+                </label>
+                <label class="inline-flex items-center gap-2 pb-3 text-sm text-gray-700">
+                  <input type="checkbox" [(ngModel)]="copySetup.includeSections" />
+                  Copy sections
+                </label>
+              }
+            </div>
+            <p class="mt-2 text-xs text-gray-400">Payment terms carry over automatically.</p>
           </div>
 
           <!-- School Year List -->
@@ -100,6 +120,30 @@ import { GRADE_LEVELS } from '../../core/constants';
                   }
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- Bulk re-enrollment (year rollover) -->
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-1">Re-enroll Students</h2>
+            <p class="text-sm text-gray-500 mb-4">Roll a school year forward: creates Draft enrollments for all Enrolled students of the source year, promoted one grade. Grade 12 and already-enrolled students are skipped.</p>
+            <div class="flex flex-wrap items-end gap-4">
+              <div>
+                <label class="form-label">From school year</label>
+                <select [(ngModel)]="reenrollFrom" class="form-input w-auto">
+                  @for (sy of schoolYearNames(); track sy) { <option [value]="sy">{{ sy }}</option> }
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Into school year</label>
+                <select [(ngModel)]="reenrollTo" class="form-input w-auto">
+                  @for (sy of schoolYearNames(); track sy) { <option [value]="sy">{{ sy }}</option> }
+                </select>
+              </div>
+              <button (click)="runBulkReenroll()" [disabled]="reenrolling() || !reenrollFrom || !reenrollTo || reenrollFrom === reenrollTo"
+                      class="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors" style="background-color: #0038A8;">
+                {{ reenrolling() ? 'Re-enrolling...' : 'Re-enroll students' }}
+              </button>
             </div>
           </div>
 
@@ -1069,6 +1113,12 @@ export class SettingsComponent implements OnInit {
   newFee = { name: '', description: '', amount: 0, gradeLevel: 'Grade 7', schoolYear: '' };
   newSection = { name: '', gradeLevel: 'Grade 7', schoolYear: '', capacity: 40, adviser: '' };
   newSchoolYear = { name: '', startDate: '', endDate: '' };
+  // Year-2 setup: copy last year's fees/sections into the new year on creation.
+  copySetup = { fromYear: '', includeFees: true, includeSections: true };
+  // Bulk year rollover
+  reenrollFrom = '';
+  reenrollTo = '';
+  reenrolling = signal(false);
 
   // Fee / Section edit modal state
   feeEditing = signal<Fee | null>(null);
@@ -1136,6 +1186,11 @@ export class SettingsComponent implements OnInit {
     this.api.getSchoolYears().subscribe(list => {
       this.schoolYearList.set(list);
       const activeName = list.find(sy => sy.isActive)?.name ?? '';
+      // Latest year by name (YYYY-YYYY sorts lexically) — the natural copy/rollover target.
+      const newestName = [...list].map(sy => sy.name).sort().pop() ?? '';
+      this.copySetup.fromYear = newestName;
+      if (!this.reenrollFrom) this.reenrollFrom = activeName;
+      if (!this.reenrollTo) this.reenrollTo = newestName;
       // Default filters and forms to active school year
       if (!this.feeFilter) this.feeFilter = activeName;
       if (!this.sectionFilterYear) this.sectionFilterYear = activeName;
@@ -1168,13 +1223,45 @@ export class SettingsComponent implements OnInit {
 
   addSchoolYear() {
     if (!this.newSchoolYear.name || !this.newSchoolYear.startDate || !this.newSchoolYear.endDate) return;
-    this.api.createSchoolYear(this.newSchoolYear).subscribe({
+    const name = this.newSchoolYear.name;
+    const copyFrom = this.copySetup.fromYear || undefined;
+    this.api.createSchoolYear({
+      ...this.newSchoolYear,
+      copyFromSchoolYear: copyFrom,
+      includeFees: copyFrom ? this.copySetup.includeFees : undefined,
+      includeSections: copyFrom ? this.copySetup.includeSections : undefined
+    }).subscribe({
       next: () => {
+        const copied = copyFrom
+          ? [this.copySetup.includeFees ? 'fees' : '', this.copySetup.includeSections ? 'sections' : ''].filter(Boolean)
+          : [];
+        this.notify.success(copied.length > 0
+          ? `School year ${name} created — copied ${copied.join(' and ')} from ${copyFrom}. Payment terms carried over automatically.`
+          : `School year ${name} created. Payment terms carried over automatically.`);
         this.newSchoolYear = { name: '', startDate: '', endDate: '' };
         this.loadSchoolYears();
         this.syService.refresh();
       },
       error: (err) => this.notify.error(err.error?.error || 'Failed to create school year')
+    });
+  }
+
+  async runBulkReenroll() {
+    if (!this.reenrollFrom || !this.reenrollTo || this.reenrollFrom === this.reenrollTo) return;
+    const ok = await this.notify.confirm(
+      `Creates Draft enrollments for all Enrolled students of ${this.reenrollFrom}, promoted one grade. Grade 12 and already-enrolled students are skipped.`,
+      { title: `Re-enroll students into ${this.reenrollTo}`, confirmLabel: 'Re-enroll' });
+    if (!ok) return;
+    this.reenrolling.set(true);
+    this.api.bulkReenroll(this.reenrollFrom, this.reenrollTo).subscribe({
+      next: (res) => {
+        this.reenrolling.set(false);
+        this.notify.success(`Created ${res.created} enrollments (${res.skippedExisting} already enrolled, ${res.skippedGraduates} graduates skipped).`);
+      },
+      error: (err) => {
+        this.reenrolling.set(false);
+        this.notify.error(err.error?.error || 'Bulk re-enrollment failed.');
+      }
     });
   }
 

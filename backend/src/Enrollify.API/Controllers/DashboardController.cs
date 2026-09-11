@@ -15,9 +15,9 @@ public class DashboardController : ControllerBase
     public DashboardController(ISender sender) => _sender = sender;
 
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats()
+    public async Task<IActionResult> GetStats([FromQuery] string? schoolYear)
     {
-        var result = await _sender.Send(new GetDashboardStatsQuery());
+        var result = await _sender.Send(new GetDashboardStatsQuery(schoolYear));
         return Ok(result);
     }
 }

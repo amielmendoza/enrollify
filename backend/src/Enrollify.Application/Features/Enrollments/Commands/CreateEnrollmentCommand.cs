@@ -58,21 +58,19 @@ public class CreateEnrollmentCommandHandler : IRequestHandler<CreateEnrollmentCo
 
         _context.Enrollments.Add(enrollment);
 
-        // Create default requirements
-        var defaultRequirements = new List<string>
-        {
-            "PSA Birth Certificate",
-            "Form 138 (Report Card)",
-            "Good Moral Certificate",
-            "2x2 ID Photo"
-        };
+        // Seed requirements from the tenant's active templates (grade-filtered), exactly like
+        // every other enrollment-creation path — not a hardcoded document list.
+        var templates = await _context.RequirementTemplates
+            .Where(t => t.IsActive && (t.GradeLevel == null || t.GradeLevel == request.GradeLevel))
+            .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
+            .ToListAsync(cancellationToken);
 
-        foreach (var docName in defaultRequirements)
+        foreach (var template in templates)
         {
             _context.EnrollmentRequirements.Add(new EnrollmentRequirement
             {
                 EnrollmentId = enrollment.Id,
-                DocumentName = docName
+                DocumentName = template.DocumentName
             });
         }
 

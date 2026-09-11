@@ -15,6 +15,13 @@ public class TenantMiddleware
 
     public async Task InvokeAsync(HttpContext context, ITenantProvider tenantProvider, ApplicationDbContext dbContext)
     {
+        // Health probes are infrastructure traffic — no tenant involved.
+        if (context.Request.Path.StartsWithSegments("/health"))
+        {
+            await _next(context);
+            return;
+        }
+
         // Skip tenant resolution for auth endpoints
         if (context.Request.Path.StartsWithSegments("/api/auth"))
         {

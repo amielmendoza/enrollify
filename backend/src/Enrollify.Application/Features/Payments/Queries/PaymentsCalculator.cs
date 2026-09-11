@@ -20,16 +20,77 @@ public record PaymentsView(
     decimal? DiscountAmount,
     decimal? InterestAmount);
 
+/// <summary>A student's payments view plus the multi-year context both response twins expose.</summary>
+public record StudentPaymentsView(PaymentsView View, string? SchoolYear, List<OtherYearBalanceDto> OtherYears);
+
 public static class PaymentsCalculator
 {
-    public static async Task<PaymentsView> BuildAsync(IApplicationDbContext context, Guid studentId, CancellationToken ct)
+    public static PaymentsView Empty() =>
+        new(new BalanceDto(0, 0, 0), new List<PaymentDto>(), null, new(), new(), null, null);
+
+    public static Task<PaymentsView> BuildAsync(IApplicationDbContext context, Guid studentId, CancellationToken ct)
+        => BuildAsync(context, studentId, null, ct);
+
+    /// <summary>
+    /// Builds the view for a specific school year's non-cancelled enrollment when
+    /// <paramref name="schoolYear"/> is given; otherwise for the EnrollmentSelector's pick
+    /// (active year first, newest overall as fallback).
+    /// </summary>
+    public static async Task<PaymentsView> BuildAsync(IApplicationDbContext context, Guid studentId, string? schoolYear, CancellationToken ct)
     {
-        var enrollment = await EnrollmentSelector.PickCurrentAsync(context,
-            context.Enrollments.Include(e => e.Payments).Where(e => e.StudentId == studentId), ct);
+        var candidates = context.Enrollments.Include(e => e.Payments).Where(e => e.StudentId == studentId);
+        var enrollment = await PickShownEnrollmentAsync(context, candidates, schoolYear, ct);
 
         if (enrollment == null)
-            return new PaymentsView(new BalanceDto(0, 0, 0), new List<PaymentDto>(), null, new(), new(), null, null);
+            return Empty();
 
+        return await BuildForEnrollmentAsync(context, enrollment, ct);
+    }
+
+    /// <summary>
+    /// The full multi-year composition shared by BOTH self-service payment views (student
+    /// GetMyPaymentsQuery and parent GetChildPaymentsQuery): the shown enrollment's view,
+    /// which school year is being shown, and every OTHER non-cancelled year with its balance
+    /// from the same math — so the two response twins structurally cannot drift.
+    /// </summary>
+    public static async Task<StudentPaymentsView> BuildStudentViewAsync(IApplicationDbContext context, Guid studentId, string? schoolYear, CancellationToken ct)
+    {
+        var candidates = context.Enrollments.Include(e => e.Payments).Where(e => e.StudentId == studentId);
+        var shown = await PickShownEnrollmentAsync(context, candidates, schoolYear, ct);
+
+        var view = shown == null
+            ? Empty()
+            : await BuildForEnrollmentAsync(context, shown, ct);
+
+        var otherEnrollments = await candidates
+            .Where(e => e.Status != Domain.Enums.EnrollmentStatus.Cancelled)
+            .OrderByDescending(e => e.SchoolYear)
+            .ToListAsync(ct);
+
+        var otherYears = new List<OtherYearBalanceDto>();
+        foreach (var enrollment in otherEnrollments.Where(e => shown == null || e.Id != shown.Id))
+        {
+            var yearView = await BuildForEnrollmentAsync(context, enrollment, ct);
+            otherYears.Add(new OtherYearBalanceDto(enrollment.SchoolYear, yearView.Balance.Balance));
+        }
+
+        return new StudentPaymentsView(view, shown?.SchoolYear, otherYears);
+    }
+
+    private static async Task<Enrollment?> PickShownEnrollmentAsync(
+        IApplicationDbContext context, IQueryable<Enrollment> candidates, string? schoolYear, CancellationToken ct)
+    {
+        return !string.IsNullOrWhiteSpace(schoolYear)
+            ? await candidates
+                .Where(e => e.SchoolYear == schoolYear && e.Status != Domain.Enums.EnrollmentStatus.Cancelled)
+                .OrderByDescending(e => e.CreatedAt)
+                .FirstOrDefaultAsync(ct)
+            : await EnrollmentSelector.PickCurrentAsync(context, candidates, ct);
+    }
+
+    /// <summary>Builds the view for one specific enrollment. Its Payments must be loaded.</summary>
+    public static async Task<PaymentsView> BuildForEnrollmentAsync(IApplicationDbContext context, Enrollment enrollment, CancellationToken ct)
+    {
         // Prefer the snapshot captured at assessment time so later fee-catalog edits
         // don't retroactively change this enrollment's balance. Enrollments assessed
         // before snapshots existed (AssessedTotal == null) keep the live-catalog math.

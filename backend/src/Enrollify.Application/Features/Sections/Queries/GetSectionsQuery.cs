@@ -1,5 +1,6 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Sections;
+using Enrollify.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,7 +33,8 @@ public class GetSectionsQueryHandler : IRequestHandler<GetSectionsQuery, List<Se
         return await query
             .OrderBy(s => s.GradeLevel).ThenBy(s => s.Name)
             .Select(s => new SectionDto(s.Id, s.Name, s.GradeLevel, s.SchoolYear,
-                s.Capacity, s.Enrollments.Count, s.Adviser, s.IsActive))
+                // Cancelled enrollments don't hold seats — keep in sync with Section.CurrentCount.
+                s.Capacity, s.Enrollments.Count(e => e.Status != EnrollmentStatus.Cancelled), s.Adviser, s.IsActive))
             .ToListAsync(cancellationToken);
     }
 }

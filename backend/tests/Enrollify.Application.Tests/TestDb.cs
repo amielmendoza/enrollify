@@ -36,6 +36,23 @@ public class FixedTenantProvider : ITenantProvider
     public void SetTenantId(Guid tenantId) => _tenantId = tenantId;
 }
 
+/// <summary>
+/// Throws on demand at SaveChangesAsync — simulates a save failing AFTER all in-memory
+/// work, for atomicity tests (used with a shared db name + a fresh verify context).
+/// </summary>
+public class FailingSaveContext : ApplicationDbContext
+{
+    public bool Fail { get; set; }
+
+    public FailingSaveContext(DbContextOptions<ApplicationDbContext> options, ITenantProvider tenantProvider)
+        : base(options, tenantProvider) { }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        => Fail
+            ? throw new InvalidOperationException("Simulated save failure.")
+            : base.SaveChangesAsync(cancellationToken);
+}
+
 public static class TestDb
 {
     public static readonly Guid TenantId = Guid.Parse("11111111-1111-1111-1111-111111111111");

@@ -5,7 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Dashboard;
 
-public record GetDashboardStatsQuery() : IRequest<DashboardStatsDto>;
+/// <summary>
+/// Dashboard stats, scoped to one school year. When <paramref name="SchoolYear"/> is null the
+/// tenant's active school year is used; the resolved year is echoed back in the DTO so the UI
+/// can label it. TotalStudents is deliberately year-independent (all active students).
+/// If the tenant has no active year and none is given, counts fall back to all years.
+/// </summary>
+public record GetDashboardStatsQuery(string? SchoolYear = null) : IRequest<DashboardStatsDto>;
 
 public record DashboardStatsDto(
     int TotalStudents,
@@ -16,7 +22,8 @@ public record DashboardStatsDto(
     int EnrolledCount,
     int TotalSections,
     decimal TotalRevenue,
-    int PendingPayments);
+    int PendingPayments,
+    string? SchoolYear);
 
 public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQuery, DashboardStatsDto>
 {
@@ -26,17 +33,37 @@ public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQu
 
     public async Task<DashboardStatsDto> Handle(GetDashboardStatsQuery request, CancellationToken cancellationToken)
     {
+        var schoolYear = request.SchoolYear;
+        if (string.IsNullOrWhiteSpace(schoolYear))
+        {
+            schoolYear = await _context.SchoolYears
+                .Where(sy => sy.IsActive)
+                .Select(sy => sy.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        var enrollments = _context.Enrollments.AsQueryable();
+        var sections = _context.Sections.AsQueryable();
+        var payments = _context.Payments.AsQueryable();
+
+        if (schoolYear != null)
+        {
+            enrollments = enrollments.Where(e => e.SchoolYear == schoolYear);
+            sections = sections.Where(s => s.SchoolYear == schoolYear);
+            payments = payments.Where(p => p.Enrollment.SchoolYear == schoolYear);
+        }
+
         var totalStudents = await _context.Students.CountAsync(cancellationToken);
-        var totalEnrollments = await _context.Enrollments.CountAsync(cancellationToken);
+        var totalEnrollments = await enrollments.CountAsync(cancellationToken);
         var pendingApps = await _context.AdmissionApplications.CountAsync(a => a.Status == "Submitted", cancellationToken);
-        var draftEnrollments = await _context.Enrollments.CountAsync(e => e.Status == EnrollmentStatus.Draft || e.Status == EnrollmentStatus.Submitted, cancellationToken);
-        var approvedEnrollments = await _context.Enrollments.CountAsync(e => e.Status == EnrollmentStatus.Approved, cancellationToken);
-        var enrolledCount = await _context.Enrollments.CountAsync(e => e.Status == EnrollmentStatus.Enrolled, cancellationToken);
-        var totalSections = await _context.Sections.CountAsync(s => s.IsActive, cancellationToken);
-        var totalRevenue = await _context.Payments.Where(p => p.Status == "Approved").SumAsync(p => p.Amount, cancellationToken);
-        var pendingPayments = await _context.Payments.CountAsync(p => p.Status == "Pending", cancellationToken);
+        var draftEnrollments = await enrollments.CountAsync(e => e.Status == EnrollmentStatus.Draft || e.Status == EnrollmentStatus.Submitted, cancellationToken);
+        var approvedEnrollments = await enrollments.CountAsync(e => e.Status == EnrollmentStatus.Approved, cancellationToken);
+        var enrolledCount = await enrollments.CountAsync(e => e.Status == EnrollmentStatus.Enrolled, cancellationToken);
+        var totalSections = await sections.CountAsync(s => s.IsActive, cancellationToken);
+        var totalRevenue = await payments.Where(p => p.Status == "Approved").SumAsync(p => p.Amount, cancellationToken);
+        var pendingPayments = await payments.CountAsync(p => p.Status == "Pending", cancellationToken);
 
         return new DashboardStatsDto(totalStudents, totalEnrollments, pendingApps, draftEnrollments,
-            approvedEnrollments, enrolledCount, totalSections, totalRevenue, pendingPayments);
+            approvedEnrollments, enrolledCount, totalSections, totalRevenue, pendingPayments, schoolYear);
     }
 }

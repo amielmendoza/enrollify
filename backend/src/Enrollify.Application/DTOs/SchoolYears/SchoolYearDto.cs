@@ -11,4 +11,7 @@ public record SchoolYearDto(
 public record CreateSchoolYearRequest(
     string Name,
     DateTime StartDate,
-    DateTime EndDate);
+    DateTime EndDate,
+    string? CopyFromSchoolYear = null,
+    bool IncludeFees = true,
+    bool IncludeSections = true);

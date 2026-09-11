@@ -74,6 +74,13 @@ export class ApiService {
     return this.http.post<Enrollment>(`${this.baseUrl}/enrollments/${enrollmentId}/assign-section`, { sectionId });
   }
 
+  // Bulk year-rollover: Draft enrollments for every Enrolled student of the source year,
+  // promoted one grade. Grade 12 and already-enrolled students are skipped server-side.
+  bulkReenroll(fromSchoolYear: string, toSchoolYear: string): Observable<{ created: number; skippedExisting: number; skippedGraduates: number }> {
+    return this.http.post<{ created: number; skippedExisting: number; skippedGraduates: number }>(
+      `${this.baseUrl}/enrollments/bulk-reenroll`, { fromSchoolYear, toSchoolYear });
+  }
+
   // Status transition history, ascending (Admin/Registrar only).
   getEnrollmentHistory(id: string): Observable<EnrollmentHistoryItem[]> {
     return this.http.get<EnrollmentHistoryItem[]>(`${this.baseUrl}/enrollments/${id}/history`);
@@ -194,13 +201,18 @@ export class ApiService {
     return this.http.post<Payment>(`${this.baseUrl}/payments/my`, data);
   }
 
-  getMyPaymentsAndBalance(): Observable<MyPaymentsResponse> {
-    return this.http.get<MyPaymentsResponse>(`${this.baseUrl}/payments/my`);
+  // Omitting schoolYear shows the current year; pass one to view a past year's account.
+  getMyPaymentsAndBalance(schoolYear?: string): Observable<MyPaymentsResponse> {
+    let params = new HttpParams();
+    if (schoolYear) params = params.set('schoolYear', schoolYear);
+    return this.http.get<MyPaymentsResponse>(`${this.baseUrl}/payments/my`, { params });
   }
 
   // Student's own account ledger (current enrollment resolved server-side).
-  getMyLedger(): Observable<EnrollmentLedger> {
-    return this.http.get<EnrollmentLedger>(`${this.baseUrl}/enrollments/me/ledger`);
+  getMyLedger(schoolYear?: string): Observable<EnrollmentLedger> {
+    let params = new HttpParams();
+    if (schoolYear) params = params.set('schoolYear', schoolYear);
+    return this.http.get<EnrollmentLedger>(`${this.baseUrl}/enrollments/me/ledger`, { params });
   }
 
   // Admin: create a Student-role login for an existing student record (only if no parent linkage)
@@ -264,13 +276,18 @@ export class ApiService {
     return this.http.post<Payment>(`${this.baseUrl}/parent/children/${studentId}/payments`, data);
   }
 
-  getChildPaymentsAndBalance(studentId: string): Observable<MyPaymentsResponse> {
-    return this.http.get<MyPaymentsResponse>(`${this.baseUrl}/parent/children/${studentId}/payments`);
+  // Omitting schoolYear shows the current year; pass one to view a past year's account.
+  getChildPaymentsAndBalance(studentId: string, schoolYear?: string): Observable<MyPaymentsResponse> {
+    let params = new HttpParams();
+    if (schoolYear) params = params.set('schoolYear', schoolYear);
+    return this.http.get<MyPaymentsResponse>(`${this.baseUrl}/parent/children/${studentId}/payments`, { params });
   }
 
   // A child's account ledger (current enrollment resolved server-side).
-  getChildLedger(studentId: string): Observable<EnrollmentLedger> {
-    return this.http.get<EnrollmentLedger>(`${this.baseUrl}/parent/children/${studentId}/ledger`);
+  getChildLedger(studentId: string, schoolYear?: string): Observable<EnrollmentLedger> {
+    let params = new HttpParams();
+    if (schoolYear) params = params.set('schoolYear', schoolYear);
+    return this.http.get<EnrollmentLedger>(`${this.baseUrl}/parent/children/${studentId}/ledger`, { params });
   }
 
   submitChildEnrollment(studentId: string, enrollmentId: string): Observable<Enrollment> {
@@ -346,7 +363,9 @@ export class ApiService {
     return this.http.get<SchoolYear[]>(`${this.baseUrl}/schoolyears`);
   }
 
-  createSchoolYear(data: { name: string; startDate: string; endDate: string }): Observable<SchoolYear> {
+  // copyFromSchoolYear + include flags let a new year start from an existing year's
+  // fees/sections; payment terms are always ensured server-side.
+  createSchoolYear(data: { name: string; startDate: string; endDate: string; copyFromSchoolYear?: string; includeFees?: boolean; includeSections?: boolean }): Observable<SchoolYear> {
     return this.http.post<SchoolYear>(`${this.baseUrl}/schoolyears`, data);
   }
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SchoolYearService } from '../../../core/services/school-year.service';
 import { ParentChild } from '../../../core/models';
 import { enrollmentStatusName } from '../../../core/constants';
 
@@ -57,10 +58,16 @@ import { enrollmentStatusName } from '../../../core/constants';
                     <p class="text-xs text-gray-500">{{ c.gradeLevel || 'Grade not set' }} &bull; {{ c.schoolYear || '—' }}</p>
                   </div>
                 </div>
-                <span [class]="badgeClass(c)" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium">{{ c.status }}</span>
+                <span [class]="badgeClass(c)" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap">{{ c.status }}{{ c.schoolYear ? ' · ' + c.schoolYear : '' }}</span>
               </div>
 
               @if (c.source === 'Student' && c.studentId) {
+                @if (!c.hasActiveYearEnrollment) {
+                  <a [routerLink]="['/parent/children', c.studentId, 'enrollment']"
+                     class="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-[#0038A8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#002B85] transition-colors">
+                    Re-enroll for {{ syService.activeName() || 'the new school year' }}
+                  </a>
+                }
                 <div class="mt-5 grid grid-cols-3 gap-2">
                   <a [routerLink]="['/parent/children', c.studentId, 'enrollment']" class="text-center rounded-lg border border-gray-200 px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">Enrollment</a>
                   @if (paymentsReady(c)) {
@@ -85,9 +92,10 @@ export class ParentDashboardComponent implements OnInit {
   children = signal<ParentChild[]>([]);
   loading = signal(true);
 
-  constructor(private api: ApiService, public auth: AuthService) {}
+  constructor(private api: ApiService, public auth: AuthService, public syService: SchoolYearService) {}
 
   ngOnInit() {
+    this.syService.ensureLoaded().subscribe();
     this.api.getMyChildren().subscribe({
       next: (list) => { this.children.set(list); this.loading.set(false); },
       error: () => this.loading.set(false)

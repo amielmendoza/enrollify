@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -68,11 +69,13 @@ import { AuthService } from '../../core/services/auth.service';
 
           <p class="mt-6 text-center text-sm text-gray-500">New parent? <a routerLink="/tenants" class="font-semibold text-[#0038A8] hover:underline">Enroll your child &rarr;</a></p>
 
-          <div class="folio-mono mt-8 space-y-1 text-center text-[11px] tracking-wide text-gray-400">
-            <p>super&#64;enrollify.app / SuperAdmin123!</p>
-            <p>admin&#64;mshs.edu.ph / Admin123!</p>
-            <p>pedro.delacruz&#64;example.com / Parent123!</p>
-          </div>
+          @if (showDemoCredentials) {
+            <div class="folio-mono mt-8 space-y-1 text-center text-[11px] tracking-wide text-gray-400">
+              <p>super&#64;enrollify.app / SuperAdmin123!</p>
+              <p>admin&#64;mshs.edu.ph / Admin123!</p>
+              <p>pedro.delacruz&#64;example.com / Parent123!</p>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -83,6 +86,8 @@ export class LoginComponent {
   password = '';
   loading = signal(false);
   error = signal('');
+  // Seeded demo logins are a dev convenience only — never advertise them in production.
+  showDemoCredentials = !environment.production;
 
   constructor(private authService: AuthService, private router: Router) {
     if (this.authService.isLoggedIn()) {

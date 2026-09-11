@@ -59,6 +59,10 @@ public record CreateEnrollmentRequest(
     string SchoolYear,
     string GradeLevel);
 
+public record BulkReenrollRequest(
+    string FromSchoolYear,
+    string ToSchoolYear);
+
 public record MoveEnrollmentStepRequest(
     string? Remarks);
 

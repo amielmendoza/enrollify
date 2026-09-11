@@ -31,7 +31,9 @@ public class SchoolYearsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateSchoolYearRequest request)
     {
-        var result = await _sender.Send(new CreateSchoolYearCommand(request.Name, request.StartDate, request.EndDate));
+        var result = await _sender.Send(new CreateSchoolYearCommand(
+            request.Name, request.StartDate, request.EndDate,
+            request.CopyFromSchoolYear, request.IncludeFees, request.IncludeSections));
         return Ok(result);
     }
 

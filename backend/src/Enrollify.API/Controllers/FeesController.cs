@@ -47,14 +47,7 @@ public class FeesController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var fee = await _sender.Send(new GetFeesQuery(null, null, true));
-        var entity = fee.FirstOrDefault(f => f.Id == id);
-        if (entity == null) return NotFound();
-        // Use context directly for delete
-        var scope = HttpContext.RequestServices;
-        var context = scope.GetRequiredService<Enrollify.Application.Common.Interfaces.IApplicationDbContext>();
-        var dbFee = await context.Fees.FindAsync(id);
-        if (dbFee != null) { context.Fees.Remove(dbFee); await context.SaveChangesAsync(); }
+        await _sender.Send(new DeleteFeeCommand(id));
         return NoContent();
     }
 }

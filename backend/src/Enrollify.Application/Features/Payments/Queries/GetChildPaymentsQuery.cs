@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Payments.Queries;
 
-public record GetChildPaymentsQuery(Guid StudentId, Guid ParentUserId) : IRequest<ChildPaymentsDto>;
+public record GetChildPaymentsQuery(Guid StudentId, Guid ParentUserId, string? SchoolYear = null) : IRequest<ChildPaymentsDto>;
 
 public record ChildPaymentsDto(
     BalanceDto Balance,
@@ -14,7 +14,9 @@ public record ChildPaymentsDto(
     List<FeeLineDto> Fees,
     List<InstallmentDto> Schedule,
     decimal? DiscountAmount,
-    decimal? InterestAmount);
+    decimal? InterestAmount,
+    string? SchoolYear = null,
+    List<OtherYearBalanceDto>? OtherYears = null);
 
 public record FeeLineDto(string Name, string? Description, decimal Amount);
 
@@ -35,7 +37,11 @@ public class GetChildPaymentsQueryHandler : IRequestHandler<GetChildPaymentsQuer
             .FirstOrDefaultAsync(s => s.Id == request.StudentId && s.ParentUserId == request.ParentUserId, cancellationToken)
             ?? throw new KeyNotFoundException("Child not found or you do not have access to this student.");
 
-        var view = await PaymentsCalculator.BuildAsync(_context, student.Id, cancellationToken);
-        return new ChildPaymentsDto(view.Balance, view.Payments, view.PaymentPlan, view.Fees, view.Schedule, view.DiscountAmount, view.InterestAmount);
+        // Same shared composition as GetMyPaymentsQuery — the two response twins expose
+        // identical schoolYear/otherYears semantics and cannot drift.
+        var result = await PaymentsCalculator.BuildStudentViewAsync(_context, student.Id, request.SchoolYear, cancellationToken);
+        return new ChildPaymentsDto(result.View.Balance, result.View.Payments, result.View.PaymentPlan,
+            result.View.Fees, result.View.Schedule, result.View.DiscountAmount, result.View.InterestAmount,
+            result.SchoolYear, result.OtherYears);
     }
 }

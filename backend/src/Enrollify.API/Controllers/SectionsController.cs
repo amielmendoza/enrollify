@@ -48,11 +48,7 @@ public class SectionsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var context = HttpContext.RequestServices.GetRequiredService<Enrollify.Application.Common.Interfaces.IApplicationDbContext>();
-        var section = await context.Sections.FindAsync(id);
-        if (section == null) return NotFound();
-        context.Sections.Remove(section);
-        await context.SaveChangesAsync();
+        await _sender.Send(new DeleteSectionCommand(id));
         return NoContent();
     }
 }

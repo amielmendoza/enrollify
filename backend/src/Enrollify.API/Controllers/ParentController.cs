@@ -89,16 +89,16 @@ public class ParentController : ControllerBase
     }
 
     [HttpGet("children/{studentId:guid}/payments")]
-    public async Task<IActionResult> GetChildPayments(Guid studentId)
+    public async Task<IActionResult> GetChildPayments(Guid studentId, [FromQuery] string? schoolYear)
     {
-        var result = await _sender.Send(new GetChildPaymentsQuery(studentId, CurrentUserId()));
+        var result = await _sender.Send(new GetChildPaymentsQuery(studentId, CurrentUserId(), schoolYear));
         return Ok(result);
     }
 
     [HttpGet("children/{studentId:guid}/ledger")]
-    public async Task<IActionResult> GetChildLedger(Guid studentId)
+    public async Task<IActionResult> GetChildLedger(Guid studentId, [FromQuery] string? schoolYear)
     {
-        var result = await _sender.Send(new GetChildLedgerQuery(studentId, CurrentUserId()));
+        var result = await _sender.Send(new GetChildLedgerQuery(studentId, CurrentUserId(), schoolYear));
         return Ok(result);
     }
 

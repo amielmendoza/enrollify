@@ -95,6 +95,14 @@ public class EnrollmentsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
+    [HttpPost("bulk-reenroll")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> BulkReenroll([FromBody] BulkReenrollRequest request)
+    {
+        var result = await _sender.Send(new BulkReenrollCommand(request.FromSchoolYear, request.ToSchoolYear));
+        return Ok(result);
+    }
+
     [HttpPost("{id:guid}/move-step")]
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> MoveStep(Guid id, [FromBody] MoveEnrollmentStepRequest request)
@@ -135,10 +143,10 @@ public class EnrollmentsController : ControllerBase
 
     [HttpGet("me/ledger")]
     [Authorize(Roles = "Student")]
-    public async Task<IActionResult> GetMyLedger()
+    public async Task<IActionResult> GetMyLedger([FromQuery] string? schoolYear)
     {
         var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-        var result = await _sender.Send(new GetMyLedgerQuery(userId));
+        var result = await _sender.Send(new GetMyLedgerQuery(userId, schoolYear));
         return Ok(result);
     }
 

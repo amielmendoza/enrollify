@@ -20,11 +20,12 @@ public static class StudentNumbering
         // Only LRNs in the auto-generated shape (exactly 12 chars) can affect the sequence,
         // so instead of loading every LRN we scan from the string-max of that shape downward:
         // for equal-length digit strings lexicographic order equals numeric order, making the
-        // first PARSEABLE value the numeric max (12-char manual alphabetic LRNs sort above
-        // the digits and get skipped). Deliberately avoids SQL-Server-only LIKE [0-9] ranges —
-        // this must run on any provider, including InMemory in tests.
+        // first PARSEABLE value the numeric max. The upper bound excludes 12-char manual
+        // alphabetic LRNs (which sort above all digits) so a pile of letter-prefixed values
+        // can never starve the scan window. Deliberately avoids SQL-Server-only LIKE [0-9]
+        // ranges — this must run on any provider, including InMemory in tests.
         var topOfShape = await context.Students
-            .Where(s => s.LRN.Length == Digits)
+            .Where(s => s.LRN.Length == Digits && s.LRN.CompareTo("999999999999") <= 0)
             .OrderByDescending(s => s.LRN)
             .Select(s => s.LRN)
             .Take(50)

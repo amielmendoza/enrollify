@@ -38,6 +38,12 @@ public class AssignSectionCommandHandler : IRequestHandler<AssignSectionCommand,
             .FirstOrDefaultAsync(s => s.Id == request.SectionId, cancellationToken)
             ?? throw new KeyNotFoundException("Section not found.");
 
+        // The UI narrows the section dropdown by year/grade, but the raw API must not
+        // allow a mismatched assignment (e.g. a Grade 8 student into a Grade 7 section).
+        if (section.SchoolYear != enrollment.SchoolYear || section.GradeLevel != enrollment.GradeLevel)
+            throw new InvalidOperationException(
+                $"Section '{section.Name}' is for {section.GradeLevel}, {section.SchoolYear} and cannot be assigned to an enrollment for {enrollment.GradeLevel}, {enrollment.SchoolYear}.");
+
         if (section.IsFull)
             throw new InvalidOperationException($"Section '{section.Name}' is already at full capacity ({section.Capacity}).");
 

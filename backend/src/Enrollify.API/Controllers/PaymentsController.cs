@@ -58,10 +58,10 @@ public class PaymentsController : ControllerBase
 
     [HttpGet("my")]
     [Authorize(Roles = "Student")]
-    public async Task<IActionResult> GetMyPayments()
+    public async Task<IActionResult> GetMyPayments([FromQuery] string? schoolYear)
     {
         var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-        var result = await _sender.Send(new GetMyPaymentsQuery(userId));
+        var result = await _sender.Send(new GetMyPaymentsQuery(userId, schoolYear));
         return Ok(result);
     }
 

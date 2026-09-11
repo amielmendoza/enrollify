@@ -330,6 +330,9 @@ export interface ParentChild {
   schoolYear: string | null;
   status: string | null;
   source: 'Application' | 'Student';
+  // False when the child's latest enrollment is for a past school year —
+  // the dashboard then offers re-enrollment instead of showing a stale status as current.
+  hasActiveYearEnrollment: boolean;
 }
 
 export interface ApplicationListDto {
@@ -412,6 +415,10 @@ export interface MyPaymentsResponse {
   schedule: Installment[];
   discountAmount: number | null;
   interestAmount: number | null;
+  // The school year this response describes (endpoints accept ?schoolYear= to view past years).
+  schoolYear: string;
+  // Other years with activity, so the UI can flag outstanding balances from prior years.
+  otherYears: { schoolYear: string; balance: number }[];
 }
 
 export interface PaymentTerm {
@@ -498,6 +505,7 @@ export interface CollectionsReport {
 }
 
 export interface DashboardStats {
+  schoolYear: string;
   totalStudents: number;
   totalEnrollments: number;
   pendingApplications: number;

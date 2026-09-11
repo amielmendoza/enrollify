@@ -17,7 +17,8 @@ public record ParentChildDto(
     string? GradeLevel,
     string? SchoolYear,
     string? Status,
-    string Source); // "Application" (still pending) or "Student" (admitted)
+    string Source, // "Application" (still pending) or "Student" (admitted)
+    bool HasActiveYearEnrollment = false);
 
 public class GetMyChildrenQueryHandler : IRequestHandler<GetMyChildrenQuery, List<ParentChildDto>>
 {
@@ -42,11 +43,26 @@ public class GetMyChildrenQueryHandler : IRequestHandler<GetMyChildrenQuery, Lis
             .Where(a => a.ParentUserId == request.ParentUserId && a.StudentId == null)
             .ToListAsync(cancellationToken);
 
+        var activeYear = await _context.SchoolYears
+            .Where(sy => sy.IsActive)
+            .Select(sy => sy.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var children = new List<ParentChildDto>();
 
         foreach (var s in students)
         {
-            var latest = enrollmentsByStudent
+            // Prefer the ACTIVE school year's enrollment (so after rollover the card shows the
+            // current year's status, e.g. a Draft awaiting requirements) and fall back to the
+            // latest enrollment overall for students not yet re-enrolled.
+            var activeYearEnrollment = activeYear == null
+                ? null
+                : enrollmentsByStudent
+                    .Where(e => e.StudentId == s.Id && e.SchoolYear == activeYear && e.Status != EnrollmentStatus.Cancelled)
+                    .OrderByDescending(e => e.CreatedAt)
+                    .FirstOrDefault();
+
+            var shown = activeYearEnrollment ?? enrollmentsByStudent
                 .Where(e => e.StudentId == s.Id)
                 .OrderByDescending(e => e.CreatedAt)
                 .FirstOrDefault();
@@ -58,10 +74,11 @@ public class GetMyChildrenQueryHandler : IRequestHandler<GetMyChildrenQuery, Lis
                 MiddleName: s.MiddleName,
                 LastName: s.LastName,
                 FullName: s.FullName,
-                GradeLevel: latest?.GradeLevel,
-                SchoolYear: latest?.SchoolYear,
-                Status: latest?.Status.ToString() ?? "Admitted",
-                Source: "Student"));
+                GradeLevel: shown?.GradeLevel,
+                SchoolYear: shown?.SchoolYear,
+                Status: shown?.Status.ToString() ?? "Admitted",
+                Source: "Student",
+                HasActiveYearEnrollment: activeYearEnrollment != null));
         }
 
         foreach (var a in pendingApps)

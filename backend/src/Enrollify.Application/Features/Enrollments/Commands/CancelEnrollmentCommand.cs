@@ -31,12 +31,19 @@ public class CancelEnrollmentCommandHandler : IRequestHandler<CancelEnrollmentCo
         enrollment.Status = EnrollmentStatus.Cancelled;
         enrollment.Remarks = request.Reason;
 
+        // Free the seat explicitly so cancelled students never count against section capacity.
+        // The section name is preserved in the history remark for the record.
+        var freedSectionName = enrollment.Section?.Name;
+        enrollment.SectionId = null;
+        enrollment.Section = null;
+
         _context.EnrollmentStatusHistories.Add(new EnrollmentStatusHistory
         {
             EnrollmentId = enrollment.Id,
             FromStatus = previousStatus,
             ToStatus = EnrollmentStatus.Cancelled,
             Remarks = $"Cancelled by {request.CancelledBy}: {request.Reason ?? "no reason given"}"
+                + (freedSectionName != null ? $" (seat freed in section '{freedSectionName}')" : "")
         });
 
         await _context.SaveChangesAsync(cancellationToken);

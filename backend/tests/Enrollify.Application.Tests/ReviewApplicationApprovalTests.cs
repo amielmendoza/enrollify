@@ -63,20 +63,6 @@ public class ReviewApplicationApprovalTests
         Assert.Contains("approved", sent.Subject);
     }
 
-    /// <summary>Throws on demand at SaveChangesAsync — simulates a save failing AFTER all in-memory work.</summary>
-    private class FailingSaveContext : ApplicationDbContext
-    {
-        public bool Fail { get; set; }
-
-        public FailingSaveContext(DbContextOptions<ApplicationDbContext> options, ITenantProvider tenantProvider)
-            : base(options, tenantProvider) { }
-
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => Fail
-                ? throw new InvalidOperationException("Simulated save failure.")
-                : base.SaveChangesAsync(cancellationToken);
-    }
-
     [Fact]
     public async Task FailedApproval_LeavesApplicationSubmitted_WithNoOrphanUserOrStudent()
     {

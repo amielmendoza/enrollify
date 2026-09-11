@@ -16,11 +16,22 @@ if (builder.Environment.IsProduction())
         throw new InvalidOperationException(
             "Jwt:Key is missing or still set to the committed development value. " +
             "Configure a strong, secret signing key for Production (e.g. via the Jwt__Key environment variable).");
+
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection is missing or still points at localhost. " +
+            "Configure the production database (e.g. via the ConnectionStrings__DefaultConnection environment variable).");
 }
 
 // Add services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Liveness/readiness for load balancers and deploy scripts: /health goes green only when
+// the database answers. Anonymous; TenantMiddleware exempts the path.
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -90,6 +101,8 @@ app.UseAuthorization();
 app.UseMiddleware<TenantMiddleware>();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health");
 
 // Seed data
 using (var scope = app.Services.CreateScope())

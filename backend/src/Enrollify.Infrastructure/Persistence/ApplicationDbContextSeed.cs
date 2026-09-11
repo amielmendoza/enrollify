@@ -1,3 +1,4 @@
+using Enrollify.Application.Common;
 using Enrollify.Application.Features.ApplicationFormFields;
 using Enrollify.Application.Features.Workflows;
 using Enrollify.Domain.Entities;
@@ -16,16 +17,8 @@ public static class ApplicationDbContextSeed
         Guid.Parse("b2c3d4e5-f6a7-8901-cdef-234567890123"), // Quezon City Science High School (qcshs)
     };
 
-    // Must exactly match the frontend's canonical list in enrollify.client/src/app/core/constants.ts
-    // (grade levels are free-text strings on the backend, so every surface must agree on spelling).
-    // Local copy: Application/Common/GradeLevels.cs did not exist when this was written — switch to
-    // the shared helper once it lands.
-    private static readonly string[] GradeLevels =
-    {
-        "Kindergarten",
-        "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6",
-        "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12",
-    };
+    // Grade levels come from the shared canonical list (Enrollify.Application.Common.GradeLevels.All),
+    // which is kept in sync with the frontend's GRADE_LEVELS in enrollify.client/src/app/core/constants.ts.
 
     // Standard demo fee structure applied to every grade level x school year of the demo tenants.
     private static readonly (string Name, string Description, decimal Amount)[] StandardDemoFees =
@@ -169,7 +162,7 @@ public static class ApplicationDbContextSeed
         // zero-fee assessment guard for everyone else).
         foreach (var syName in new[] { "2024-2025", "2025-2026" })
         {
-            foreach (var grade in GradeLevels)
+            foreach (var grade in GradeLevels.All)
             {
                 foreach (var (name, description, amount) in StandardDemoFees)
                 {
@@ -573,7 +566,7 @@ public static class ApplicationDbContextSeed
 
             foreach (var syName in schoolYearNames)
             {
-                foreach (var grade in GradeLevels)
+                foreach (var grade in GradeLevels.All)
                 {
                     foreach (var (name, description, amount) in StandardDemoFees)
                     {

@@ -18,7 +18,12 @@ type SelectedInstallment = Installment | null;
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
         Back to my children
       </a>
-      <h1 class="text-2xl font-bold text-gray-900">Payments</h1>
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">Payments</h1>
+        @if (viewSchoolYear()) {
+          <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 folio-mono">S.Y. {{ viewSchoolYear() }}</span>
+        }
+      </div>
       <p class="mt-1 text-sm text-gray-500">View balance, payment plan, and make payments for this child</p>
 
       @if (balance()) {
@@ -60,6 +65,18 @@ type SelectedInstallment = Installment | null;
               </div>
             </div>
           </div>
+        </div>
+      }
+
+      @if (viewingYear()) {
+        <div class="mt-6">
+          <button (click)="backToCurrentYear()" class="text-sm font-medium text-[#0038A8] hover:underline">&larr; Back to current year</button>
+        </div>
+      }
+      @for (oy of outstandingOtherYears(); track oy.schoolYear) {
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          <span>Outstanding from {{ oy.schoolYear }}: <span class="font-semibold folio-mono">₱{{ oy.balance | number:'1.2-2' }}</span></span>
+          <button (click)="viewYear(oy.schoolYear)" class="rounded-lg border border-amber-400 px-3 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100">View</button>
         </div>
       }
 
@@ -530,6 +547,12 @@ export class ChildPaymentsComponent implements OnInit {
   adjustmentEntries = computed(() => (this.ledger()?.entries ?? []).filter(en => en.type === 'Adjustment' && !en.voided));
   // What the schedule actually schedules — the account-wide total lives in Fees & Charges.
   planTotal = computed(() => this.schedule().reduce((sum, i) => sum + i.amount, 0));
+  // Multi-year accounts: the year on display (from the response), prior years with
+  // activity, and which past year (if any) the user chose to view.
+  viewSchoolYear = signal('');
+  otherYears = signal<{ schoolYear: string; balance: number }[]>([]);
+  viewingYear = signal<string | null>(null);
+  outstandingOtherYears = computed(() => this.otherYears().filter(y => y.balance > 0));
   // Nothing left to pay and nothing awaiting review.
   settled = computed(() => (this.balance()?.balance ?? 0) <= 0 && !this.hasPendingPayment());
   // All schedule rows paid (or no schedule) yet a balance remains — e.g. a post-assessment
@@ -590,12 +613,13 @@ export class ChildPaymentsComponent implements OnInit {
   }
 
   load() {
+    const year = this.viewingYear() ?? undefined;
     // Read-only ledger; errors just leave the empty state.
-    this.api.getChildLedger(this.studentId).subscribe({
+    this.api.getChildLedger(this.studentId, year).subscribe({
       next: l => this.ledger.set(l),
       error: () => this.ledger.set(null)
     });
-    this.api.getChildPaymentsAndBalance(this.studentId).subscribe({
+    this.api.getChildPaymentsAndBalance(this.studentId, year).subscribe({
       next: (res) => {
         this.balance.set(res.balance);
         this.payments.set(res.payments);
@@ -604,6 +628,8 @@ export class ChildPaymentsComponent implements OnInit {
         this.schedule.set(res.schedule);
         this.discountAmount.set(res.discountAmount);
         this.interestAmount.set(res.interestAmount);
+        this.viewSchoolYear.set(res.schoolYear);
+        this.otherYears.set(res.otherYears ?? []);
         // Auto-select next unpaid installment only if no pending payments
         const hasPending = res.payments.some(p => p.status === 'Pending');
         const next = res.schedule.find(i => !i.isPaid);
@@ -620,6 +646,16 @@ export class ChildPaymentsComponent implements OnInit {
         this.balance.set({ totalFees: 0, totalPaid: 0, balance: 0 });
       }
     });
+  }
+
+  viewYear(year: string) {
+    this.viewingYear.set(year);
+    this.load();
+  }
+
+  backToCurrentYear() {
+    this.viewingYear.set(null);
+    this.load();
   }
 
   selectInstallment(inst: Installment) {

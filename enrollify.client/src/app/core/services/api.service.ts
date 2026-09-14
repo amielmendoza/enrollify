@@ -70,6 +70,12 @@ export class ApiService {
     return this.http.post<Enrollment>(`${this.baseUrl}/enrollments/${id}/cancel`, { reason });
   }
 
+  // Return an Assessed/Approved enrollment to Submitted for re-assessment
+  // (the fee snapshot is replaced on the next "Mark as Assessed").
+  sendBackEnrollment(id: string, reason: string): Observable<Enrollment> {
+    return this.http.post<Enrollment>(`${this.baseUrl}/enrollments/${id}/send-back`, { reason });
+  }
+
   assignSection(enrollmentId: string, sectionId: string): Observable<Enrollment> {
     return this.http.post<Enrollment>(`${this.baseUrl}/enrollments/${enrollmentId}/assign-section`, { sectionId });
   }
@@ -265,6 +271,12 @@ export class ApiService {
 
   reviewPayment(paymentId: string, isApproved: boolean, notes?: string): Observable<Payment> {
     return this.http.post<Payment>(`${this.baseUrl}/payments/${paymentId}/review`, { isApproved, notes });
+  }
+
+  // Void an Approved payment (Admin/Registrar). If this drops the enrollment below its
+  // payment threshold while at Paid, the server rolls it back to Approved.
+  voidPayment(paymentId: string, reason: string): Observable<Payment> {
+    return this.http.post<Payment>(`${this.baseUrl}/payments/${paymentId}/void`, { reason });
   }
 
   // Parent self-service for a specific child

@@ -1,5 +1,6 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Enrollments;
+using Enrollify.Application.Features.Payments.Queries;
 using Enrollify.Domain.Entities;
 using Enrollify.Domain.Enums;
 using MediatR;
@@ -45,6 +46,42 @@ public class CancelEnrollmentCommandHandler : IRequestHandler<CancelEnrollmentCo
             Remarks = $"Cancelled by {request.CancelledBy}: {request.Reason ?? "no reason given"}"
                 + (freedSectionName != null ? $" (seat freed in section '{freedSectionName}')" : "")
         });
+
+        // Close the books: a cancelled enrollment should end up owing exactly zero, so any
+        // outstanding balance is waived with an auto-posted Credit adjustment. The balance
+        // composition mirrors GetBalanceQuery/LedgerCalculator exactly — effective total
+        // (plan discount/interest via PaymentsCalculator.EffectiveTotal) plus the non-voided
+        // adjustment net, minus approved payments — so the ledger bottoms out at what was
+        // actually paid. Pre-assessment enrollments have no charges yet, hence nothing to waive.
+        if (enrollment.AssessedTotal != null)
+        {
+            var term = enrollment.PaymentPlan != null
+                ? await _context.PaymentTerms.FirstOrDefaultAsync(
+                    t => t.SchoolYear == enrollment.SchoolYear && t.PlanType == enrollment.PaymentPlan && t.IsActive, cancellationToken)
+                : null;
+            var effectiveTotal = PaymentsCalculator.EffectiveTotal(enrollment.PaymentPlan, enrollment.AssessedTotal.Value, term);
+
+            var adjustmentNet = await _context.LedgerAdjustments
+                .Where(a => a.EnrollmentId == enrollment.Id && !a.IsVoided)
+                .SumAsync(a => a.Type == "Debit" ? a.Amount : -a.Amount, cancellationToken);
+
+            var totalPaid = await _context.Payments
+                .Where(p => p.EnrollmentId == enrollment.Id && p.Status == "Approved")
+                .SumAsync(p => p.Amount, cancellationToken);
+
+            var outstanding = effectiveTotal + adjustmentNet - totalPaid;
+            if (outstanding > 0)
+            {
+                _context.LedgerAdjustments.Add(new LedgerAdjustment
+                {
+                    EnrollmentId = enrollment.Id,
+                    Type = "Credit",
+                    Description = "Cancelled — remaining charges waived",
+                    Amount = outstanding,
+                    PostedBy = request.CancelledBy
+                });
+            }
+        }
 
         await _context.SaveChangesAsync(cancellationToken);
 

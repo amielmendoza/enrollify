@@ -2,6 +2,7 @@ using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Payments;
 using Enrollify.Application.Features.Enrollments;
 using Enrollify.Domain.Entities;
+using Enrollify.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,6 +37,11 @@ public class ParentPaymentCommandHandler : IRequestHandler<ParentPaymentCommand,
                 _context.Enrollments.Where(e => e.StudentId == student.Id), cancellationToken)
             ?? throw new KeyNotFoundException("No enrollment found.");
 
+        // EnrollmentSelector never picks a cancelled enrollment, but the guard stays here as
+        // server-side defense in depth: a cancelled enrollment's books are closed.
+        if (enrollment.Status == EnrollmentStatus.Cancelled)
+            throw new InvalidOperationException("This enrollment is cancelled — payments can no longer be made against it.");
+
         if (request.Amount <= 0)
             throw new InvalidOperationException("Payment amount must be greater than zero.");
 
@@ -56,6 +62,7 @@ public class ParentPaymentCommandHandler : IRequestHandler<ParentPaymentCommand,
         return new PaymentDto(payment.Id, payment.EnrollmentId, payment.Amount,
             payment.PaymentMethod, payment.ReferenceNumber, payment.Remarks, payment.PaymentDate,
             payment.Status, payment.ReviewedBy, payment.ReviewedAt, payment.ReviewNotes,
-            payment.ReceiptFileName, payment.ReceiptFileUrl);
+            payment.ReceiptFileName, payment.ReceiptFileUrl,
+            payment.VoidedBy, payment.VoidedAt, payment.VoidReason);
     }
 }

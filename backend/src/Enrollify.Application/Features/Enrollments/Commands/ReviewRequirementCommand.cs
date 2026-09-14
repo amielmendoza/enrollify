@@ -34,8 +34,13 @@ public class ReviewRequirementCommandHandler : IRequestHandler<ReviewRequirement
             requirement.IsSubmitted = false;
 
             // A rejected document must be re-uploaded, but the parent/student UI only allows
-            // uploads while the enrollment is in Draft — so roll a Submitted enrollment back.
-            if (requirement.Enrollment.Status == EnrollmentStatus.Submitted)
+            // uploads while the enrollment is in Draft — so any pre-payment status (Submitted,
+            // Assessed, Approved) returns to Draft. The fee snapshot survives and is replaced
+            // wholesale on the next Submitted→Assessed step; approved payments keep counting.
+            // At Paid/Enrolled/Cancelled the requirement is marked rejected for staff follow-up
+            // but the enrollment's status is left alone.
+            var status = requirement.Enrollment.Status;
+            if (status == EnrollmentStatus.Submitted)
             {
                 requirement.Enrollment.Status = EnrollmentStatus.Draft;
                 _context.EnrollmentStatusHistories.Add(new EnrollmentStatusHistory
@@ -44,6 +49,17 @@ public class ReviewRequirementCommandHandler : IRequestHandler<ReviewRequirement
                     FromStatus = EnrollmentStatus.Submitted,
                     ToStatus = EnrollmentStatus.Draft,
                     Remarks = $"Requirement '{requirement.DocumentName}' rejected: {request.Notes ?? "no reason given"}"
+                });
+            }
+            else if (status == EnrollmentStatus.Assessed || status == EnrollmentStatus.Approved)
+            {
+                requirement.Enrollment.Status = EnrollmentStatus.Draft;
+                _context.EnrollmentStatusHistories.Add(new EnrollmentStatusHistory
+                {
+                    EnrollmentId = requirement.EnrollmentId,
+                    FromStatus = status,
+                    ToStatus = EnrollmentStatus.Draft,
+                    Remarks = $"Requirement '{requirement.DocumentName}' rejected — returned to Draft for re-upload: {request.Notes ?? "no reason given"}"
                 });
             }
         }

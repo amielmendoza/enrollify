@@ -69,7 +69,10 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
           }
           @if (getStatusName() === 'Assessed') {
             <div class="mt-4 p-3 bg-yellow-50 rounded-lg text-sm text-yellow-700">Requirements have been assessed. Approve the enrollment to proceed.</div>
-            <div class="mt-3"><button (click)="moveStep()" class="btn btn-primary">Approve Enrollment</button></div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button (click)="moveStep()" class="btn btn-primary">Approve Enrollment</button>
+              <button (click)="sendBack()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Send back for re-assessment</button>
+            </div>
           }
           @if (getStatusName() === 'Approved') {
             <div class="mt-4 p-3 bg-purple-50 rounded-lg text-sm text-purple-700">
@@ -84,10 +87,11 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
             @if (stepError()) {
               <div class="mt-2 p-3 bg-red-50 rounded-lg text-sm text-red-700">{{ stepError() }}</div>
             }
-            <div class="mt-3">
+            <div class="mt-3 flex flex-wrap gap-2">
               <button (click)="moveStep()" [disabled]="hasPendingPayments() || !hasApprovedPayments()" class="btn btn-primary disabled:opacity-50">
                 Mark as Paid
               </button>
+              <button (click)="sendBack()" class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Send back for re-assessment</button>
             </div>
           }
           @if (getStatusName() === 'Paid') {
@@ -276,16 +280,18 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
             <div class="mt-4 space-y-3">
               <h4 class="text-sm font-medium text-gray-900">Payment Records</h4>
               @for (p of payments(); track p.id) {
-                <div class="border rounded-lg p-4" [class]="p.status === 'Pending' ? 'border-yellow-300 bg-yellow-50/50' : p.status === 'Approved' ? 'border-emerald-200 bg-emerald-50/30' : 'border-red-200 bg-red-50/30'">
+                <div class="border rounded-lg p-4" [class]="p.status === 'Pending' ? 'border-yellow-300 bg-yellow-50/50' : p.status === 'Approved' ? 'border-emerald-200 bg-emerald-50/30' : p.status === 'Voided' ? 'border-gray-200 bg-gray-50/60 opacity-70' : 'border-red-200 bg-red-50/30'">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <div class="flex items-center gap-3 mb-2">
-                        <span class="text-sm font-semibold text-gray-900">\u20B1{{ p.amount | number:'1.2-2' }}</span>
+                        <span class="text-sm font-semibold text-gray-900" [class.line-through]="p.status === 'Voided'">\u20B1{{ p.amount | number:'1.2-2' }}</span>
                         <span class="text-sm text-gray-500">via {{ p.paymentMethod }}</span>
                         @if (p.status === 'Pending') {
                           <span class="badge badge-warning">Pending Review</span>
                         } @else if (p.status === 'Approved') {
                           <span class="badge badge-success">Approved</span>
+                        } @else if (p.status === 'Voided') {
+                          <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Voided</span>
                         } @else {
                           <span class="badge badge-danger">Rejected</span>
                         }
@@ -299,6 +305,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
                         @if (p.remarks) { <span>{{ p.remarks }}</span> }
                         @if (p.reviewedBy) { <span>Reviewed by: {{ p.reviewedBy }}</span> }
                         @if (p.reviewNotes) { <span>Note: {{ p.reviewNotes }}</span> }
+                        @if (p.voidedBy) { <span class="text-gray-600">Voided by {{ p.voidedBy }}{{ p.voidReason ? ': ' + p.voidReason : '' }}</span> }
                       </div>
                     </div>
                     @if (p.status === 'Pending') {
@@ -317,6 +324,10 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
                         <button (click)="openPrintDoc('receipt', p.id)"
                                 class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
                           Receipt
+                        </button>
+                        <button (click)="voidPayment(p.id)"
+                                class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors">
+                          Void
                         </button>
                       </div>
                     }
@@ -631,7 +642,15 @@ export class EnrollmentDetailComponent implements OnInit {
   }
 
   async cancelEnrollment(): Promise<void> {
-    const reason = await this.notify.prompt('Cancel this enrollment? Enter a reason:',
+    // Cancelling waives remaining charges server-side, but money already taken in
+    // stays unless payments are voided — say so when approved payments exist.
+    const approvedSum = this.payments()
+      .filter(p => p.status === 'Approved')
+      .reduce((sum, p) => sum + p.amount, 0);
+    const message = approvedSum > 0
+      ? `This enrollment has ₱${approvedSum.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in approved payments. Remaining charges will be waived on the ledger; void payments separately if money is being returned.\n\nCancel this enrollment? Enter a reason:`
+      : 'Cancel this enrollment? Enter a reason:';
+    const reason = await this.notify.prompt(message,
       { title: 'Cancel Enrollment', confirmLabel: 'Cancel Enrollment', cancelLabel: 'Keep Enrollment', danger: true });
     if (reason === null) return;
     this.stepError.set('');
@@ -671,6 +690,36 @@ export class EnrollmentDetailComponent implements OnInit {
       { title: 'Reject Payment', confirmLabel: 'Reject', danger: true });
     if (reason === null) return;
     this.api.reviewPayment(paymentId, false, reason || 'Payment rejected').subscribe(() => this.loadAll());
+  }
+
+  // Void an Approved payment. The server may roll a Paid enrollment back to Approved
+  // when the void drops it below the plan threshold — loadAll() picks that up.
+  async voidPayment(paymentId: string): Promise<void> {
+    const reason = await this.notify.prompt('Reason for voiding this payment:',
+      { title: 'Void Payment', confirmLabel: 'Void', danger: true, required: true });
+    if (reason === null) return;
+    this.api.voidPayment(paymentId, reason).subscribe({
+      next: () => {
+        this.notify.success('Payment voided.');
+        this.loadAll();
+      },
+      error: (err) => this.notify.error(err.error?.error || 'Failed to void payment.')
+    });
+  }
+
+  // Return an Assessed/Approved enrollment to Submitted for re-assessment.
+  async sendBack(): Promise<void> {
+    const reason = await this.notify.prompt(
+      'Returns this enrollment to Submitted. Re-assessing will replace the fee snapshot.\n\nReason for sending back:',
+      { title: 'Send Back for Re-assessment', confirmLabel: 'Send Back', required: true });
+    if (reason === null) return;
+    this.api.sendBackEnrollment(this.enrollmentId, reason).subscribe({
+      next: () => {
+        this.notify.success('Enrollment returned to Submitted for re-assessment.');
+        this.loadAll();
+      },
+      error: (err) => this.notify.error(err.error?.error || 'Failed to send back enrollment.')
+    });
   }
 
   recordPayment(): void {

@@ -1,5 +1,47 @@
 # MVP Backlog
 
+## Batch C — Money corrections (delivered 2026-09-14, team-lead APPROVED after one fix)
+
+Closes probe theme T2 — every money mistake is now correctable and the books never lie:
+- Void payment: `VoidPaymentCommand` + `POST api/payments/{id}/void` [Admin,Registrar], reason
+  required; only Approved payments voidable (Pending → reject via review). Sets Status="Voided" +
+  VoidedBy/VoidedAt/VoidReason (new Payment columns, migration `AddPaymentVoidFields`). Voided money
+  drops out of every sum automatically (all seven payment aggregations already filtered
+  Status=="Approved" — swept and verified): collections journal + CSV, TotalRevenue, balances, gates.
+  Ledger lists voided payments struck-through (generic voided handling, like adjustments), excluded
+  from running balance and SOA. If the void breaks `PaymentGate.MinimumRequired` while the enrollment
+  is Paid, it rolls back to Approved with a history row — same single SaveChanges; Enrolled is never
+  regressed (balance surfaces the debt instead).
+- Cancel closes the books: `CancelEnrollmentCommand` auto-posts a Credit adjustment
+  "Cancelled — remaining charges waived" for the outstanding balance (EffectiveTotal + non-voided
+  adjustments − Approved payments) when assessed and positive — a cancelled ledger provably bottoms
+  out at exactly what was paid. Review caught the ordering seam: voiding a payment AFTER cancellation
+  reopened a closed book that the new guards then forbade healing — fixed: void on a cancelled
+  enrollment auto-posts a compensating credit ("Waiver adjusted — payment voided after cancellation")
+  in the same save, so a cancelled account always owes zero.
+- Guards: staff CreatePayment rejects < Assessed and Cancelled; parent/student payment commands
+  reject Cancelled (defense-in-depth behind EnrollmentSelector); PostLedgerAdjustment rejects
+  Cancelled ("books are closed").
+- Send back for re-assessment: `SendBackEnrollmentCommand` + `POST api/enrollments/{id}/send-back`
+  [Admin,Registrar] — Assessed/Approved → Submitted with reason + history row; snapshot deliberately
+  kept (move-step's Submitted→Assessed block RemoveRanges + re-snapshots — proven end-to-end in a
+  test); approved payments survive and recount.
+- Requirement-rejection recovery: reject at Assessed/Approved now also returns the enrollment to
+  Draft for re-upload (was Submitted-only); Paid/Enrolled/Cancelled just mark the requirement
+  rejected. Both upload commands verified guard-free on status, so re-upload in Draft works.
+- UI: Void button (danger, required-reason prompt) on Approved payment rows in enrollment-detail;
+  voided rows dimmed/struck with "Voided by {x}: {reason}"; "Send back for re-assessment" in the
+  Assessed and Approved progress states; cancel dialog warns of the approved-payment sum + waiver and
+  points to void for actual refunds; payments twins render Voided read-only (still byte-identical).
+  Tests 121 → 148; backend build 0/0; frontend production build clean.
+
+Follow-ups (non-blocking, from review):
+- [ ] `VoidLedgerAdjustmentCommand` has no Cancelled guard — staff could void the compensating
+  waiver credit itself and re-create an unhealable imbalance (deliberate act on a clearly-labeled
+  row, so low risk). One-line guard: refuse voiding adjustments on cancelled enrollments.
+- [ ] Paid→Approved rollback history remark embeds "₱" — first currency symbol in history remarks;
+  cosmetic consistency question only.
+
 ## Batches A+B — Deploy unblock + Year-2 pack (delivered 2026-09-11, team-lead APPROVED after one fix)
 
 Closes probe themes T3 (deployability) and most of T1 (year lifecycle):
@@ -19,8 +61,8 @@ Closes probe themes T3 (deployability) and most of T1 (year lifecycle):
   Review caught the ChildPaymentsDto contract break (parent twin would have shipped inert) — fixed
   via the shared helper. Tests 94 → 121; both frontend build configs verified.
 
-Still open from the probe: T2 (money corrections: void payment, cancel/refund semantics,
-requirement-rejection-after-assessment recovery), T4 (password self-service, forced first-login
+Still open from the probe: ~~T2 (money corrections)~~ delivered 2026-09-14 as Batch C (above),
+T4 (password self-service, forced first-login
 change, staff change-password, refresh tokens, duplicate-student dedup, createStudentAccount UI,
 student deactivate), T5 (error/loading/mobile sweep, enrollment register export, section roster,
 entity cross-links, collections deep-link params), plus T1 leftovers (arrears carryover entity,

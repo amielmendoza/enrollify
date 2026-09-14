@@ -69,6 +69,9 @@ public record MoveEnrollmentStepRequest(
 public record CancelEnrollmentRequest(
     string? Reason);
 
+public record SendBackEnrollmentRequest(
+    string Reason);
+
 public record AssignSectionRequest(
     Guid SectionId);
 

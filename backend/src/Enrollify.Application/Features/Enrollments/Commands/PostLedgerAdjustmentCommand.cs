@@ -1,6 +1,7 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Enrollments;
 using Enrollify.Domain.Entities;
+using Enrollify.Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,9 @@ public class PostLedgerAdjustmentCommandHandler : IRequestHandler<PostLedgerAdju
         var enrollment = await _context.Enrollments
             .FirstOrDefaultAsync(e => e.Id == request.EnrollmentId, cancellationToken)
             ?? throw new KeyNotFoundException("Enrollment not found.");
+
+        if (enrollment.Status == EnrollmentStatus.Cancelled)
+            throw new InvalidOperationException("This enrollment is cancelled; its books are closed.");
 
         // The ledger opens at assessment — there is nothing to adjust before charges exist.
         if (enrollment.AssessedTotal == null)

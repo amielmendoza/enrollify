@@ -14,8 +14,14 @@ public class Payment : TenantEntity
     public string? ReceiptFileName { get; set; }
     public string? ReceiptFileUrl { get; set; }
     public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
-    public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
+    public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Voided
     public string? ReviewedBy { get; set; }
     public DateTime? ReviewedAt { get; set; }
     public string? ReviewNotes { get; set; }
+
+    // Void audit trail (set when Status becomes "Voided"; a voided payment is kept
+    // for the record, never deleted).
+    public string? VoidedBy { get; set; }
+    public DateTime? VoidedAt { get; set; }
+    public string? VoidReason { get; set; }
 }

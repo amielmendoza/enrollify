@@ -401,7 +401,7 @@ type SelectedInstallment = Installment | null;
             </thead>
             <tbody class="divide-y divide-gray-100">
               @for (p of payments(); track p.id) {
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-gray-50" [class.opacity-60]="p.status === 'Voided'">
                   <td class="px-6 py-4 text-sm">{{ p.paymentDate | date:'mediumDate' }}</td>
                   <td class="px-6 py-4 text-sm">
                     <span class="inline-flex items-center gap-1.5">
@@ -413,12 +413,14 @@ type SelectedInstallment = Installment | null;
                     </span>
                   </td>
                   <td class="px-6 py-4 text-sm folio-mono text-gray-500">{{ p.referenceNumber || '-' }}</td>
-                  <td class="px-6 py-4 text-sm text-right font-semibold">\u20B1{{ p.amount | number:'1.2-2' }}</td>
+                  <td class="px-6 py-4 text-sm text-right font-semibold" [class.line-through]="p.status === 'Voided'">\u20B1{{ p.amount | number:'1.2-2' }}</td>
                   <td class="px-6 py-4 text-center">
                     @if (p.status === 'Pending') {
                       <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700">Pending Review</span>
                     } @else if (p.status === 'Approved') {
                       <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">Approved</span>
+                    } @else if (p.status === 'Voided') {
+                      <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">Voided</span>
                     } @else {
                       <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">Rejected</span>
                     }

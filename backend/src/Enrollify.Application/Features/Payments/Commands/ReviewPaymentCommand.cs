@@ -49,7 +49,8 @@ public class ReviewPaymentCommandHandler : IRequestHandler<ReviewPaymentCommand,
         return new PaymentDto(payment.Id, payment.EnrollmentId, payment.Amount,
             payment.PaymentMethod, payment.ReferenceNumber, payment.Remarks, payment.PaymentDate,
             payment.Status, payment.ReviewedBy, payment.ReviewedAt, payment.ReviewNotes,
-            payment.ReceiptFileName, payment.ReceiptFileUrl);
+            payment.ReceiptFileName, payment.ReceiptFileUrl,
+            payment.VoidedBy, payment.VoidedAt, payment.VoidReason);
     }
 
     /// <summary>

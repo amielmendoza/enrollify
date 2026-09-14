@@ -145,6 +145,10 @@ export interface Payment {
   reviewNotes: string | null;
   receiptFileName: string | null;
   receiptFileUrl: string | null;
+  // Set when an Approved payment is voided (status becomes the terminal "Voided").
+  voidedBy: string | null;
+  voidedAt: string | null;
+  voidReason: string | null;
 }
 
 export interface BalanceInfo {

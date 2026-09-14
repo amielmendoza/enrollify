@@ -73,4 +73,15 @@ public class PaymentsController : ControllerBase
         var result = await _sender.Send(new ReviewPaymentCommand(id, request.IsApproved, request.Notes, reviewerName));
         return Ok(result);
     }
+
+    [HttpPost("{id:guid}/void")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> VoidPayment(Guid id, [FromBody] VoidPaymentRequest request)
+    {
+        var voidedBy = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                       ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                       ?? "Admin";
+        var result = await _sender.Send(new VoidPaymentCommand(id, request.Reason, voidedBy));
+        return Ok(result);
+    }
 }

@@ -20,6 +20,8 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Status).HasMaxLength(20).HasDefaultValue("Pending");
         builder.Property(p => p.ReviewedBy).HasMaxLength(200);
         builder.Property(p => p.ReviewNotes).HasMaxLength(500);
+        builder.Property(p => p.VoidedBy).HasMaxLength(200);
+        builder.Property(p => p.VoidReason).HasMaxLength(300);
 
         builder.HasOne(p => p.Enrollment)
             .WithMany(e => e.Payments)

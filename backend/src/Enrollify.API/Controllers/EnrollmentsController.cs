@@ -122,6 +122,17 @@ public class EnrollmentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("{id:guid}/send-back")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> SendBack(Guid id, [FromBody] SendBackEnrollmentRequest request)
+    {
+        var sentBackBy = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                         ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                         ?? "Admin";
+        var result = await _sender.Send(new SendBackEnrollmentCommand(id, request.Reason, sentBackBy));
+        return Ok(result);
+    }
+
     [HttpPost("{id:guid}/assign-section")]
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> AssignSection(Guid id, [FromBody] AssignSectionRequest request)

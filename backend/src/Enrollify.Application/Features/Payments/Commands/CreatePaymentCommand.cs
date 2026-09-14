@@ -1,6 +1,7 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Payments;
 using Enrollify.Domain.Entities;
+using Enrollify.Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,13 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         var enrollment = await _context.Enrollments.FirstOrDefaultAsync(e => e.Id == request.EnrollmentId, cancellationToken)
             ?? throw new KeyNotFoundException("Enrollment not found.");
 
+        // Money can only be logged against a live, assessed enrollment: before assessment
+        // there is nothing owed to pay against, and a cancelled enrollment's books are closed.
+        if (enrollment.Status == EnrollmentStatus.Cancelled)
+            throw new InvalidOperationException("This enrollment is cancelled — payments can no longer be recorded against it.");
+        if (enrollment.Status < EnrollmentStatus.Assessed)
+            throw new InvalidOperationException("Record the assessment first — payments can only be logged once the enrollment has been assessed.");
+
         var payment = new Payment
         {
             EnrollmentId = request.EnrollmentId,
@@ -53,6 +61,7 @@ public class CreatePaymentCommandHandler : IRequestHandler<CreatePaymentCommand,
         return new PaymentDto(payment.Id, payment.EnrollmentId, payment.Amount,
             payment.PaymentMethod, payment.ReferenceNumber, payment.Remarks, payment.PaymentDate,
             payment.Status, payment.ReviewedBy, payment.ReviewedAt, payment.ReviewNotes,
-            payment.ReceiptFileName, payment.ReceiptFileUrl);
+            payment.ReceiptFileName, payment.ReceiptFileUrl,
+            payment.VoidedBy, payment.VoidedAt, payment.VoidReason);
     }
 }

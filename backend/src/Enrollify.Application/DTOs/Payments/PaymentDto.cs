@@ -13,11 +13,17 @@ public record PaymentDto(
     DateTime? ReviewedAt,
     string? ReviewNotes,
     string? ReceiptFileName = null,
-    string? ReceiptFileUrl = null);
+    string? ReceiptFileUrl = null,
+    string? VoidedBy = null,
+    DateTime? VoidedAt = null,
+    string? VoidReason = null);
 
 public record ReviewPaymentRequest(
     bool IsApproved,
     string? Notes);
+
+public record VoidPaymentRequest(
+    string Reason);
 
 public record CreatePaymentRequest(
     Guid EnrollmentId,

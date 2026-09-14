@@ -126,7 +126,8 @@ public static class PaymentsCalculator
             .Select(p => new PaymentDto(p.Id, p.EnrollmentId, p.Amount,
                 p.PaymentMethod, p.ReferenceNumber, p.Remarks, p.PaymentDate,
                 p.Status, p.ReviewedBy, p.ReviewedAt, p.ReviewNotes,
-                p.ReceiptFileName, p.ReceiptFileUrl))
+                p.ReceiptFileName, p.ReceiptFileUrl,
+                p.VoidedBy, p.VoidedAt, p.VoidReason))
             .ToList();
 
         var plan = enrollment.PaymentPlan;

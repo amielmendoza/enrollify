@@ -105,14 +105,16 @@ public static class LedgerCalculator
                 adj.Id, adj.IsVoided));
         }
 
-        // d. Approved payments.
+        // d. Approved payments — plus VOIDED ones, marked exactly like voided adjustments:
+        //    listed (the UI strikes them through) but excluded from the running balance
+        //    and the SOA totals. Pending/Rejected payments never reach the ledger.
         var payments = await context.Payments
-            .Where(p => p.EnrollmentId == enrollment.Id && p.Status == "Approved")
+            .Where(p => p.EnrollmentId == enrollment.Id && (p.Status == "Approved" || p.Status == "Voided"))
             .OrderBy(p => p.PaymentDate)
             .ToListAsync(ct);
 
         foreach (var payment in payments)
-            pending.Add((payment.PaymentDate, 2, "Payment", $"Payment — {payment.PaymentMethod}", payment.ReferenceNumber, null, payment.Amount, null, false));
+            pending.Add((payment.PaymentDate, 2, "Payment", $"Payment — {payment.PaymentMethod}", payment.ReferenceNumber, null, payment.Amount, null, payment.Status == "Voided"));
 
         var entries = new List<LedgerEntryDto>();
         decimal running = 0m, totalDebits = 0m, totalCredits = 0m;

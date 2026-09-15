@@ -21,9 +21,10 @@ public class StudentsController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin,Registrar")]
-    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] bool includeInactive = false)
     {
-        var result = await _sender.Send(new GetStudentsQuery(search, page, pageSize));
+        var result = await _sender.Send(new GetStudentsQuery(search, page, pageSize, includeInactive));
         return Ok(result);
     }
 
@@ -61,8 +62,16 @@ public class StudentsController : ControllerBase
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> CreateAccount(Guid id, [FromBody] CreateStudentAccountRequest request)
     {
-        var userId = await _sender.Send(new CreateStudentAccountCommand(id, request.Email, request.Password));
-        return Ok(new { userId });
+        var result = await _sender.Send(new CreateStudentAccountCommand(id, request.Email, request.Password));
+        return Ok(result); // { email, temporaryPassword }
+    }
+
+    [HttpPost("{id:guid}/set-active")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> SetActive(Guid id, [FromBody] SetStudentActiveRequest request)
+    {
+        var result = await _sender.Send(new SetStudentActiveCommand(id, request.IsActive));
+        return Ok(result);
     }
 
     [HttpGet("me")]

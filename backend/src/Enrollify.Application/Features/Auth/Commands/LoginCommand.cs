@@ -27,8 +27,15 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid email or password.");
 
+        // Issue a refresh token so a workday never hard-logs-out; the raw value is returned
+        // exactly once — only its hash is stored.
+        var (refreshToken, rawRefreshToken) = AuthTokens.IssueRefreshToken(user.Id);
+        _context.RefreshTokens.Add(refreshToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
         var token = _tokenGenerator.GenerateToken(user);
 
-        return new LoginResponse(token, user.Email, user.FullName, user.Role.ToString(), user.TenantId);
+        return new LoginResponse(token, user.Email, user.FullName, user.Role.ToString(), user.TenantId,
+            rawRefreshToken, user.MustChangePassword);
     }
 }

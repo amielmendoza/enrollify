@@ -11,13 +11,16 @@ startup** in the Production environment when any of these is missing or left at 
 |---|---|---|
 | `ConnectionStrings:DefaultConnection` | `ConnectionStrings__DefaultConnection` | Real SQL Server. Values containing `localhost` are rejected in Production. |
 | `Jwt:Key` | `Jwt__Key` | Strong secret (256-bit+). The committed dev key is rejected in Production. |
+| `Frontend:BaseUrl` | `Frontend__BaseUrl` | **REQUIRED.** Base URL of the deployed SPA; password-reset emails link to `{BaseUrl}/reset-password`. The API refuses to start in Production without it — a caller-supplied `Origin` header is only honored as a fallback when it exactly matches an `AllowedOrigins` entry (reset-link poisoning guard, CWE-640). |
 
 Recommended (no fail-fast, but needed for a working deployment):
 
 | Setting | Env-var override | Notes |
 |---|---|---|
 | `AllowedOrigins` | `AllowedOrigins__0` (`__1`, ...) | Exact origins of the deployed SPA (e.g. `https://app.example.edu.ph`). Defaults to `http://localhost:4200` when unset. |
-| `Email:*` | `Email__Enabled`, `Email__Host`, `Email__Port`, `Email__UserName`, `Email__Password`, `Email__FromAddress`, `Email__FromName` | SMTP relay. With `Email__Enabled=false` (default) the app runs fine; sends are logged and skipped. |
+| `Email:*` | `Email__Enabled`, `Email__Host`, `Email__Port`, `Email__UserName`, `Email__Password`, `Email__FromAddress`, `Email__FromName` | SMTP relay. With `Email__Enabled=false` (default) the app runs fine; sends are logged and skipped. Note: password-reset emails also go through this — with email disabled, reset links are only visible in the API logs. |
+Known limitation (by design): `MustChangePassword` is a flag the API sets and reports on
+login/refresh — the temporary-password quarantine is enforced by the frontend, not the server.
 
 Environment variables use the double-underscore (`__`) separator for nesting and always win
 over the JSON files.

@@ -16,6 +16,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.FirstName).HasMaxLength(100).IsRequired();
         builder.Property(u => u.LastName).HasMaxLength(100).IsRequired();
         builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(50);
+        // Default constraint so existing rows backfill to false when the column is added.
+        builder.Property(u => u.MustChangePassword).HasDefaultValue(false);
+        builder.Property(u => u.PasswordResetTokenHash).HasMaxLength(200);
 
         builder.HasIndex(u => new { u.TenantId, u.Email }).IsUnique();
         builder.HasIndex(u => u.TenantId);

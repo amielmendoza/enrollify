@@ -45,6 +45,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
             app.ReviewNotes = request.Notes;
 
             Student? student = null;
+            Student? createdStudent = null; // null when an existing student was matched and reused
 
             if (request.IsApproved)
             {
@@ -65,29 +66,55 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     (studentSelfUserId, newAccountEmail) = await CreateStudentUserAsync(app, ct);
                 }
 
-                // Approval transcribes data that was already validated at SUBMISSION time against
-                // the tenant's application-form configuration — it must never re-validate.
-                // Dispatching CreateStudentCommand here would run its FluentValidation rules
-                // (e.g. Address NotEmpty) and reject applications whose form never required
-                // those fields, so the Student is constructed directly instead.
-                student = new Student
+                // Dedup: a returning family re-applying must not mint a second student record.
+                // Match an ACTIVE student by exact LRN when the application provides one (via a
+                // custom form field), else by name + date of birth.
+                var existingStudent = await FindMatchingActiveStudentAsync(app, ct);
+                if (existingStudent != null)
                 {
-                    LRN = await StudentNumbering.NextLrnAsync(_context, ct),
-                    FirstName = app.FirstName,
-                    MiddleName = app.MiddleName ?? string.Empty,
-                    LastName = app.LastName,
-                    BirthDate = app.DateOfBirth,
-                    Gender = app.Gender,
-                    Address = app.Address ?? string.Empty,
-                    ContactNumber = app.ContactNumber,
-                    Email = app.Email,
-                    GuardianName = app.GuardianName,
-                    GuardianContact = app.GuardianContact,
-                    UserId = studentSelfUserId,
-                    ParentUserId = parentUserId,
-                    TenantId = app.TenantId
-                };
-                _context.Students.Add(student);
+                    var alreadyEnrolled = await _context.Enrollments.AnyAsync(
+                        e => e.StudentId == existingStudent.Id
+                             && e.SchoolYear == app.SchoolYear
+                             && e.Status != EnrollmentStatus.Cancelled, ct);
+                    if (alreadyEnrolled)
+                        throw new InvalidOperationException(
+                            $"This applicant matches existing student {existingStudent.LRN}, who is already enrolled for {app.SchoolYear}; " +
+                            "reject this application or cancel the existing enrollment first.");
+
+                    student = existingStudent; // reuse — no new Student row, no new LRN
+                    // Attach the accounts this approval created/resolved, but never overwrite links.
+                    if (studentSelfUserId != null && student.UserId == null)
+                        student.UserId = studentSelfUserId;
+                    if (parentUserId != null && student.ParentUserId == null)
+                        student.ParentUserId = parentUserId;
+                }
+                else
+                {
+                    // Approval transcribes data that was already validated at SUBMISSION time against
+                    // the tenant's application-form configuration — it must never re-validate.
+                    // Dispatching CreateStudentCommand here would run its FluentValidation rules
+                    // (e.g. Address NotEmpty) and reject applications whose form never required
+                    // those fields, so the Student is constructed directly instead.
+                    student = new Student
+                    {
+                        LRN = await StudentNumbering.NextLrnAsync(_context, ct),
+                        FirstName = app.FirstName,
+                        MiddleName = app.MiddleName ?? string.Empty,
+                        LastName = app.LastName,
+                        BirthDate = app.DateOfBirth,
+                        Gender = app.Gender,
+                        Address = app.Address ?? string.Empty,
+                        ContactNumber = app.ContactNumber,
+                        Email = app.Email,
+                        GuardianName = app.GuardianName,
+                        GuardianContact = app.GuardianContact,
+                        UserId = studentSelfUserId,
+                        ParentUserId = parentUserId,
+                        TenantId = app.TenantId
+                    };
+                    _context.Students.Add(student);
+                    createdStudent = student;
+                }
 
                 app.StudentId = student.Id;
                 app.ParentUserId = parentUserId;
@@ -98,7 +125,9 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     SchoolYear = app.SchoolYear,
                     GradeLevel = app.GradeLevel,
                     Status = EnrollmentStatus.Draft,
-                    Remarks = "Auto-created on application approval",
+                    Remarks = existingStudent != null
+                        ? $"Auto-created on application approval — linked to existing student {student.LRN}"
+                        : "Auto-created on application approval",
                     TenantId = app.TenantId
                 };
                 _context.Enrollments.Add(enrollment);
@@ -134,9 +163,10 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     await _context.SaveChangesAsync(ct);
                     break;
                 }
-                catch (DbUpdateException) when (student != null && attempt < maxAttempts)
+                catch (DbUpdateException) when (createdStudent != null && attempt < maxAttempts)
                 {
-                    student.LRN = await StudentNumbering.NextLrnAsync(_context, ct);
+                    // Only a freshly minted LRN may be regenerated — never a reused student's.
+                    createdStudent.LRN = await StudentNumbering.NextLrnAsync(_context, ct);
                 }
             }
         }, cancellationToken);
@@ -159,6 +189,45 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
             app.Status, app.CreatedAt, app.ReviewedAt, app.ReviewNotes, app.StudentId,
             app.ApplicationType, app.ParentFirstName, app.ParentLastName, app.ParentEmail, app.ParentContactNumber,
             custom);
+    }
+
+    /// <summary>
+    /// Matches an existing ACTIVE student for a re-applying family: exact LRN when the
+    /// application provides one (the built-in form has no LRN field, so tenants that collect
+    /// it do so via a custom field keyed "lrn"), else FirstName + LastName + DateOfBirth,
+    /// case-insensitively on trimmed names. Inactive students never match — a deactivated
+    /// record must not silently resurrect through admissions.
+    /// </summary>
+    private async Task<Student?> FindMatchingActiveStudentAsync(AdmissionApplication app, CancellationToken ct)
+    {
+        var providedLrn = ExtractProvidedLrn(app.CustomFieldValues);
+        if (!string.IsNullOrWhiteSpace(providedLrn))
+            return await _context.Students
+                .FirstOrDefaultAsync(s => s.IsActive && s.LRN == providedLrn, ct);
+
+        var first = app.FirstName.Trim().ToLower();
+        var last = app.LastName.Trim().ToLower();
+        return await _context.Students.FirstOrDefaultAsync(s => s.IsActive
+            && s.FirstName.ToLower() == first
+            && s.LastName.ToLower() == last
+            && s.BirthDate == app.DateOfBirth, ct);
+    }
+
+    private static string? ExtractProvidedLrn(string? customFieldValues)
+    {
+        if (string.IsNullOrWhiteSpace(customFieldValues)) return null;
+        try
+        {
+            var values = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string?>>(customFieldValues);
+            if (values == null) return null;
+            foreach (var kv in values)
+            {
+                if (string.Equals(kv.Key, "lrn", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(kv.Value))
+                    return kv.Value.Trim();
+            }
+            return null;
+        }
+        catch { return null; }
     }
 
     /// <returns>The parent user id, plus the account email when a NEW account was created (null when reused).</returns>
@@ -188,7 +257,8 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
             FirstName = app.ParentFirstName ?? string.Empty,
             LastName = app.ParentLastName ?? string.Empty,
             Role = UserRole.Parent,
-            IsActive = true
+            IsActive = true,
+            MustChangePassword = true // temp password — owner must set their own on first login
         };
         _context.Users.Add(parent);
         return (parent.Id, email);
@@ -247,7 +317,8 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
             FirstName = app.FirstName,
             LastName = app.LastName,
             Role = UserRole.Student,
-            IsActive = true
+            IsActive = true,
+            MustChangePassword = true // temp password — owner must set their own on first login
         };
         _context.Users.Add(user);
         return (user.Id, email);

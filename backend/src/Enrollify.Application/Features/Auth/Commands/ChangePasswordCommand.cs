@@ -25,6 +25,18 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
             throw new InvalidOperationException("New password must be at least 6 characters.");
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.MustChangePassword = false; // temp-password flow completed
+
+        // Revoke every active refresh token: any other session dies with the old password
+        // (the caller's current ACCESS token stays valid until it expires; they re-login
+        // or refresh from a fresh login).
+        var now = DateTime.UtcNow;
+        var activeTokens = await _context.RefreshTokens
+            .Where(t => t.UserId == user.Id && t.RevokedAt == null && t.ExpiresAt > now)
+            .ToListAsync(cancellationToken);
+        foreach (var token in activeTokens)
+            token.RevokedAt = now;
+
         await _context.SaveChangesAsync(cancellationToken);
         return true;
     }

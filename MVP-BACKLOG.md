@@ -1,5 +1,51 @@
 # MVP Backlog
 
+## Batch D — Accounts & identity (delivered 2026-09-15, team-lead APPROVED after two fixes)
+
+Closes probe theme T4:
+- Forgot/reset password full-stack: POST /api/auth/forgot-password (always {success:true} — no
+  account enumeration; URL-safe random token, SHA-256 hash + 1h expiry stored on User, single active
+  token, link emailed after save) and /api/auth/reset-password (single-use, BCrypt, clears
+  MustChangePassword, revokes refresh tokens). Reset-link base URL resolved via testable
+  ResetLinkBaseUrl.Resolve: Frontend:BaseUrl first, Origin header ONLY on exact AllowedOrigins match
+  (review caught CWE-640 reset-link poisoning via attacker-controlled Origin — fixed + 8 adversarial
+  tests incl. suffix-trick and port-variant origins), else API host. Frontend:BaseUrl added to the
+  Production fail-fasts + DEPLOYMENT.md required table. Folio forgot/reset pages off the login card.
+- Forced first-login password change: User.MustChangePassword (migration AddAccountSecurityFields)
+  set on every temp-password path (Register, both approval-created accounts, createStudentAccount);
+  login/refresh responses carry the flag; authGuard (canActivate + canActivateChild) quarantines to
+  /change-password until changed. Frontend-gated by design (documented known limitation).
+- Change-password for every role: shell user menu (Change password · Sign out); clears the flag and
+  revokes the user's refresh tokens.
+- Refresh tokens: RefreshToken entity (BaseEntity, deliberately not tenant-filtered — resolved
+  pre-tenant-context with IgnoreQueryFilters, EF 10622 expected), hash-only storage, 14-day rotating
+  refresh (POST /api/auth/refresh; replay of a rotated token 401s; inactive users rejected; expired
+  cleanup). errorInterceptor: single-flight 401→refresh→retry (shareReplay; /api/auth/* never
+  triggers; refresh failure → logout; pre-refresh sessions keep old behavior). JWT stays 8h.
+- Duplicate-student dedup on approval: match active student by LRN (custom form field "lrn") else
+  name+DOB (case-insensitive); reuse student + attach accounts only where null; same-year
+  non-cancelled enrollment → clear approval failure; remark "linked to existing student {LRN}".
+- Student accounts UI: StudentDto exposes UserId/ParentUserId/IsActive; students list shows a
+  "Has account" mark; Create account action (prompt-for-email confirm, prefilled; server generates
+  Temp-XXXXXXXX when password omitted; refuses existing UserId and parent-managed students) with a
+  copyable credentials modal. Review caught the route/body drift that made the first UI version dead
+  on arrival — realigned to /students/{id}/create-account {email}.
+- Student deactivation: SetStudentActiveCommand + POST /api/students/{id}/set-active; refused while
+  a non-cancelled active-year enrollment exists; students list ?includeInactive= (default false);
+  dedup matches active students only.
+  Tests 148 → 179; backend + frontend builds clean.
+
+Follow-ups (non-blocking, from review):
+- [ ] Forgot-password timing side channel: the email send is awaited inline, so response latency can
+  reveal account existence when SMTP is enabled — queue/fire-and-forget the send.
+- [ ] Refresh replay detection doesn't revoke the descendant token family (thief-who-rotated-first
+  keeps a session) — standard hardening.
+- [ ] Dedup name+DOB match should require explicit registrar confirmation (or an extra signal like
+  guardian name) before attaching a NEW account link to an existing student — cross-family exposure
+  on an exact name+DOB collision is low-probability but poorly reversible (no unlink UI).
+- [ ] Refresh token lives in localStorage alongside the JWT — consistent with existing posture; note
+  for a future httpOnly-cookie migration.
+
 ## Batch C — Money corrections (delivered 2026-09-14, team-lead APPROVED after one fix)
 
 Closes probe theme T2 — every money mistake is now correctable and the books never lie:
@@ -61,10 +107,9 @@ Closes probe themes T3 (deployability) and most of T1 (year lifecycle):
   Review caught the ChildPaymentsDto contract break (parent twin would have shipped inert) — fixed
   via the shared helper. Tests 94 → 121; both frontend build configs verified.
 
-Still open from the probe: ~~T2 (money corrections)~~ delivered 2026-09-14 as Batch C (above),
-T4 (password self-service, forced first-login
-change, staff change-password, refresh tokens, duplicate-student dedup, createStudentAccount UI,
-student deactivate), T5 (error/loading/mobile sweep, enrollment register export, section roster,
+Still open from the probe: ~~T2 (money corrections)~~ delivered 2026-09-14 as Batch C,
+~~T4 (accounts & identity)~~ delivered 2026-09-15 as Batch D (both above),
+T5 (error/loading/mobile sweep, enrollment register export, section roster,
 entity cross-links, collections deep-link params), plus T1 leftovers (arrears carryover entity,
 CreateTenant calendar-year guess, free-text SY/grade vocabulary checks) and T3 leftovers
 (structured logging, rate limiting, CI/container, FileDocuments lifecycle).

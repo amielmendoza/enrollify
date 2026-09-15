@@ -6,7 +6,7 @@ import {
   Student, CreateStudentRequest, Enrollment, CreateEnrollmentRequest, EnrollmentRequirement, EnrollmentHistoryItem,
   EnrollmentLedger,
   Section, Fee, FeeLine, Payment, BalanceInfo, PagedResult, WorkflowDefinition,
-  CreateStudentAccountRequest, SubmitApplicationRequest, ApplicationListDto, ApplicationDetailDto, ApplicationStatusDto,
+  SubmitApplicationRequest, ApplicationListDto, ApplicationDetailDto, ApplicationStatusDto,
   ParentPayRequest, StudentPayRequest, ParentChild, MyPaymentsResponse, DashboardStats, CollectionsReport, SchoolYear, PaymentTerm, RequirementTemplate,
   ApplicationFormField,
   Tenant, PublicTenant, CreateTenantRequest, UpdateTenantRequest,
@@ -21,10 +21,12 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  // Students
-  getStudents(search?: string, page = 1, pageSize = 20): Observable<PagedResult<Student>> {
+  // Students. includeInactive is for the admin management list only — pickers and
+  // searches stay active-only, which the default (omitted param) preserves.
+  getStudents(search?: string, page = 1, pageSize = 20, includeInactive = false): Observable<PagedResult<Student>> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (search) params = params.set('search', search);
+    if (includeInactive) params = params.set('includeInactive', true);
     return this.http.get<PagedResult<Student>>(`${this.baseUrl}/students`, { params });
   }
 
@@ -221,9 +223,17 @@ export class ApiService {
     return this.http.get<EnrollmentLedger>(`${this.baseUrl}/enrollments/me/ledger`, { params });
   }
 
-  // Admin: create a Student-role login for an existing student record (only if no parent linkage)
-  createStudentAccount(studentId: string, data: CreateStudentAccountRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/students/${studentId}/create-account`, data);
+  // Admin/Registrar: create a Student-role login for an existing student record.
+  // Email is required by the backend contract; the server generates a temporary
+  // password and the student must change it at first login.
+  createStudentAccount(studentId: string, email: string): Observable<{ email: string; temporaryPassword: string }> {
+    return this.http.post<{ email: string; temporaryPassword: string }>(`${this.baseUrl}/students/${studentId}/create-account`, { email });
+  }
+
+  // Admin/Registrar: activate/deactivate a student record. The server rejects
+  // deactivation with a clear 400 while an active-year enrollment exists.
+  setStudentActive(studentId: string, isActive: boolean): Observable<Student> {
+    return this.http.post<Student>(`${this.baseUrl}/students/${studentId}/set-active`, { isActive });
   }
 
   // Parent: children & per-child views
@@ -365,9 +375,19 @@ export class ApiService {
     });
   }
 
-  // Change password
+  // Change password (any authenticated role; also clears the temporary-password flag server-side)
   changePassword(currentPassword: string, newPassword: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/auth/change-password`, { currentPassword, newPassword });
+  }
+
+  // Password recovery (anonymous). forgot-password always returns 200 so the
+  // response never reveals whether an account exists.
+  forgotPassword(email: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.baseUrl}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(email: string, token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/reset-password`, { email, token, newPassword });
   }
 
   // School Years

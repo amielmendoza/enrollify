@@ -13,7 +13,12 @@ public record StudentDto(
     string? Email,
     string? GuardianName,
     string? GuardianContact,
-    string FullName);
+    string FullName,
+    Guid? UserId = null,
+    Guid? ParentUserId = null,
+    bool IsActive = true);
+
+public record SetStudentActiveRequest(bool IsActive);
 
 public record CreateStudentRequest(
     string LRN,

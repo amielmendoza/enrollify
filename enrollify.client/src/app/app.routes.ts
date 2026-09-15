@@ -9,6 +9,10 @@ import { roleGuard } from './core/guards/role.guard';
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent) },
 
+  // Public password recovery (linked from the login card / the emailed reset link).
+  { path: 'forgot-password', loadComponent: () => import('./pages/auth/forgot-password.component').then(m => m.ForgotPasswordComponent) },
+  { path: 'reset-password', loadComponent: () => import('./pages/auth/reset-password.component').then(m => m.ResetPasswordComponent) },
+
   // Public school directory.
   { path: 'tenants', loadComponent: () => import('./pages/tenants-directory/tenants-directory.component').then(m => m.TenantsDirectoryComponent) },
 
@@ -33,9 +37,14 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
+    // canActivateChild too: the temporary-password quarantine must re-check on every
+    // child navigation, not just when the shell first activates.
     canActivate: [authGuard],
+    canActivateChild: [authGuard],
     children: [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      // All roles; forced here by authGuard while mustChangePassword is set.
+      { path: 'change-password', loadComponent: () => import('./pages/account/change-password.component').then(m => m.ChangePasswordComponent) },
       { path: 'students', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/students/student-list/student-list.component').then(m => m.StudentListComponent) },
       { path: 'students/new', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/students/student-form/student-form.component').then(m => m.StudentFormComponent) },
       { path: 'students/:id/edit', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/students/student-form/student-form.component').then(m => m.StudentFormComponent) },

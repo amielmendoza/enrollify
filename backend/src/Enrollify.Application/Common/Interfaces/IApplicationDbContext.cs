@@ -7,6 +7,7 @@ public interface IApplicationDbContext
 {
     DbSet<Tenant> Tenants { get; }
     DbSet<User> Users { get; }
+    DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<Student> Students { get; }
     DbSet<Enrollment> Enrollments { get; }
     DbSet<EnrollmentStatusHistory> EnrollmentStatusHistories { get; }

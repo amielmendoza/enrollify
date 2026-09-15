@@ -157,14 +157,25 @@ import { CommonModule } from '@angular/common';
             </svg>
             <span class="folio-mono text-xs tracking-wide">S.Y. {{ syService.activeName() || '---' }}</span>
           </div>
-          <div class="flex items-center gap-3">
-            <div class="text-right hidden sm:block">
-              <p class="text-sm font-medium text-gray-900 leading-tight">{{ auth.user()?.fullName }}</p>
-              <p class="text-xs text-gray-500">{{ auth.user()?.role }}</p>
-            </div>
-            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#0038A8] text-white text-sm font-semibold">
-              {{ userInitials() }}
-            </div>
+          <div class="relative">
+            <button (click)="userMenuOpen.set(!userMenuOpen())" class="flex items-center gap-3 rounded-lg px-2 py-1 hover:bg-gray-50 transition-colors">
+              <div class="text-right hidden sm:block">
+                <p class="text-sm font-medium text-gray-900 leading-tight">{{ auth.user()?.fullName }}</p>
+                <p class="text-xs text-gray-500">{{ auth.user()?.role }}</p>
+              </div>
+              <div class="flex h-9 w-9 items-center justify-center rounded-full bg-[#0038A8] text-white text-sm font-semibold">
+                {{ userInitials() }}
+              </div>
+            </button>
+            @if (userMenuOpen()) {
+              <div class="fixed inset-0 z-40" (click)="userMenuOpen.set(false)"></div>
+              <div class="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-[#E2D9C2] bg-white py-1 shadow-lg">
+                <a routerLink="/change-password" (click)="userMenuOpen.set(false)"
+                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Change password</a>
+                <button (click)="userMenuOpen.set(false); auth.logout()"
+                        class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50">Sign out</button>
+              </div>
+            }
           </div>
         </header>
         <main class="flex-1 overflow-y-auto bg-[#FAF8F2] p-6 lg:p-8">
@@ -176,6 +187,7 @@ import { CommonModule } from '@angular/common';
 })
 export class MainLayoutComponent implements OnInit {
   sidebarOpen = signal(false);
+  userMenuOpen = signal(false);
 
   constructor(public auth: AuthService, public syService: SchoolYearService) {}
 

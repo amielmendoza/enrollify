@@ -22,6 +22,11 @@ if (builder.Environment.IsProduction())
         throw new InvalidOperationException(
             "ConnectionStrings:DefaultConnection is missing or still points at localhost. " +
             "Configure the production database (e.g. via the ConnectionStrings__DefaultConnection environment variable).");
+
+    if (string.IsNullOrWhiteSpace(builder.Configuration["Frontend:BaseUrl"]))
+        throw new InvalidOperationException(
+            "Frontend:BaseUrl is missing. Password-reset emails must link to the deployed SPA — " +
+            "configure it for Production (e.g. via the Frontend__BaseUrl environment variable).");
 }
 
 // Add services

@@ -58,6 +58,7 @@ public class UpdateStudentCommandHandler : IRequestHandler<UpdateStudentCommand,
 
         return new StudentDto(student.Id, student.LRN, student.FirstName, student.MiddleName, student.LastName,
             student.BirthDate, student.Gender, student.Address, student.ContactNumber, student.Email,
-            student.GuardianName, student.GuardianContact, student.FullName);
+            student.GuardianName, student.GuardianContact, student.FullName,
+            student.UserId, student.ParentUserId, student.IsActive);
     }
 }

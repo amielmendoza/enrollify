@@ -9,6 +9,11 @@ export interface LoginResponse {
   fullName: string;
   role: string;
   tenantId: string;
+  // Rotated on every refresh; exchanged at /auth/refresh for a new JWT.
+  refreshToken: string;
+  // True while the account is on a temporary password — the app quarantines
+  // the session to /change-password until it is changed.
+  mustChangePassword: boolean;
 }
 
 export interface Student {
@@ -25,6 +30,10 @@ export interface Student {
   guardianName: string | null;
   guardianContact: string | null;
   fullName: string;
+  // Login linkage: the student's own account, and/or the managing parent's.
+  userId: string | null;
+  parentUserId: string | null;
+  isActive: boolean;
 }
 
 export interface CreateStudentRequest {
@@ -316,11 +325,6 @@ export interface SubmitApplicationRequest {
   parentContactNumber: string | null;
   // One or more applicants. Parent mode: 1+ children. Student mode: exactly one (the student themselves).
   applicants: ApplicantData[];
-}
-
-export interface CreateStudentAccountRequest {
-  email: string;
-  password: string;
 }
 
 export interface ParentChild {

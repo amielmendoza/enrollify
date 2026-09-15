@@ -47,6 +47,9 @@ import { environment } from '../../../environments/environment';
               <label class="form-label">Password</label>
               <input type="password" [(ngModel)]="password" name="password" required [disabled]="loading()" autocomplete="current-password"
                      class="form-input" placeholder="Enter your password" />
+              <div class="mt-1.5 flex justify-end">
+                <a routerLink="/forgot-password" class="text-sm font-semibold text-[#0038A8] hover:underline">Forgot password?</a>
+              </div>
             </div>
             <button type="submit" [disabled]="loading()"
                     class="flex w-full items-center justify-center gap-2 rounded-md bg-[#0038A8] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#002B85] transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
@@ -99,7 +102,8 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
     this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: (res) => this.router.navigate([this.landingRouteForRole(res.role)]),
+      // Temporary-password sessions go straight to the forced change screen.
+      next: (res) => this.router.navigate([res.mustChangePassword ? '/change-password' : this.landingRouteForRole(res.role)]),
       error: (err) => {
         this.loading.set(false);
         // status 0 = the request never reached the server (API down / network) —

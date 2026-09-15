@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Student> Students => Set<Student>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<EnrollmentStatusHistory> EnrollmentStatusHistories => Set<EnrollmentStatusHistory>();

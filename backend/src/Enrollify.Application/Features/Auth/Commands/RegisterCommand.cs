@@ -60,13 +60,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, LoginResp
             FirstName = request.FirstName,
             LastName = request.LastName,
             Role = role,
-            TenantId = request.TenantId
+            TenantId = request.TenantId,
+            // Admin-issued password → the owner must set their own on first login.
+            MustChangePassword = true
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync(cancellationToken);
 
         var token = _tokenGenerator.GenerateToken(user);
-        return new LoginResponse(token, user.Email, user.FullName, user.Role.ToString(), user.TenantId);
+        return new LoginResponse(token, user.Email, user.FullName, user.Role.ToString(), user.TenantId,
+            MustChangePassword: true);
     }
 }

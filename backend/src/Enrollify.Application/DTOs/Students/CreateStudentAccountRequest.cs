@@ -1,3 +1,3 @@
 namespace Enrollify.Application.DTOs.Students;
 
-public record CreateStudentAccountRequest(string Email, string Password);
+public record CreateStudentAccountRequest(string Email, string? Password = null);

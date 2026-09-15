@@ -11,10 +11,12 @@ namespace Enrollify.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly ISender _sender;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(ISender sender)
+    public AuthController(ISender sender, IConfiguration configuration)
     {
         _sender = sender;
+        _configuration = configuration;
     }
 
     [HttpPost("login")]
@@ -22,6 +24,41 @@ public class AuthController : ControllerBase
     {
         var result = await _sender.Send(new LoginCommand(request.Email, request.Password));
         return Ok(result);
+    }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResponse>> Refresh([FromBody] RefreshRequest request)
+    {
+        var result = await _sender.Send(new RefreshTokenCommand(request.RefreshToken));
+        return Ok(result);
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        // Reset links point at the SPA. "Frontend:BaseUrl" (env: Frontend__BaseUrl) wins —
+        // and is REQUIRED in Production (fail-fast at startup). The Origin fallback is only
+        // honored when it matches the CORS AllowedOrigins list: Origin is attacker-controlled
+        // on an anonymous endpoint, and a poisoned base URL would put a live reset token in a
+        // genuine email pointing at an attacker's domain (CWE-640).
+        var baseUrl = Enrollify.Application.Features.Auth.ResetLinkBaseUrl.Resolve(
+            _configuration["Frontend:BaseUrl"],
+            Request.Headers.Origin.FirstOrDefault(),
+            _configuration.GetSection("AllowedOrigins").Get<string[]>(),
+            $"{Request.Scheme}://{Request.Host}");
+
+        await _sender.Send(new ForgotPasswordCommand(request.Email, baseUrl));
+        return Ok(new { success = true }); // always — no account enumeration
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        await _sender.Send(new ResetPasswordCommand(request.Email, request.Token, request.NewPassword));
+        return Ok(new { success = true });
     }
 
     // Self-service signup does not exist: parent/student accounts are created on application

@@ -23,6 +23,7 @@ public class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByIdQuery, S
 
         return new StudentDto(s.Id, s.LRN, s.FirstName, s.MiddleName, s.LastName,
             s.BirthDate, s.Gender, s.Address, s.ContactNumber, s.Email,
-            s.GuardianName, s.GuardianContact, s.FullName);
+            s.GuardianName, s.GuardianContact, s.FullName,
+            s.UserId, s.ParentUserId, s.IsActive);
     }
 }

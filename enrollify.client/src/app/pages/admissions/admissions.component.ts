@@ -1,15 +1,17 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { LoadingComponent } from '../../core/components/loading.component';
 import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
 import { formatApiError } from '../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-admissions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink, LoadingComponent],
   template: `
     <div>
       <div class="flex items-center justify-between">
@@ -26,6 +28,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
                  class="form-input max-w-sm" />
           <select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()" class="form-input w-auto">
             <option value="">All Statuses</option>
+            <option value="Pending">Pending (Submitted + Under Review)</option>
             <option value="Submitted">Submitted</option>
             <option value="UnderReview">Under Review</option>
             <option value="Approved">Approved</option>
@@ -58,9 +61,12 @@ import { formatApiError } from '../../core/utils/format-api-error';
                     <span class="badge" [class]="getStatusBadge(app.status)">{{ app.status }}</span>
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">{{ app.createdAt | date:'mediumDate' }}</td>
-                  <td class="px-6 py-4 text-sm text-right space-x-2">
+                  <td class="px-6 py-4 text-sm text-right space-x-2 whitespace-nowrap">
                     <button (click)="viewDetail(app.id)" class="text-[#0038A8] hover:text-[#002B85] font-medium">View</button>
                     @if (app.status === 'Submitted') {
+                      <button (click)="markUnderReview(app.id)" class="text-amber-600 hover:text-amber-700 font-medium">Mark under review</button>
+                    }
+                    @if (app.status === 'Submitted' || app.status === 'UnderReview') {
                       <button (click)="approve(app.id)" class="text-emerald-600 hover:text-emerald-700 font-medium">Approve</button>
                       <button (click)="reject(app.id)" class="text-red-600 hover:text-red-700 font-medium">Reject</button>
                     }
@@ -68,7 +74,10 @@ import { formatApiError } from '../../core/utils/format-api-error';
                 </tr>
               }
               @empty {
-                <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No applications found</td></tr>
+                <tr><td colspan="6">
+                  @if (loading()) { <app-loading label="Loading applications..." /> }
+                  @else { <p class="px-6 py-8 text-center text-gray-400">No applications found</p> }
+                </td></tr>
               }
             </tbody>
           </table>
@@ -94,7 +103,12 @@ import { formatApiError } from '../../core/utils/format-api-error';
             <div class="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h2 class="text-lg font-semibold text-gray-900 folio-mono tracking-wide">{{ selectedApp()!.applicationNumber }}</h2>
-                <span class="badge mt-1" [class]="getStatusBadge(selectedApp()!.status)">{{ selectedApp()!.status }}</span>
+                <div class="mt-1 flex flex-wrap items-center gap-3">
+                  <span class="badge" [class]="getStatusBadge(selectedApp()!.status)">{{ selectedApp()!.status }}</span>
+                  @if (selectedApp()!.studentId) {
+                    <a [routerLink]="['/students', selectedApp()!.studentId]" class="text-sm font-medium text-[#0038A8] hover:underline">View student record</a>
+                  }
+                </div>
               </div>
               <button (click)="selectedApp.set(null)" class="p-2 hover:bg-gray-100 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -143,8 +157,11 @@ import { formatApiError } from '../../core/utils/format-api-error';
                 </div>
               }
             </div>
-            @if (selectedApp()!.status === 'Submitted') {
-              <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
+            @if (selectedApp()!.status === 'Submitted' || selectedApp()!.status === 'UnderReview') {
+              <div class="flex flex-wrap justify-end gap-3 p-6 border-t border-gray-200">
+                @if (selectedApp()!.status === 'Submitted') {
+                  <button (click)="markUnderReview(selectedApp()!.id)" class="rounded-lg border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50">Mark under review</button>
+                }
                 <button (click)="reject(selectedApp()!.id)" class="btn btn-danger">Reject</button>
                 <button (click)="approve(selectedApp()!.id)" class="btn btn-success">Approve</button>
               </div>
@@ -158,21 +175,53 @@ import { formatApiError } from '../../core/utils/format-api-error';
 export class AdmissionsComponent implements OnInit {
   applications = signal<ApplicationListDto[]>([]);
   selectedApp = signal<ApplicationDetailDto | null>(null);
+  loading = signal(true);
   search = '';
   statusFilter = '';
   page = signal(1);
   totalCount = signal(0);
   totalPages = signal(0);
 
-  constructor(private api: ApiService, private notify: NotificationService) {}
+  constructor(private api: ApiService, private notify: NotificationService, private route: ActivatedRoute, private router: Router) {}
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    // Deep links: the dashboard tile (/admissions?status=Pending) and the student page
+    // (/admissions?view=<applicationId> opens that application's detail).
+    const qp = this.route.snapshot.queryParamMap;
+    this.statusFilter = qp.get('status') ?? '';
+    this.load();
+    const viewId = qp.get('view');
+    if (viewId) {
+      this.viewDetail(viewId);
+      // One-shot: drop ?view so closing the modal and reloading doesn't reopen it.
+      this.router.navigate([], { relativeTo: this.route, queryParams: { view: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    }
+  }
 
   load() {
-    this.api.getApplications({ status: this.statusFilter || undefined, search: this.search || undefined, page: this.page() }).subscribe(r => {
-      this.applications.set(r.items);
-      this.totalCount.set(r.totalCount);
-      this.totalPages.set(r.totalPages);
+    this.loading.set(true);
+    this.api.getApplications({ status: this.statusFilter || undefined, search: this.search || undefined, page: this.page() }).subscribe({
+      next: r => {
+        this.loading.set(false);
+        this.applications.set(r.items);
+        this.totalCount.set(r.totalCount);
+        this.totalPages.set(r.totalPages);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(formatApiError(err, 'Failed to load applications.'));
+      }
+    });
+  }
+
+  markUnderReview(id: string) {
+    this.api.markApplicationUnderReview(id).subscribe({
+      next: () => {
+        this.notify.success('Marked under review.');
+        this.selectedApp.set(null);
+        this.load();
+      },
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to update the application.'))
     });
   }
 
@@ -187,7 +236,10 @@ export class AdmissionsComponent implements OnInit {
   }
 
   viewDetail(id: string) {
-    this.api.getApplication(id).subscribe(a => this.selectedApp.set(a));
+    this.api.getApplication(id).subscribe({
+      next: a => this.selectedApp.set(a),
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to open the application.'))
+    });
   }
 
   async approve(id: string) {

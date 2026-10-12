@@ -51,9 +51,10 @@ public class AdmissionsController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin,Registrar")]
-    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? studentId = null)
     {
-        var result = await _sender.Send(new GetApplicationsQuery(status, search, page, pageSize));
+        var result = await _sender.Send(new GetApplicationsQuery(status, search, page, pageSize, studentId));
         return Ok(result);
     }
 
@@ -69,7 +70,21 @@ public class AdmissionsController : ControllerBase
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> Review(Guid id, [FromBody] ReviewApplicationRequest request)
     {
-        var result = await _sender.Send(new ReviewApplicationCommand(id, request.IsApproved, request.Notes));
+        var result = await _sender.Send(new ReviewApplicationCommand(id, request.IsApproved, request.Notes, CurrentActor()));
         return Ok(result);
     }
+
+    [HttpPost("{id:guid}/under-review")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> MarkUnderReview(Guid id)
+    {
+        await _sender.Send(new SetApplicationUnderReviewCommand(id, CurrentActor()));
+        return Ok(new { success = true });
+    }
+
+    // Who is acting, for ReviewedBy: display name, else email.
+    private string CurrentActor() =>
+        User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+        ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+        ?? "Staff";
 }

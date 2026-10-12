@@ -1,4 +1,5 @@
 using Enrollify.Application.Common.Interfaces;
+using Enrollify.Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,17 @@ public class VoidLedgerAdjustmentCommandHandler : IRequestHandler<VoidLedgerAdju
         var adjustment = await _context.LedgerAdjustments
             .FirstOrDefaultAsync(a => a.Id == request.AdjustmentId && a.EnrollmentId == request.EnrollmentId, cancellationToken)
             ?? throw new KeyNotFoundException("Adjustment not found for this enrollment.");
+
+        // A cancelled enrollment's books are settled at zero by auto-posted waiver credits
+        // (cancel itself, and payment voids after cancellation). Voiding any adjustment there —
+        // those credits especially — would reopen an imbalance nothing can heal, since a
+        // cancelled enrollment accepts no new postings.
+        var enrollmentStatus = await _context.Enrollments
+            .Where(e => e.Id == adjustment.EnrollmentId)
+            .Select(e => (EnrollmentStatus?)e.Status)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (enrollmentStatus == EnrollmentStatus.Cancelled)
+            throw new InvalidOperationException("This enrollment is cancelled; its books are closed.");
 
         if (adjustment.IsVoided)
             throw new InvalidOperationException("Adjustment is already voided.");

@@ -27,9 +27,9 @@ public class EnrollmentsController : ControllerBase
         [FromQuery] string? schoolYear, [FromQuery] string? gradeLevel,
         [FromQuery] EnrollmentStatus? status, [FromQuery] string? search,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] bool pendingPaymentsOnly = false)
+        [FromQuery] bool pendingPaymentsOnly = false, [FromQuery] Guid? studentId = null)
     {
-        var result = await _sender.Send(new GetEnrollmentsQuery(schoolYear, gradeLevel, status, search, page, pageSize, pendingPaymentsOnly));
+        var result = await _sender.Send(new GetEnrollmentsQuery(schoolYear, gradeLevel, status, search, page, pageSize, pendingPaymentsOnly, studentId));
         return Ok(result);
     }
 

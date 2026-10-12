@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ApplicationStatusDto, PublicTenant } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 /// Anonymous application-status lookup. Applicants land here from the apply success screen
 /// (or a bookmark) and check progress using the application number they were given.
@@ -117,7 +118,7 @@ export class ApplicationStatusComponent implements OnInit {
     this.api.getApplicationStatus(this.slug, number).subscribe({
       next: r => { this.result.set(r); this.loading.set(false); },
       error: err => {
-        this.error.set(err.error?.error || 'No application found with that number. Double-check and try again.');
+        this.error.set(formatApiError(err, 'No application found with that number. Double-check and try again.'));
         this.loading.set(false);
       }
     });

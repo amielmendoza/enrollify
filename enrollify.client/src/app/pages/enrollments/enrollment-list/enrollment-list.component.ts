@@ -4,13 +4,16 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { SchoolYearService } from '../../../core/services/school-year.service';
+import { NotificationService } from '../../../core/services/notification.service';
+import { LoadingComponent } from '../../../core/components/loading.component';
+import { formatApiError } from '../../../core/utils/format-api-error';
 import { Enrollment, SchoolYear } from '../../../core/models';
 import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
 
 @Component({
   selector: 'app-enrollment-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, LoadingComponent],
   template: `
     <div>
       <div class="flex items-center justify-between mb-6">
@@ -61,7 +64,9 @@ import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
             <tbody class="divide-y divide-gray-200">
               @for (e of enrollments(); track e.id) {
                 <tr class="hover:bg-gray-50 transition-colors">
-                  <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ e.studentName }}</td>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                    <a [routerLink]="['/students', e.studentId]" class="hover:text-[#0038A8] hover:underline">{{ e.studentName }}</a>
+                  </td>
                   <td class="px-6 py-4 text-sm text-gray-600">{{ e.schoolYear }}</td>
                   <td class="px-6 py-4 text-sm text-gray-600">{{ e.gradeLevel }}</td>
                   <td class="px-6 py-4 text-sm text-gray-600">{{ e.sectionName || '-' }}</td>
@@ -82,7 +87,10 @@ import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
                 </tr>
               }
               @empty {
-                <tr><td colspan="6" class="px-6 py-8 text-center text-gray-400">No enrollments found</td></tr>
+                <tr><td colspan="6">
+                  @if (loading()) { <app-loading label="Loading enrollments..." /> }
+                  @else { <p class="px-6 py-8 text-center text-gray-400">No enrollments found</p> }
+                </td></tr>
               }
             </tbody>
           </table>
@@ -106,6 +114,7 @@ import { ENROLLMENT_STATUS_NAMES } from '../../../core/constants';
 export class EnrollmentListComponent implements OnInit {
   enrollments = signal<Enrollment[]>([]);
   schoolYears = signal<SchoolYear[]>([]);
+  loading = signal(true);
   search = '';
   statusFilter = '';
   schoolYearFilter = '';
@@ -114,7 +123,7 @@ export class EnrollmentListComponent implements OnInit {
   totalCount = signal(0);
   totalPages = signal(0);
 
-  constructor(private api: ApiService, private syService: SchoolYearService, private route: ActivatedRoute) {}
+  constructor(private api: ApiService, private syService: SchoolYearService, private route: ActivatedRoute, private notify: NotificationService) {}
 
   ngOnInit(): void {
     // Deep link from the dashboard tile: /enrollments?pendingPaymentsOnly=true
@@ -127,16 +136,24 @@ export class EnrollmentListComponent implements OnInit {
   }
 
   load(): void {
+    this.loading.set(true);
     this.api.getEnrollments({
       search: this.search,
       status: this.statusFilter || undefined,
       schoolYear: this.schoolYearFilter || undefined,
       pendingPaymentsOnly: this.pendingOnly || undefined,
       page: this.page()
-    }).subscribe(r => {
-      this.enrollments.set(r.items);
-      this.totalCount.set(r.totalCount);
-      this.totalPages.set(r.totalPages);
+    }).subscribe({
+      next: r => {
+        this.loading.set(false);
+        this.enrollments.set(r.items);
+        this.totalCount.set(r.totalCount);
+        this.totalPages.set(r.totalPages);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(formatApiError(err, 'Failed to load enrollments.'));
+      }
     });
   }
 

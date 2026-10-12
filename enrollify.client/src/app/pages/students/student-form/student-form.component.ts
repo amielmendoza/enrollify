@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { CreateStudentRequest } from '../../../core/models';
+import { formatApiError } from '../../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-student-form',
@@ -127,7 +128,7 @@ export class StudentFormComponent implements OnInit {
       : this.api.createStudent(this.form);
     obs.subscribe({
       next: () => this.router.navigate(['/students']),
-      error: (err) => { this.saving.set(false); this.error.set(err.error?.error || 'Save failed'); }
+      error: (err) => { this.saving.set(false); this.error.set(formatApiError(err, 'Save failed')); }
     });
   }
 

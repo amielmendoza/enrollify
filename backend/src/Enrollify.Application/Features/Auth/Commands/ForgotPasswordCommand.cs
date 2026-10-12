@@ -43,14 +43,32 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Best-effort, AFTER the token is persisted; IEmailSender never throws.
+        // Best-effort, AFTER the token is persisted — and deliberately NOT awaited: with a
+        // real SMTP relay the send takes network time, and awaiting it would make this
+        // endpoint measurably slower for existing accounts than unknown ones (a timing side
+        // channel defeating the uniform "success" answer). The discarded task carries its own
+        // try/catch (SmtpEmailSender never throws by contract; this is defense in depth for
+        // any other IEmailSender) and CancellationToken.None so an aborted request can't
+        // cancel a send that's already owed.
         var link = $"{request.FrontendBaseUrl.TrimEnd('/')}/reset-password?email={Uri.EscapeDataString(user.Email)}&token={token}";
         var body = $"Hi {user.FirstName},\n\n" +
                    "We received a request to reset your Enrollify password. Open the link below to choose a new one:\n\n" +
                    $"{link}\n\n" +
                    "The link is valid for 1 hour. If you didn't request this, you can ignore this email — your password is unchanged.";
-        await _emailSender.SendAsync(user.Email, "Reset your Enrollify password", body, cancellationToken);
+        _ = SendResetEmailSafelyAsync(user.Email, body);
 
         return true;
+    }
+
+    private async Task SendResetEmailSafelyAsync(string to, string body)
+    {
+        try
+        {
+            await _emailSender.SendAsync(to, "Reset your Enrollify password", body, CancellationToken.None);
+        }
+        catch
+        {
+            // Best-effort by design — a failed reset email must never surface to the caller.
+        }
     }
 }

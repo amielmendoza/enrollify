@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Enrollment, FeeLine, BalanceInfo, Payment, PublicTenant, EnrollmentLedger } from '../../core/models';
 import { ENROLLMENT_STATUS_NAMES } from '../../core/constants';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
 
@@ -335,7 +336,7 @@ export class PrintEnrollmentComponent implements OnInit {
         this.enrollment.set(e);
         this.maybeAutoPrint();
       },
-      error: (err) => this.error.set(err.error?.error || 'Failed to load enrollment.')
+      error: (err) => this.error.set(formatApiError(err, 'Failed to load enrollment.'))
     });
 
     if (this.doc === 'assessment') {

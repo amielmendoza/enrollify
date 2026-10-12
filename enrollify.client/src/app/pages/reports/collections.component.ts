@@ -1,10 +1,12 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { LoadingComponent } from '../../core/components/loading.component';
 import { CollectionsReport, CollectionRow } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 type Preset = 'today' | 'week' | 'month' | null;
 
@@ -21,7 +23,7 @@ interface DayGroup {
 @Component({
   selector: 'app-collections',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LoadingComponent],
   template: `
     <div>
       <div class="flex items-center justify-between flex-wrap gap-3">
@@ -131,7 +133,10 @@ interface DayGroup {
                 }
               }
               @empty {
-                <tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">No collections in this period.</td></tr>
+                <tr><td colspan="7">
+                  @if (loading()) { <app-loading label="Loading collections..." /> }
+                  @else { <p class="px-6 py-8 text-center text-gray-400">No collections in this period.</p> }
+                </td></tr>
               }
             </tbody>
             @if (report() && report()!.rows.length > 0) {
@@ -162,6 +167,7 @@ interface DayGroup {
 })
 export class CollectionsComponent implements OnInit {
   report = signal<CollectionsReport | null>(null);
+  loading = signal(true);
   from = '';
   to = '';
   method = '';
@@ -191,10 +197,22 @@ export class CollectionsComponent implements OnInit {
     return groups;
   });
 
-  constructor(private api: ApiService, private notify: NotificationService) {}
+  constructor(private api: ApiService, private notify: NotificationService, private route: ActivatedRoute, private router: Router) {}
 
   ngOnInit(): void {
-    this.setPreset('today');
+    // Honor deep links (dashboard quick action, shared URLs): ?from&to&method.
+    const qp = this.route.snapshot.queryParamMap;
+    const from = qp.get('from');
+    const to = qp.get('to');
+    if (from && to) {
+      this.from = from;
+      this.to = to;
+      this.method = qp.get('method') ?? '';
+      this.activePreset.set(this.fmt(new Date()) === from && from === to ? 'today' : null);
+      this.onFilterChange();
+    } else {
+      this.setPreset('today');
+    }
   }
 
   setPreset(p: Exclude<Preset, null>): void {
@@ -223,7 +241,17 @@ export class CollectionsComponent implements OnInit {
 
   onFilterChange(): void {
     this.page.set(1);
+    this.syncUrl();
     this.load();
+  }
+
+  // Keep the URL shareable/bookmarkable as filters change (no history spam).
+  private syncUrl(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { from: this.from || null, to: this.to || null, method: this.method || null },
+      replaceUrl: true
+    });
   }
 
   loadPage(p: number): void {
@@ -233,11 +261,16 @@ export class CollectionsComponent implements OnInit {
 
   load(): void {
     if (!this.from || !this.to) return;
+    this.loading.set(true);
     this.api.getCollections({ from: this.from, to: this.to, method: this.method || undefined, page: this.page() }).subscribe({
-      next: r => this.report.set(r),
+      next: r => {
+        this.loading.set(false);
+        this.report.set(r);
+      },
       error: (err) => {
+        this.loading.set(false);
         this.report.set(null);
-        this.notify.error(err.error?.error || 'Failed to load collections.');
+        this.notify.error(formatApiError(err, 'Failed to load collections.'));
       }
     });
   }

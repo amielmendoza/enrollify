@@ -1,26 +1,29 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Enrollment, Section, BalanceInfo, Payment, EnrollmentHistoryItem, EnrollmentLedger } from '../../../core/models';
 import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/constants';
+import { formatApiError } from '../../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-enrollment-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="max-w-4xl">
       @if (enrollment()) {
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h2 class="text-2xl font-bold text-gray-900">{{ enrollment()!.studentName }}</h2>
+            <h2 class="text-2xl font-bold text-gray-900">
+              <a [routerLink]="['/students', enrollment()!.studentId]" class="hover:text-[#0038A8] hover:underline" title="Open the student record">{{ enrollment()!.studentName }}</a>
+            </h2>
             <p class="text-sm text-gray-500">{{ enrollment()!.schoolYear }} - {{ enrollment()!.gradeLevel }}</p>
           </div>
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center gap-3">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium" [ngClass]="getStatusClass(getStatusName())">
               {{ getStatusName() }}
             </span>
@@ -130,9 +133,9 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
 
         <!-- Tabs -->
         <div class="mb-6 border-b border-gray-200">
-          <nav class="flex gap-6">
+          <nav class="flex gap-6 overflow-x-auto whitespace-nowrap">
             <button (click)="activeTab.set('requirements')"
-                    class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                    class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
                     [class]="activeTab() === 'requirements' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
               Requirements
               @if (toVerifyCount() > 0) {
@@ -140,7 +143,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
               }
             </button>
             <button (click)="activeTab.set('payments')"
-                    class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                    class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
                     [class]="activeTab() === 'payments' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
               Payments
               @if (pendingPaymentsCount() > 0) {
@@ -148,12 +151,12 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
               }
             </button>
             <button (click)="activeTab.set('ledger')"
-                    class="pb-3 text-sm font-medium border-b-2 transition-colors"
+                    class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors"
                     [class]="activeTab() === 'ledger' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
               Ledger
             </button>
             <button (click)="activeTab.set('history')"
-                    class="pb-3 text-sm font-medium border-b-2 transition-colors"
+                    class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors"
                     [class]="activeTab() === 'history' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
               History
             </button>
@@ -242,7 +245,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/co
         <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6">
           <h3 class="font-semibold text-gray-900 mb-4">Fees & Payments</h3>
           @if (balance()) {
-            <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg text-center">
                 <p class="text-sm text-gray-500">Total Charges</p>
                 <p class="text-xl font-bold text-gray-900">{{ totalCharges() | number:'1.2-2' }}</p>
@@ -583,7 +586,7 @@ export class EnrollmentDetailComponent implements OnInit {
       },
       error: (err) => {
         this.adjSaving.set(false);
-        this.adjError.set(err.error?.error || 'Failed to add adjustment.');
+        this.adjError.set(formatApiError(err, 'Failed to add adjustment.'));
       }
     });
   }
@@ -597,7 +600,7 @@ export class EnrollmentDetailComponent implements OnInit {
         this.notify.success('Adjustment voided.');
         this.loadAll();
       },
-      error: (err) => this.notify.error(err.error?.error || 'Failed to void adjustment.')
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to void adjustment.'))
     });
   }
 
@@ -656,7 +659,7 @@ export class EnrollmentDetailComponent implements OnInit {
     this.stepError.set('');
     this.api.cancelEnrollment(this.enrollmentId, reason || undefined).subscribe({
       next: () => this.loadAll(),
-      error: (err) => this.stepError.set(err.error?.error || 'Failed to cancel enrollment.')
+      error: (err) => this.stepError.set(formatApiError(err, 'Failed to cancel enrollment.'))
     });
   }
 
@@ -672,7 +675,7 @@ export class EnrollmentDetailComponent implements OnInit {
     this.stepError.set('');
     this.api.moveEnrollmentStep(this.enrollmentId, 'Advanced by admin').subscribe({
       next: () => this.loadAll(),
-      error: (err) => this.stepError.set(err.error?.error || 'Failed to advance step.')
+      error: (err) => this.stepError.set(formatApiError(err, 'Failed to advance step.'))
     });
   }
 
@@ -703,7 +706,7 @@ export class EnrollmentDetailComponent implements OnInit {
         this.notify.success('Payment voided.');
         this.loadAll();
       },
-      error: (err) => this.notify.error(err.error?.error || 'Failed to void payment.')
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to void payment.'))
     });
   }
 
@@ -718,7 +721,7 @@ export class EnrollmentDetailComponent implements OnInit {
         this.notify.success('Enrollment returned to Submitted for re-assessment.');
         this.loadAll();
       },
-      error: (err) => this.notify.error(err.error?.error || 'Failed to send back enrollment.')
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to send back enrollment.'))
     });
   }
 
@@ -748,7 +751,7 @@ export class EnrollmentDetailComponent implements OnInit {
     this.reqError.set('');
     this.api.reviewRequirement(requirementId, isVerified, notes || undefined).subscribe({
       next: () => this.loadAll(),
-      error: (err) => this.reqError.set(err.error?.error || 'Failed to review requirement.')
+      error: (err) => this.reqError.set(formatApiError(err, 'Failed to review requirement.'))
     });
   }
 
@@ -768,13 +771,13 @@ export class EnrollmentDetailComponent implements OnInit {
           },
           error: (err) => {
             this.uploadingReqId.set(null);
-            this.reqError.set(err.error?.error || 'Failed to attach file.');
+            this.reqError.set(formatApiError(err, 'Failed to attach file.'));
           }
         });
       },
       error: (err) => {
         this.uploadingReqId.set(null);
-        this.reqError.set(err.error?.error || 'File upload failed.');
+        this.reqError.set(formatApiError(err, 'File upload failed.'));
       }
     });
   }

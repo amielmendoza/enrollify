@@ -4,13 +4,14 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { LoadingComponent } from '../../../core/components/loading.component';
 import { formatApiError } from '../../../core/utils/format-api-error';
 import { Student } from '../../../core/models';
 
 @Component({
   selector: 'app-student-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, LoadingComponent],
   template: `
     <div>
       <div class="flex items-center justify-between mb-6">
@@ -49,7 +50,7 @@ import { Student } from '../../../core/models';
                   <td class="px-6 py-4 text-sm folio-mono text-gray-700">{{ student.lrn }}</td>
                   <td class="px-6 py-4 text-sm font-medium text-gray-900">
                     <div class="flex flex-wrap items-center gap-2">
-                      {{ student.fullName }}
+                      <a [routerLink]="['/students', student.id]" class="hover:text-[#0038A8] hover:underline">{{ student.fullName }}</a>
                       @if (student.isActive === false) {
                         <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Inactive</span>
                       }
@@ -83,7 +84,10 @@ import { Student } from '../../../core/models';
                 </tr>
               }
               @empty {
-                <tr><td colspan="7" class="px-6 py-8 text-center text-gray-400">No students found</td></tr>
+                <tr><td colspan="7">
+                  @if (loading()) { <app-loading label="Loading students..." /> }
+                  @else { <p class="px-6 py-8 text-center text-gray-400">No students found</p> }
+                </td></tr>
               }
             </tbody>
           </table>
@@ -132,6 +136,7 @@ import { Student } from '../../../core/models';
 })
 export class StudentListComponent implements OnInit {
   students = signal<Student[]>([]);
+  loading = signal(true);
   search = '';
   showInactive = false;
   page = signal(1);
@@ -145,10 +150,18 @@ export class StudentListComponent implements OnInit {
   ngOnInit(): void { this.load(); }
 
   load(): void {
-    this.api.getStudents(this.search, this.page(), 20, this.showInactive).subscribe(result => {
-      this.students.set(result.items);
-      this.totalCount.set(result.totalCount);
-      this.totalPages.set(result.totalPages);
+    this.loading.set(true);
+    this.api.getStudents(this.search, this.page(), 20, this.showInactive).subscribe({
+      next: result => {
+        this.loading.set(false);
+        this.students.set(result.items);
+        this.totalCount.set(result.totalCount);
+        this.totalPages.set(result.totalPages);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(formatApiError(err, 'Failed to load students.'));
+      }
     });
   }
 

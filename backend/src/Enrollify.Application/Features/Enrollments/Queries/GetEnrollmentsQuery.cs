@@ -10,7 +10,8 @@ namespace Enrollify.Application.Features.Enrollments.Queries;
 public record GetEnrollmentsQuery(
     string? SchoolYear, string? GradeLevel, EnrollmentStatus? Status,
     string? Search, int Page = 1, int PageSize = 20,
-    bool PendingPaymentsOnly = false
+    bool PendingPaymentsOnly = false,
+    Guid? StudentId = null
 ) : IRequest<PagedResult<EnrollmentDto>>;
 
 public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, PagedResult<EnrollmentDto>>
@@ -37,6 +38,10 @@ public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, P
 
         if (request.Status.HasValue)
             query = query.Where(e => e.Status == request.Status.Value);
+
+        // Student page: one learner's enrollments across every year and status.
+        if (request.StudentId.HasValue)
+            query = query.Where(e => e.StudentId == request.StudentId.Value);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

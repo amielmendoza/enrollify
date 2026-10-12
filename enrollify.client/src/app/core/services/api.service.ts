@@ -8,7 +8,7 @@ import {
   Section, Fee, FeeLine, Payment, BalanceInfo, PagedResult, WorkflowDefinition,
   SubmitApplicationRequest, ApplicationListDto, ApplicationDetailDto, ApplicationStatusDto,
   ParentPayRequest, StudentPayRequest, ParentChild, MyPaymentsResponse, DashboardStats, CollectionsReport, SchoolYear, PaymentTerm, RequirementTemplate,
-  ApplicationFormField,
+  ApplicationFormField, EnrollmentRegister, EnrollmentRegisterFilters, SectionRoster,
   Tenant, PublicTenant, CreateTenantRequest, UpdateTenantRequest,
   TenantUser, CreateTenantUserRequest, UpdateTenantUserRequest,
   Registrar, CreateRegistrarRequest, UpdateRegistrarRequest
@@ -43,7 +43,7 @@ export class ApiService {
   }
 
   // Enrollments
-  getEnrollments(filters?: { schoolYear?: string; gradeLevel?: string; status?: string; search?: string; pendingPaymentsOnly?: boolean; page?: number; pageSize?: number }): Observable<PagedResult<Enrollment>> {
+  getEnrollments(filters?: { schoolYear?: string; gradeLevel?: string; status?: string; search?: string; pendingPaymentsOnly?: boolean; studentId?: string; page?: number; pageSize?: number }): Observable<PagedResult<Enrollment>> {
     let params = new HttpParams();
     if (filters) {
       if (filters.schoolYear) params = params.set('schoolYear', filters.schoolYear);
@@ -51,6 +51,7 @@ export class ApiService {
       if (filters.status) params = params.set('status', filters.status);
       if (filters.search) params = params.set('search', filters.search);
       if (filters.pendingPaymentsOnly) params = params.set('pendingPaymentsOnly', true);
+      if (filters.studentId) params = params.set('studentId', filters.studentId);
       params = params.set('page', filters.page ?? 1).set('pageSize', filters.pageSize ?? 20);
     }
     return this.http.get<PagedResult<Enrollment>>(`${this.baseUrl}/enrollments`, { params });
@@ -117,6 +118,10 @@ export class ApiService {
 
   // Sections. includeInactive is for admin management UIs only (Settings) — pickers
   // and assessments must stay active-only, which the default (omitted param) preserves.
+  getSectionRoster(sectionId: string): Observable<SectionRoster> {
+    return this.http.get<SectionRoster>(`${this.baseUrl}/sections/${sectionId}/roster`);
+  }
+
   getSections(schoolYear?: string, gradeLevel?: string, includeInactive = false): Observable<Section[]> {
     let params = new HttpParams();
     if (schoolYear) params = params.set('schoolYear', schoolYear);
@@ -261,11 +266,12 @@ export class ApiService {
   }
 
   // Admissions (admin)
-  getApplications(filters?: { status?: string; search?: string; page?: number; pageSize?: number }): Observable<PagedResult<ApplicationListDto>> {
+  getApplications(filters?: { status?: string; search?: string; studentId?: string; page?: number; pageSize?: number }): Observable<PagedResult<ApplicationListDto>> {
     let params = new HttpParams();
     if (filters) {
       if (filters.status) params = params.set('status', filters.status);
       if (filters.search) params = params.set('search', filters.search);
+      if (filters.studentId) params = params.set('studentId', filters.studentId);
       params = params.set('page', filters.page ?? 1).set('pageSize', filters.pageSize ?? 20);
     }
     return this.http.get<PagedResult<ApplicationListDto>>(`${this.baseUrl}/admissions`, { params });
@@ -277,6 +283,11 @@ export class ApiService {
 
   reviewApplication(id: string, isApproved: boolean, notes?: string): Observable<ApplicationDetailDto> {
     return this.http.post<ApplicationDetailDto>(`${this.baseUrl}/admissions/${id}/review`, { isApproved, notes });
+  }
+
+  // Move a Submitted application to UnderReview (approve/reject stay available from there).
+  markApplicationUnderReview(id: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.baseUrl}/admissions/${id}/under-review`, {});
   }
 
   reviewPayment(paymentId: string, isApproved: boolean, notes?: string): Observable<Payment> {
@@ -439,6 +450,26 @@ export class ApiService {
     let params = new HttpParams().set('from', from).set('to', to);
     if (method) params = params.set('method', method);
     return this.http.get(`${this.baseUrl}/reports/collections/export`, { params, responseType: 'blob' });
+  }
+
+  // Enrollment register (per school year; omitted year = the active one server-side).
+  getEnrollmentRegister(filters: EnrollmentRegisterFilters, page = 1, pageSize = 50): Observable<EnrollmentRegister> {
+    const params = this.registerParams(filters).set('page', page).set('pageSize', pageSize);
+    return this.http.get<EnrollmentRegister>(`${this.baseUrl}/reports/enrollment-register`, { params });
+  }
+
+  exportEnrollmentRegister(filters: EnrollmentRegisterFilters): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/reports/enrollment-register/export`, { params: this.registerParams(filters), responseType: 'blob' });
+  }
+
+  private registerParams(f: EnrollmentRegisterFilters): HttpParams {
+    let params = new HttpParams();
+    if (f.schoolYear) params = params.set('schoolYear', f.schoolYear);
+    if (f.gradeLevel) params = params.set('gradeLevel', f.gradeLevel);
+    if (f.status) params = params.set('status', f.status);
+    if (f.sectionId) params = params.set('sectionId', f.sectionId);
+    if (f.includeCancelled) params = params.set('includeCancelled', true);
+    return params;
   }
 
   // Application form fields (admin)

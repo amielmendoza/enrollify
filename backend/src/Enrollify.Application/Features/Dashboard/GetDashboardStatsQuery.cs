@@ -55,7 +55,8 @@ public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQu
 
         var totalStudents = await _context.Students.CountAsync(cancellationToken);
         var totalEnrollments = await enrollments.CountAsync(cancellationToken);
-        var pendingApps = await _context.AdmissionApplications.CountAsync(a => a.Status == "Submitted", cancellationToken);
+        // Awaiting a decision: Submitted or UnderReview (marking under review must not hide it).
+        var pendingApps = await _context.AdmissionApplications.CountAsync(a => a.Status == "Submitted" || a.Status == "UnderReview", cancellationToken);
         var draftEnrollments = await enrollments.CountAsync(e => e.Status == EnrollmentStatus.Draft || e.Status == EnrollmentStatus.Submitted, cancellationToken);
         var approvedEnrollments = await enrollments.CountAsync(e => e.Status == EnrollmentStatus.Approved, cancellationToken);
         var enrolledCount = await enrollments.CountAsync(e => e.Status == EnrollmentStatus.Enrolled, cancellationToken);

@@ -18,6 +18,20 @@ export const ENROLLMENT_STEP_NAMES: string[] = [
   'Draft', 'Submitted', 'Assessed', 'Approved', 'Paid', 'Enrolled',
 ];
 
+// Badge colours for enrollment statuses (same palette as the enrollments list).
+export function enrollmentStatusBadgeClass(status: string): string {
+  const classes: Record<string, string> = {
+    Draft: 'bg-gray-100 text-gray-700',
+    Submitted: 'bg-blue-100 text-blue-700',
+    Assessed: 'bg-yellow-100 text-yellow-700',
+    Approved: 'bg-purple-100 text-purple-700',
+    Paid: 'bg-green-100 text-green-700',
+    Enrolled: 'bg-emerald-100 text-emerald-800',
+    Cancelled: 'bg-red-100 text-red-700',
+  };
+  return classes[status] || 'bg-gray-100 text-gray-700';
+}
+
 export function enrollmentStatusName(status: string | number): string {
   if (typeof status === 'number') return ENROLLMENT_STATUS_NAMES[status] ?? `${status}`;
   const asNumber = Number(status);

@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { Tenant } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
+import { LoadingComponent } from '../../core/components/loading.component';
 
 /// SuperAdmin-only page to manage the list of schools (tenants).
 @Component({
   selector: 'app-super-tenants',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LoadingComponent],
   template: `
     <div>
       <div class="flex items-start justify-between gap-4 flex-wrap">
@@ -66,7 +68,11 @@ import { Tenant } from '../../core/models';
               </tr>
             }
             @empty {
-              <tr><td colspan="5" class="px-4 py-12 text-center text-gray-400">No schools yet.</td></tr>
+              <tr><td colspan="5">
+                @if (listLoading()) { <app-loading label="Loading schools..." /> }
+                @else if (listError()) { <p class="px-4 py-12 text-center text-red-600">{{ listError() }}</p> }
+                @else { <p class="px-4 py-12 text-center text-gray-400">No schools yet.</p> }
+              </td></tr>
             }
           </tbody>
         </table>
@@ -134,8 +140,17 @@ export class SuperTenantsComponent implements OnInit {
 
   ngOnInit() { this.load(); }
 
+  // Spinner until loaded; a failed load says so instead of claiming the list is empty.
+  listLoading = signal(true);
+  listError = signal('');
+
   load() {
-    this.api.getAllTenants().subscribe(list => this.tenants.set(list));
+    this.listLoading.set(true);
+    this.listError.set('');
+    this.api.getAllTenants().subscribe({
+      next: list => { this.listLoading.set(false); this.tenants.set(list); },
+      error: (err) => { this.listLoading.set(false); this.listError.set(formatApiError(err, 'Failed to load schools.')); }
+    });
   }
 
   openCreate() {
@@ -183,7 +198,7 @@ export class SuperTenantsComponent implements OnInit {
       next: () => { this.saving.set(false); this.showModal.set(false); this.load(); },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Failed to save school.');
+        this.error.set(formatApiError(err, 'Failed to save school.'));
       }
     });
   }

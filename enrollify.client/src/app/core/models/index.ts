@@ -512,6 +512,48 @@ export interface CollectionsReport {
   };
 }
 
+// Enrollment register (GET /reports/enrollment-register): one school year, deterministic
+// order (grade, name). Summary covers the whole filtered set regardless of paging.
+// Money is null before assessment — never a faked zero.
+export interface EnrollmentRegisterRow {
+  enrollmentId: string;
+  studentId: string;
+  lrn: string | null;
+  studentName: string;
+  gradeLevel: string;
+  sectionName: string | null;
+  status: string;
+  paymentPlan: string | null;
+  assessedTotal: number | null;
+  totalPaid: number;
+  balance: number | null;
+  createdAt: string;
+}
+
+export interface EnrollmentRegister {
+  items: EnrollmentRegisterRow[];
+  totalCount: number;
+  summary: {
+    totalCount: number;
+    byStatus: { status: string; count: number }[];
+    byGrade: { gradeLevel: string; count: number }[];
+  };
+}
+
+export interface EnrollmentRegisterFilters {
+  schoolYear?: string;
+  gradeLevel?: string;
+  status?: string;
+  sectionId?: string;
+  includeCancelled?: boolean;
+}
+
+// Class list for one section (GET /sections/{id}/roster); cancelled enrollments excluded.
+export interface SectionRoster {
+  section: { id: string; name: string; gradeLevel: string; schoolYear: string; capacity: number; currentCount: number; adviser: string | null };
+  students: { studentId: string; enrollmentId: string; lrn: string | null; name: string; gender: string | null; status: string }[];
+}
+
 export interface DashboardStats {
   schoolYear: string;
   totalStudents: number;

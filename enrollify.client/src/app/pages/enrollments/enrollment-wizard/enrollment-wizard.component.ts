@@ -6,6 +6,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { SchoolYearService } from '../../../core/services/school-year.service';
 import { Student } from '../../../core/models';
 import { GRADE_LEVELS } from '../../../core/constants';
+import { formatApiError } from '../../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-enrollment-wizard',
@@ -147,7 +148,7 @@ export class EnrollmentWizardComponent {
       gradeLevel: this.gradeLevel
     }).subscribe({
       next: (e) => this.router.navigate(['/enrollments', e.id]),
-      error: (err) => { this.saving.set(false); this.error.set(err.error?.error || 'Failed to create enrollment'); }
+      error: (err) => { this.saving.set(false); this.error.set(formatApiError(err, 'Failed to create enrollment')); }
     });
   }
 }

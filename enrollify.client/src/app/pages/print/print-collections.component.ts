@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CollectionsReport, CollectionRow, PublicTenant } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 interface DayGroup {
   key: string;
@@ -203,7 +204,7 @@ export class PrintCollectionsComponent implements OnInit {
 
     this.api.getCollections({ from: this.from, to: this.to, method: this.method || undefined, page: 1, pageSize: 500 }).subscribe({
       next: r => { this.report.set(r); this.maybeAutoPrint(); },
-      error: (err) => this.error.set(err.error?.error || 'Failed to load the collections report.')
+      error: (err) => this.error.set(formatApiError(err, 'Failed to load the collections report.'))
     });
   }
 

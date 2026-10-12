@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Student } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-my-profile',
@@ -188,7 +189,7 @@ export class MyProfileComponent implements OnInit {
       },
       error: (err) => {
         this.changingPw.set(false);
-        this.pwError.set(err.error?.error || 'Failed to change password');
+        this.pwError.set(formatApiError(err, 'Failed to change password'));
       }
     });
   }

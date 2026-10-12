@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, WritableSignal, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
@@ -6,11 +6,13 @@ import { SchoolYearService } from '../../core/services/school-year.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { WorkflowDefinition, Fee, Section, SchoolYear, PaymentTerm, RequirementTemplate, ApplicationFormField, FormFieldType, FormFieldSection, FormFieldAppliesTo, Registrar } from '../../core/models';
 import { GRADE_LEVELS } from '../../core/constants';
+import { formatApiError } from '../../core/utils/format-api-error';
+import { LoadingComponent } from '../../core/components/loading.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LoadingComponent],
   template: `
     <div>
       <h1 class="text-2xl font-bold text-gray-900">School Management</h1>
@@ -18,10 +20,10 @@ import { GRADE_LEVELS } from '../../core/constants';
 
       <!-- Tabs -->
       <div class="mt-6 border-b border-gray-200">
-        <nav class="flex gap-6">
+        <nav class="flex gap-6 overflow-x-auto whitespace-nowrap">
           @for (tab of tabs; track tab.id) {
             <button (click)="activeTab = tab.id"
-                    class="pb-3 text-sm font-medium border-b-2 transition-colors"
+                    class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors"
                     [class]="activeTab === tab.id ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
               {{ tab.label }}
             </button>
@@ -116,7 +118,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                     </tr>
                   }
                   @empty {
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">No school years configured</td></tr>
+                    <tr><td colspan="5">@if (syLoading()) { <app-loading label="Loading school years..." /> } @else { <p class="px-6 py-8 text-center text-gray-400">No school years configured</p> }</td></tr>
                   }
                 </tbody>
               </table>
@@ -252,7 +254,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                     </tr>
                   }
                   @empty {
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">No fees configured</td></tr>
+                    <tr><td colspan="5">@if (feesLoading()) { <app-loading label="Loading fees..." /> } @else { <p class="px-6 py-8 text-center text-gray-400">No fees configured</p> }</td></tr>
                   }
                 </tbody>
               </table>
@@ -303,9 +305,9 @@ import { GRADE_LEVELS } from '../../core/constants';
 
           <!-- Section List -->
           <div class="bg-white rounded-xl border border-[#E2D9C2]">
-            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
               <h2 class="text-lg font-semibold text-gray-900">Sections</h2>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2">
                 <select [(ngModel)]="sectionFilterGrade" (ngModelChange)="loadSections()" class="form-input w-auto text-sm">
                   <option value="">All Grades</option>
                   @for (g of gradeLevels; track g) { <option [value]="g">{{ g }}</option> }
@@ -331,6 +333,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                         <p class="text-xs text-gray-500">{{ s.gradeLevel }} &bull; {{ s.schoolYear }}</p>
                       </div>
                       <div class="flex items-center">
+                        <button (click)="openRoster(s.id)" class="text-xs font-semibold text-[#0038A8] hover:text-[#002B85] px-1.5 py-1" title="Print the class list">Roster</button>
                         <button (click)="openEditSection(s)" class="text-xs text-[#0038A8] hover:text-[#002B85] p-1" title="Edit section">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg>
                         </button>
@@ -352,7 +355,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                   </div>
                 }
                 @empty {
-                  <div class="col-span-3 py-8 text-center text-gray-400">No sections configured</div>
+                  <div class="col-span-full">@if (sectionsLoading()) { <app-loading label="Loading sections..." /> } @else { <p class="py-8 text-center text-gray-400">No sections configured</p> }</div>
                 }
               </div>
             </div>
@@ -577,7 +580,7 @@ import { GRADE_LEVELS } from '../../core/constants';
             <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700">{{ regNotice() }}</div>
           }
 
-          <div class="bg-white rounded-xl border border-[#E2D9C2] overflow-hidden">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] overflow-x-auto">
             <table class="w-full">
               <thead class="bg-gray-50">
                 <tr>
@@ -608,7 +611,7 @@ import { GRADE_LEVELS } from '../../core/constants';
                   </tr>
                 }
                 @empty {
-                  <tr><td colspan="4" class="px-4 py-12 text-center text-gray-400">No registrars yet. Add one to delegate day-to-day enrollment work.</td></tr>
+                  <tr><td colspan="4">@if (registrarsLoading()) { <app-loading label="Loading registrars..." /> } @else { <p class="px-4 py-12 text-center text-gray-400">No registrars yet. Add one to delegate day-to-day enrollment work.</p> }</td></tr>
                 }
               </tbody>
             </table>
@@ -1164,7 +1167,7 @@ export class SettingsComponent implements OnInit {
         this.newRequirement = { documentName: '', gradeLevel: '', displayOrder: 0 };
         this.loadRequirementTemplates();
       },
-      error: (err) => this.reqError.set(err.error?.error || 'Failed to add requirement template.')
+      error: (err) => this.reqError.set(formatApiError(err, 'Failed to add requirement template.'))
     });
   }
 
@@ -1182,8 +1185,21 @@ export class SettingsComponent implements OnInit {
     this.api.deleteRequirementTemplate(t.id).subscribe(() => this.loadRequirementTemplates());
   }
 
+  // Each list shows a spinner until loaded, so "No … configured" never flashes on arrival.
+  syLoading = signal(true);
+  feesLoading = signal(true);
+  sectionsLoading = signal(true);
+  registrarsLoading = signal(true);
+
+  private listLoadFailed(flag: WritableSignal<boolean>, err: unknown, what: string): void {
+    flag.set(false);
+    this.notify.error(formatApiError(err, `Failed to load ${what}.`));
+  }
+
   loadSchoolYears() {
-    this.api.getSchoolYears().subscribe(list => {
+    this.syLoading.set(true);
+    this.api.getSchoolYears().subscribe({ next: list => {
+      this.syLoading.set(false);
       this.schoolYearList.set(list);
       const activeName = list.find(sy => sy.isActive)?.name ?? '';
       // Latest year by name (YYYY-YYYY sorts lexically) — the natural copy/rollover target.
@@ -1201,17 +1217,25 @@ export class SettingsComponent implements OnInit {
       this.loadFees();
       this.loadSections();
       this.loadPaymentTerms();
-    });
+    }, error: (err) => this.listLoadFailed(this.syLoading, err, 'school years') });
   }
 
   loadFees() {
     // includeInactive so admins can still find and re-activate deactivated fees.
-    this.api.getFees(this.feeFilter || undefined, undefined, true).subscribe(f => this.fees.set(f));
+    this.feesLoading.set(true);
+    this.api.getFees(this.feeFilter || undefined, undefined, true).subscribe({
+      next: f => { this.feesLoading.set(false); this.fees.set(f); },
+      error: (err) => this.listLoadFailed(this.feesLoading, err, 'fees')
+    });
   }
 
   loadSections() {
     // includeInactive so admins can still find and re-activate deactivated sections.
-    this.api.getSections(this.sectionFilterYear || undefined, this.sectionFilterGrade || undefined, true).subscribe(s => this.sections.set(s));
+    this.sectionsLoading.set(true);
+    this.api.getSections(this.sectionFilterYear || undefined, this.sectionFilterGrade || undefined, true).subscribe({
+      next: s => { this.sectionsLoading.set(false); this.sections.set(s); },
+      error: (err) => this.listLoadFailed(this.sectionsLoading, err, 'sections')
+    });
   }
 
   // Summary counts only active rows — the lists include inactive ones for re-activation.
@@ -1242,7 +1266,7 @@ export class SettingsComponent implements OnInit {
         this.loadSchoolYears();
         this.syService.refresh();
       },
-      error: (err) => this.notify.error(err.error?.error || 'Failed to create school year')
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to create school year'))
     });
   }
 
@@ -1260,7 +1284,7 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => {
         this.reenrolling.set(false);
-        this.notify.error(err.error?.error || 'Bulk re-enrollment failed.');
+        this.notify.error(formatApiError(err, 'Bulk re-enrollment failed.'));
       }
     });
   }
@@ -1283,7 +1307,7 @@ export class SettingsComponent implements OnInit {
         this.loadSchoolYears();
         this.syService.refresh();
       },
-      error: (err) => this.notify.error(err.error?.error || 'Cannot delete this school year')
+      error: (err) => this.notify.error(formatApiError(err, 'Cannot delete this school year'))
     });
   }
 
@@ -1335,7 +1359,7 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => {
         this.feeEditSaving.set(false);
-        this.feeEditError.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Failed to update fee.');
+        this.feeEditError.set(formatApiError(err, 'Failed to update fee.'));
       }
     });
   }
@@ -1351,6 +1375,11 @@ export class SettingsComponent implements OnInit {
   async deleteSection(id: string) {
     if (!(await this.notify.confirm('Delete this section?', { title: 'Delete Section', confirmLabel: 'Delete', danger: true }))) return;
     this.api.deleteSection(id).subscribe(() => this.loadSections());
+  }
+
+  // Printable class list (outside the app shell, like the other print pages).
+  openRoster(sectionId: string) {
+    window.open(`/print/section-roster/${sectionId}`, '_blank');
   }
 
   openEditSection(s: Section) {
@@ -1388,7 +1417,7 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => {
         this.sectionEditSaving.set(false);
-        this.sectionEditError.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Failed to update section.');
+        this.sectionEditError.set(formatApiError(err, 'Failed to update section.'));
       }
     });
   }
@@ -1413,7 +1442,7 @@ export class SettingsComponent implements OnInit {
         : { schoolYear: this.ptFilter, planType, downPaymentPercent: this.ptQuarterly.downPaymentPercent, interestRatePercent: this.ptQuarterly.interestRatePercent, discountPercent: 0, installmentCount: this.ptQuarterly.installmentCount };
     this.api.savePaymentTerm(data).subscribe({
       next: () => this.loadPaymentTerms(),
-      error: (err) => this.notify.error(err.error?.error || 'Failed to save')
+      error: (err) => this.notify.error(formatApiError(err, 'Failed to save'))
     });
   }
 
@@ -1436,7 +1465,7 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => {
         this.restoringDefaults.set(false);
-        this.ffError.set(err.error?.error || 'Failed to restore defaults.');
+        this.ffError.set(formatApiError(err, 'Failed to restore defaults.'));
       }
     });
   }
@@ -1489,7 +1518,7 @@ export class SettingsComponent implements OnInit {
       helpText: this.ffNew.helpText || null
     }).subscribe({
       next: () => { this.ffShowAddModal.set(false); this.loadFormFields(); },
-      error: (err) => this.ffError.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Failed to add field.')
+      error: (err) => this.ffError.set(formatApiError(err, 'Failed to add field.'))
     });
   }
 
@@ -1524,7 +1553,7 @@ export class SettingsComponent implements OnInit {
     if (!(await this.notify.confirm(`Delete custom field "${f.label}"? Stored values for this field will remain on existing applications but will no longer be displayed.`, { title: 'Delete Custom Field', confirmLabel: 'Delete', danger: true }))) return;
     this.api.deleteApplicationFormField(f.id).subscribe({
       next: () => this.loadFormFields(),
-      error: (err) => this.ffError.set(err.error?.error || 'Failed to delete field.')
+      error: (err) => this.ffError.set(formatApiError(err, 'Failed to delete field.'))
     });
   }
 
@@ -1537,7 +1566,7 @@ export class SettingsComponent implements OnInit {
       displayOrder: f.displayOrder, options: f.options, helpText: f.helpText
     }).subscribe({
       next: () => { this.ffEditing.set(null); this.loadFormFields(); },
-      error: (err) => this.ffError.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Failed to save field.')
+      error: (err) => this.ffError.set(formatApiError(err, 'Failed to save field.'))
     });
   }
 
@@ -1548,7 +1577,11 @@ export class SettingsComponent implements OnInit {
   // ----- Registrars -----
 
   loadRegistrars() {
-    this.api.getRegistrars().subscribe(list => this.registrars.set(list));
+    this.registrarsLoading.set(true);
+    this.api.getRegistrars().subscribe({
+      next: list => { this.registrarsLoading.set(false); this.registrars.set(list); },
+      error: (err) => this.listLoadFailed(this.registrarsLoading, err, 'registrars')
+    });
   }
 
   openCreateRegistrar() {
@@ -1587,7 +1620,7 @@ export class SettingsComponent implements OnInit {
       next: () => { this.regSaving.set(false); this.regShowModal.set(false); this.regNotice.set(target ? 'Registrar updated.' : 'Registrar created.'); this.loadRegistrars(); },
       error: (err) => {
         this.regSaving.set(false);
-        this.regError.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Failed to save registrar.');
+        this.regError.set(formatApiError(err, 'Failed to save registrar.'));
       }
     });
   }
@@ -1607,7 +1640,7 @@ export class SettingsComponent implements OnInit {
     this.regSaving.set(true);
     this.api.resetRegistrarPassword(r.id, this.regResetPassword).subscribe({
       next: () => { this.regSaving.set(false); this.regResetting.set(null); this.regNotice.set(`Password reset for ${r.email}.`); },
-      error: (err) => { this.regSaving.set(false); this.regError.set(err.error?.error || 'Failed to reset password.'); }
+      error: (err) => { this.regSaving.set(false); this.regError.set(formatApiError(err, 'Failed to reset password.')); }
     });
   }
 }

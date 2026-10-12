@@ -7,17 +7,23 @@ import { SchoolYearService } from '../../core/services/school-year.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { Enrollment, BalanceInfo, PaymentTerm } from '../../core/models';
 import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } from '../../core/constants';
+import { LoadingComponent } from '../../core/components/loading.component';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-my-enrollment',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LoadingComponent],
   template: `
     <div>
       <h1 class="text-2xl font-bold text-gray-900">My Enrollment</h1>
       <p class="mt-1 text-sm text-gray-500">Track your enrollment progress</p>
 
-      @if (enrollment()) {
+      @if (!loaded()) {
+        <app-loading label="Loading your enrollment..." />
+      } @else if (loadFailed()) {
+        <div class="mt-6 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">We couldn't load the enrollment. Refresh the page to try again.</div>
+      } @else if (enrollment()) {
         <!-- Progress Tracker -->
         <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mt-6">
           <h2 class="font-semibold text-gray-900 mb-4">Enrollment Progress</h2>
@@ -219,7 +225,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 
           <!-- Balance -->
           @if (balance()) {
-            <div class="mt-6 grid grid-cols-3 gap-4">
+            <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div class="bg-white rounded-xl border border-[#E2D9C2] p-4 text-center">
                 <p class="text-sm text-gray-500">Total Fees</p>
                 <p class="text-xl font-bold text-gray-900 mt-1">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</p>
@@ -270,7 +276,7 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
         @if ((statusName() === 'Paid' || statusName() === 'Enrolled') && balance()) {
           <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
             <h2 class="font-semibold text-gray-900 mb-3">Tuition Summary</h2>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div class="bg-gray-50 p-4 rounded-lg text-center">
                 <p class="text-sm text-gray-500">Total Fees</p>
                 <p class="text-xl font-bold text-gray-900">\u20B1{{ balance()!.totalFees | number:'1.2-2' }}</p>
@@ -304,6 +310,16 @@ import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } 
 })
 export class MyEnrollmentComponent implements OnInit {
   enrollment = signal<Enrollment | null>(null);
+  // False until the first fetch completes, so the student never sees "No enrollment found" (and its
+  // Request button) flash before the real state arrives.
+  loaded = signal(false);
+  loadFailed = signal(false);
+
+  private failLoad(err: unknown): void {
+    this.loaded.set(true);
+    this.loadFailed.set(true);
+    this.notify.error(formatApiError(err, 'Failed to load the enrollment.'));
+  }
   balance = signal<BalanceInfo | null>(null);
   submitting = signal(false);
   requesting = signal(false);
@@ -397,15 +413,23 @@ export class MyEnrollmentComponent implements OnInit {
   constructor(private api: ApiService, private syService: SchoolYearService, private notify: NotificationService) {}
 
   ngOnInit() {
-    this.syService.ensureLoaded().subscribe(() => this.load());
+    this.syService.ensureLoaded().subscribe({
+      next: () => this.load(),
+      error: (err) => this.failLoad(err)
+    });
   }
 
   load() {
-    this.api.getMyEnrollments().subscribe(enrollments => {
+    this.api.getMyEnrollments().subscribe({
+      next: enrollments => {
       const activeSY = this.syService.activeName();
       // Skip cancelled enrollments so the student can request a fresh one.
       const match = enrollments.find(e => e.schoolYear === activeSY && enrollmentStatusName(e.status) !== 'Cancelled') ?? null;
       this.enrollment.set(match);
+      this.loaded.set(true);
+      this.loadFailed.set(false);
+      },
+      error: (err) => this.failLoad(err)
     });
     this.api.getMyPaymentsAndBalance().subscribe({
       next: (res) => this.balance.set(res.balance),
@@ -421,7 +445,7 @@ export class MyEnrollmentComponent implements OnInit {
     this.requesting.set(true);
     this.api.requestEnrollment().subscribe({
       next: () => { this.requesting.set(false); this.load(); },
-      error: (err) => { this.requesting.set(false); this.notify.error(err.error?.error || 'Failed to request enrollment'); }
+      error: (err) => { this.requesting.set(false); this.notify.error(formatApiError(err, 'Failed to request enrollment')); }
     });
   }
 
@@ -488,7 +512,7 @@ export class MyEnrollmentComponent implements OnInit {
     this.submitting.set(true);
     this.api.submitEnrollment(this.enrollment()!.id).subscribe({
       next: () => { this.submitting.set(false); this.load(); },
-      error: (err) => { this.submitting.set(false); this.notify.error(err.error?.error || 'Submit failed'); }
+      error: (err) => { this.submitting.set(false); this.notify.error(formatApiError(err, 'Submit failed')); }
     });
   }
 
@@ -499,7 +523,7 @@ export class MyEnrollmentComponent implements OnInit {
     this.confirmingPlan.set(true);
     this.api.selectPaymentPlan(this.selectedPlan()).subscribe({
       next: () => { this.confirmingPlan.set(false); this.load(); },
-      error: (err) => { this.confirmingPlan.set(false); this.notify.error(err.error?.error || 'Failed'); }
+      error: (err) => { this.confirmingPlan.set(false); this.notify.error(formatApiError(err, 'Failed')); }
     });
   }
 }

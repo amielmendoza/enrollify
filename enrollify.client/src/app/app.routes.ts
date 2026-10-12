@@ -27,6 +27,12 @@ export const routes: Routes = [
   // Printable cashier's collections journal, ?from&to&method — same top-level treatment.
   { path: 'print/collections', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-collections.component').then(m => m.PrintCollectionsComponent) },
 
+  // Printable enrollment register, ?schoolYear&gradeLevel&status&sectionId&includeCancelled.
+  { path: 'print/enrollment-register', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-enrollment-register.component').then(m => m.PrintEnrollmentRegisterComponent) },
+
+  // Printable class list for one section.
+  { path: 'print/section-roster/:id', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-section-roster.component').then(m => m.PrintSectionRosterComponent) },
+
   // Per-school slug-based apply page (e.g. /mshs/apply, /qcshs/apply).
   // Sits before the auth-protected MainLayout so it's reachable without a login session.
   { path: ':slug/apply', loadComponent: () => import('./pages/apply/apply.component').then(m => m.ApplyComponent) },
@@ -47,11 +53,14 @@ export const routes: Routes = [
       { path: 'change-password', loadComponent: () => import('./pages/account/change-password.component').then(m => m.ChangePasswordComponent) },
       { path: 'students', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/students/student-list/student-list.component').then(m => m.StudentListComponent) },
       { path: 'students/new', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/students/student-form/student-form.component').then(m => m.StudentFormComponent) },
+      // After 'students/new' so the literal path wins over the :id param.
+      { path: 'students/:id', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/students/student-detail/student-detail.component').then(m => m.StudentDetailComponent) },
       { path: 'students/:id/edit', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/students/student-form/student-form.component').then(m => m.StudentFormComponent) },
       { path: 'enrollments', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/enrollments/enrollment-list/enrollment-list.component').then(m => m.EnrollmentListComponent) },
       { path: 'enrollments/new', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/enrollments/enrollment-wizard/enrollment-wizard.component').then(m => m.EnrollmentWizardComponent) },
       { path: 'enrollments/:id', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/enrollments/enrollment-detail/enrollment-detail.component').then(m => m.EnrollmentDetailComponent) },
       { path: 'admissions', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/admissions/admissions.component').then(m => m.AdmissionsComponent) },
+      { path: 'reports/enrollment-register', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/enrollment-register.component').then(m => m.EnrollmentRegisterComponent) },
       { path: 'reports/collections', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/collections.component').then(m => m.CollectionsComponent) },
       { path: 'settings', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
 

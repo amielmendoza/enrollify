@@ -4,13 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { TenantUser, PublicTenant } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
+import { LoadingComponent } from '../../core/components/loading.component';
 
 /// SuperAdmin-only page to manage Admin/Registrar accounts for one school.
 /// Reached from /super/tenants → "Manage admins" on a row.
 @Component({
   selector: 'app-tenant-admins',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, LoadingComponent],
   template: `
     <div>
       <a routerLink="/super/tenants" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2">
@@ -75,7 +77,11 @@ import { TenantUser, PublicTenant } from '../../core/models';
               </tr>
             }
             @empty {
-              <tr><td colspan="4" class="px-4 py-12 text-center text-gray-400">No admins yet. Add one to get started.</td></tr>
+              <tr><td colspan="4">
+                @if (listLoading()) { <app-loading label="Loading admins..." /> }
+                @else if (listError()) { <p class="px-4 py-12 text-center text-red-600">{{ listError() }}</p> }
+                @else { <p class="px-4 py-12 text-center text-gray-400">No admins yet. Add one to get started.</p> }
+              </td></tr>
             }
           </tbody>
         </table>
@@ -179,8 +185,17 @@ export class TenantAdminsComponent implements OnInit {
     this.load();
   }
 
+  // Spinner until loaded; a failed load says so instead of claiming the list is empty.
+  listLoading = signal(true);
+  listError = signal('');
+
   load() {
-    this.api.getTenantUsers(this.tenantId).subscribe(list => this.users.set(list));
+    this.listLoading.set(true);
+    this.listError.set('');
+    this.api.getTenantUsers(this.tenantId).subscribe({
+      next: list => { this.listLoading.set(false); this.users.set(list); },
+      error: (err) => { this.listLoading.set(false); this.listError.set(formatApiError(err, 'Failed to load admins.')); }
+    });
   }
 
   badgeClass(role: string): string {
@@ -229,7 +244,7 @@ export class TenantAdminsComponent implements OnInit {
       next: () => { this.saving.set(false); this.showUserModal.set(false); this.notice.set(target ? 'Admin updated.' : 'Admin created.'); this.load(); },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(err.error?.error || err.error?.details?.[0]?.errorMessage || 'Failed to save admin.');
+        this.error.set(formatApiError(err, 'Failed to save admin.'));
       }
     });
   }
@@ -249,7 +264,7 @@ export class TenantAdminsComponent implements OnInit {
     this.saving.set(true);
     this.api.resetTenantUserPassword(this.tenantId, u.id, this.resetPassword).subscribe({
       next: () => { this.saving.set(false); this.resettingUser.set(null); this.notice.set(`Password reset for ${u.email}.`); },
-      error: (err) => { this.saving.set(false); this.error.set(err.error?.error || 'Failed to reset password.'); }
+      error: (err) => { this.saving.set(false); this.error.set(formatApiError(err, 'Failed to reset password.')); }
     });
   }
 }

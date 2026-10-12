@@ -26,6 +26,14 @@ public class SectionsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id:guid}/roster")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> GetRoster(Guid id)
+    {
+        var result = await _sender.Send(new GetSectionRosterQuery(id));
+        return Ok(result);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateSectionRequest request)

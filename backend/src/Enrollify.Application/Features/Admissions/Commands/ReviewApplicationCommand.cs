@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Admissions.Commands;
 
-public record ReviewApplicationCommand(Guid ApplicationId, bool IsApproved, string? Notes) : IRequest<ApplicationDetailDto>;
+public record ReviewApplicationCommand(Guid ApplicationId, bool IsApproved, string? Notes, string? ReviewedBy = null) : IRequest<ApplicationDetailDto>;
 
 public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplicationCommand, ApplicationDetailDto>
 {
@@ -42,6 +42,8 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
         await _context.ExecuteInTransactionAsync(async ct =>
         {
             app.ReviewedAt = DateTime.UtcNow;
+            // The decider. (Mark-under-review stamps whoever picked it up; the decision overwrites it.)
+            if (request.ReviewedBy != null) app.ReviewedBy = request.ReviewedBy;
             app.ReviewNotes = request.Notes;
 
             Student? student = null;

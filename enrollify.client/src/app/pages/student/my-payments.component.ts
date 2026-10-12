@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { Payment, BalanceInfo, FeeLine, Installment, EnrollmentLedger } from '../../core/models';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 type SelectedInstallment = Installment | null;
 
@@ -77,9 +78,9 @@ type SelectedInstallment = Installment | null;
 
       <!-- Tabs -->
       <div class="mt-6 border-b border-gray-200">
-        <nav class="flex gap-6">
+        <nav class="flex gap-6 overflow-x-auto whitespace-nowrap">
           <button (click)="activeTab.set('pay')"
-                  class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                  class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
                   [class]="activeTab() === 'pay' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
             Make a payment
             @if (hasPendingPayment()) {
@@ -87,7 +88,7 @@ type SelectedInstallment = Installment | null;
             }
           </button>
           <button (click)="activeTab.set('history')"
-                  class="pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                  class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
                   [class]="activeTab() === 'history' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
             History
             @if (payments().length > 0) {
@@ -95,7 +96,7 @@ type SelectedInstallment = Installment | null;
             }
           </button>
           <button (click)="activeTab.set('ledger')"
-                  class="pb-3 text-sm font-medium border-b-2 transition-colors"
+                  class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors"
                   [class]="activeTab() === 'ledger' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
             Ledger
           </button>
@@ -672,7 +673,7 @@ export class MyPaymentsComponent implements OnInit {
       },
       error: (err) => {
         this.selectingPlan.set(false);
-        this.notify.error(err.error?.error || 'Failed to select payment plan');
+        this.notify.error(formatApiError(err, 'Failed to select payment plan'));
       }
     });
   }
@@ -714,7 +715,7 @@ export class MyPaymentsComponent implements OnInit {
       next: (up) => this.recordPayment(up.fileName, up.fileUrl),
       error: (err) => {
         this.paying.set(false);
-        this.payError.set(err.error?.error || 'Receipt upload failed. Please try again.');
+        this.payError.set(formatApiError(err, 'Receipt upload failed. Please try again.'));
       }
     });
   }
@@ -740,7 +741,7 @@ export class MyPaymentsComponent implements OnInit {
       },
       error: (err) => {
         this.paying.set(false);
-        this.payError.set(err.error?.error || 'Payment failed');
+        this.payError.set(formatApiError(err, 'Payment failed'));
       }
     });
   }

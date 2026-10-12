@@ -130,4 +130,36 @@ public class PasswordResetTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => new ResetPasswordCommandHandler(ctx)
             .Handle(new ResetPasswordCommand("pat@example.com", "a-guessed-token", "NewPass1!"), default));
     }
+
+    /// <summary>An SMTP relay that never answers — the send must not hold up the response.</summary>
+    private class NeverCompletingEmailSender : Enrollify.Application.Common.Interfaces.IEmailSender
+    {
+        private readonly TaskCompletionSource _never = new();
+        public int Calls { get; private set; }
+
+        public Task SendAsync(string to, string subject, string body, CancellationToken ct)
+        {
+            Calls++;
+            return _never.Task;
+        }
+    }
+
+    // Timing side channel: awaiting the send would make known accounts measurably slower
+    // than unknown ones. The handler must answer while the send is still in flight.
+    [Fact]
+    public async Task Forgot_AnswersWithoutWaitingForTheEmailSend()
+    {
+        var ctx = TestDb.Create();
+        ctx.Users.Add(NewUser("pat@example.com"));
+        await ctx.SaveChangesAsync();
+        var email = new NeverCompletingEmailSender();
+
+        var handle = new ForgotPasswordCommandHandler(ctx, email)
+            .Handle(new ForgotPasswordCommand("pat@example.com", BaseUrl), default);
+        var first = await Task.WhenAny(handle, Task.Delay(TimeSpan.FromSeconds(5)));
+
+        Assert.Same(handle, first);
+        Assert.True(await handle);
+        Assert.Equal(1, email.Calls);
+    }
 }

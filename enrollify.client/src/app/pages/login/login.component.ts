@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
+import { formatApiError } from '../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-login',
@@ -110,7 +111,7 @@ export class LoginComponent {
         // don't blame the user's credentials for that.
         this.error.set(err.status === 0
           ? "Can't reach the server. Please try again in a moment."
-          : (err.error?.error || 'Login failed. Please check your credentials.'));
+          : (formatApiError(err, 'Login failed. Please check your credentials.')));
       }
     });
   }

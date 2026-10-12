@@ -1,5 +1,51 @@
 # MVP Backlog
 
+## Batch E — Quality sweep + reports (delivered 2026-10-12)
+
+Closes probe theme T5 and the open Batch C/D review follow-ups:
+- Under Review: `SetApplicationUnderReviewCommand` + `POST /api/admissions/{id}/under-review`;
+  Admissions list/modal "Mark under review", approve/reject available from UnderReview; the
+  decision now records the decider in `ReviewedBy` (previously never set). "Pending" now means
+  Submitted + UnderReview everywhere: dashboard tile count, `?status=Pending` filter, and the
+  tile deep-links to it (marking under review no longer hides an application from the tile).
+- Enrollment register: `GET /api/reports/enrollment-register` (+ `/export` CSV) — per school year,
+  cancelled excluded unless asked, rows in canonical grade order (Kindergarten → Grade 12, not
+  text order), batched money columns with the same live-catalog fallback as the balance endpoint
+  for pre-snapshot enrollments, summary by status/grade. New Reports → Enrollment Register page
+  (filters in the URL, paging, CSV) and `/print/enrollment-register`. CSV text cells are
+  neutralized against spreadsheet formula injection (collections CSV too); the register's
+  Created column is the Manila calendar day.
+- Section roster: `GET /api/sections/{id}/roster` (now with the adviser) + Settings → Sections
+  "Roster" → printable class list `/print/section-roster/:id` (M/F counts, adviser signature).
+- Cross-links: new student page `/students/:id` (details, enrollments across years, linked
+  applications); enrollments and applications list queries take `studentId`; students list,
+  enrollments list and enrollment detail link to the student; admissions modal links to the
+  student; `/admissions?view=<id>` opens an application once (the param is then dropped). (An
+  earlier draft of this batch linked student names to `/students/:id` before that page existed —
+  clicking bounced to login; the page now exists.)
+- Error/loading/mobile sweep: `formatApiError` on 24/27 pages (the other 3 need none); shared
+  `<app-loading>` on every list that could flash an empty state (enrollments, students,
+  admissions, collections, register, Settings school years/fees/sections/registrars, SuperAdmin
+  schools/admins); staff dashboard shows "…"/"—" instead of confident zeros; the student
+  dashboard, parent child-enrollment and student my-enrollment pages no longer flash "Request
+  your enrollment" before loading, and a failed load shows an error instead of an empty state;
+  all 4 tab bars scroll horizontally on phones; 5 money-tile grids stack below `sm`; Registrars
+  table scrolls instead of clipping; collections page honors `?from&to&method`.
+- Follow-ups closed: forgot-password email send no longer awaited (timing side channel; pinned by
+  a never-completing-sender test, and `IEmailSender` now documents that sends may outlive the
+  request); voiding an adjustment on a cancelled enrollment is refused (books stay closed).
+  Seeder grade list was already on `GradeLevels.All`.
+  Tests 179 → 207; backend 0 warnings; frontend production build clean; endpoints smoke-tested
+  against the dev database; independent review done and its findings fixed.
+
+Follow-ups (non-blocking, from review):
+- [ ] Forgot-password: the token DB write still only happens for real accounts — queue the
+  email via a background service and pad unknown-account responses to close the remaining gap.
+
+Still open from the probe (unchanged): T1 leftovers (arrears carryover entity, CreateTenant
+calendar-year guess, free-text SY/grade vocabulary checks), T3 leftovers (structured logging, rate
+limiting, CI/container, FileDocuments lifecycle), and the Batch D hardening follow-ups below.
+
 ## Batch D — Accounts & identity (delivered 2026-09-15, team-lead APPROVED after two fixes)
 
 Closes probe theme T4:

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.RequirementTemplates.Commands;
 
-public record CreateRequirementTemplateCommand(string DocumentName, string? GradeLevel, int DisplayOrder) : IRequest<RequirementTemplateDto>;
+public record CreateRequirementTemplateCommand(string DocumentName, string? GradeLevel, int DisplayOrder, bool KeepOnFile = false) : IRequest<RequirementTemplateDto>;
 
 public class CreateRequirementTemplateCommandHandler : IRequestHandler<CreateRequirementTemplateCommand, RequirementTemplateDto>
 {
@@ -32,12 +32,13 @@ public class CreateRequirementTemplateCommandHandler : IRequestHandler<CreateReq
             DocumentName = name,
             GradeLevel = grade,
             IsActive = true,
-            DisplayOrder = request.DisplayOrder
+            DisplayOrder = request.DisplayOrder,
+            KeepOnFile = request.KeepOnFile
         };
 
         _context.RequirementTemplates.Add(template);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new RequirementTemplateDto(template.Id, template.DocumentName, template.GradeLevel, template.IsActive, template.DisplayOrder);
+        return new RequirementTemplateDto(template.Id, template.DocumentName, template.GradeLevel, template.IsActive, template.DisplayOrder, template.KeepOnFile);
     }
 }

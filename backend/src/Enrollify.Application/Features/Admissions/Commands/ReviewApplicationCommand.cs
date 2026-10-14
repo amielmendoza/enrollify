@@ -1,3 +1,4 @@
+using Enrollify.Application.Features.Enrollments;
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Admissions;
 using Enrollify.Application.Features.Students;
@@ -134,20 +135,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                 };
                 _context.Enrollments.Add(enrollment);
 
-                var templates = await _context.RequirementTemplates
-                    .Where(t => t.IsActive && (t.GradeLevel == null || t.GradeLevel == app.GradeLevel))
-                    .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
-                    .ToListAsync(ct);
-
-                foreach (var template in templates)
-                {
-                    _context.EnrollmentRequirements.Add(new EnrollmentRequirement
-                    {
-                        EnrollmentId = enrollment.Id,
-                        DocumentName = template.DocumentName,
-                        TenantId = app.TenantId
-                    });
-                }
+                await EnrollmentRequirements.AddForAsync(_context, enrollment, ct, app.TenantId);
             }
             else
             {

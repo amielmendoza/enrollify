@@ -67,10 +67,7 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
                     .ToListAsync(ct))
                 .ToHashSet();
 
-            var templates = await _context.RequirementTemplates
-                .Where(t => t.IsActive)
-                .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
-                .ToListAsync(ct);
+            var createdEnrollments = new List<Enrollment>();
 
             foreach (var source in perStudent)
             {
@@ -96,15 +93,7 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
                     Remarks = $"Bulk re-enrolled from {request.FromSchoolYear}"
                 };
                 _context.Enrollments.Add(enrollment);
-
-                foreach (var template in templates.Where(t => t.GradeLevel == null || t.GradeLevel == newGrade))
-                {
-                    _context.EnrollmentRequirements.Add(new EnrollmentRequirement
-                    {
-                        EnrollmentId = enrollment.Id,
-                        DocumentName = template.DocumentName
-                    });
-                }
+                createdEnrollments.Add(enrollment);
 
                 _context.EnrollmentStatusHistories.Add(new EnrollmentStatusHistory
                 {
@@ -116,6 +105,8 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
 
                 created++;
             }
+
+            await EnrollmentRequirements.AddForManyAsync(_context, createdEnrollments, ct);
 
             await _context.SaveChangesAsync(ct);
         }, cancellationToken);

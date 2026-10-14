@@ -17,7 +17,7 @@ public class GetRequirementTemplatesQueryHandler : IRequestHandler<GetRequiremen
     {
         return await _context.RequirementTemplates
             .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
-            .Select(t => new RequirementTemplateDto(t.Id, t.DocumentName, t.GradeLevel, t.IsActive, t.DisplayOrder))
+            .Select(t => new RequirementTemplateDto(t.Id, t.DocumentName, t.GradeLevel, t.IsActive, t.DisplayOrder, t.KeepOnFile))
             .ToListAsync(cancellationToken);
     }
 }

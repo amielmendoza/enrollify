@@ -73,19 +73,7 @@ public class RequestEnrollmentCommandHandler : IRequestHandler<RequestEnrollment
         _context.Enrollments.Add(enrollment);
 
         // Seed requirements from active templates (matching this grade level or applicable to all)
-        var templates = await _context.RequirementTemplates
-            .Where(t => t.IsActive && (t.GradeLevel == null || t.GradeLevel == gradeLevel))
-            .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
-            .ToListAsync(cancellationToken);
-
-        foreach (var template in templates)
-        {
-            _context.EnrollmentRequirements.Add(new EnrollmentRequirement
-            {
-                EnrollmentId = enrollment.Id,
-                DocumentName = template.DocumentName
-            });
-        }
+        await EnrollmentRequirements.AddForAsync(_context, enrollment, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
 

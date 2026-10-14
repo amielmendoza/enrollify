@@ -118,7 +118,8 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, T
                 TenantId = tenant.Id,
                 DocumentName = defaultRequirements[i],
                 IsActive = true,
-                DisplayOrder = i + 1
+                DisplayOrder = i + 1,
+                KeepOnFile = defaultRequirements[i] == "PSA Birth Certificate",
             });
         }
 

@@ -289,7 +289,8 @@ public static class ApplicationDbContextSeed
                     DocumentName = defaults[i],
                     GradeLevel = null,
                     IsActive = true,
-                    DisplayOrder = i + 1
+                    DisplayOrder = i + 1,
+                    KeepOnFile = defaults[i] == "PSA Birth Certificate",
                 });
             }
             added = true;

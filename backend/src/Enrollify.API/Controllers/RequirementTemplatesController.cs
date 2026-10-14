@@ -30,7 +30,7 @@ public class RequirementTemplatesController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateRequirementTemplateRequest request)
     {
-        var result = await _sender.Send(new CreateRequirementTemplateCommand(request.DocumentName, request.GradeLevel, request.DisplayOrder));
+        var result = await _sender.Send(new CreateRequirementTemplateCommand(request.DocumentName, request.GradeLevel, request.DisplayOrder, request.KeepOnFile));
         return Ok(result);
     }
 
@@ -38,7 +38,7 @@ public class RequirementTemplatesController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRequirementTemplateRequest request)
     {
-        var result = await _sender.Send(new UpdateRequirementTemplateCommand(id, request.DocumentName, request.GradeLevel, request.IsActive, request.DisplayOrder));
+        var result = await _sender.Send(new UpdateRequirementTemplateCommand(id, request.DocumentName, request.GradeLevel, request.IsActive, request.DisplayOrder, request.KeepOnFile));
         return Ok(result);
     }
 

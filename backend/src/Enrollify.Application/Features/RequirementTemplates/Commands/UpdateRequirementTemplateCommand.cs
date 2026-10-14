@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.RequirementTemplates.Commands;
 
-public record UpdateRequirementTemplateCommand(Guid Id, string DocumentName, string? GradeLevel, bool IsActive, int DisplayOrder) : IRequest<RequirementTemplateDto>;
+public record UpdateRequirementTemplateCommand(Guid Id, string DocumentName, string? GradeLevel, bool IsActive, int DisplayOrder, bool KeepOnFile = false) : IRequest<RequirementTemplateDto>;
 
 public class UpdateRequirementTemplateCommandHandler : IRequestHandler<UpdateRequirementTemplateCommand, RequirementTemplateDto>
 {
@@ -26,9 +26,10 @@ public class UpdateRequirementTemplateCommandHandler : IRequestHandler<UpdateReq
         template.GradeLevel = string.IsNullOrWhiteSpace(request.GradeLevel) ? null : request.GradeLevel.Trim();
         template.IsActive = request.IsActive;
         template.DisplayOrder = request.DisplayOrder;
+        template.KeepOnFile = request.KeepOnFile;
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new RequirementTemplateDto(template.Id, template.DocumentName, template.GradeLevel, template.IsActive, template.DisplayOrder);
+        return new RequirementTemplateDto(template.Id, template.DocumentName, template.GradeLevel, template.IsActive, template.DisplayOrder, template.KeepOnFile);
     }
 }

@@ -58,21 +58,9 @@ public class CreateEnrollmentCommandHandler : IRequestHandler<CreateEnrollmentCo
 
         _context.Enrollments.Add(enrollment);
 
-        // Seed requirements from the tenant's active templates (grade-filtered), exactly like
-        // every other enrollment-creation path — not a hardcoded document list.
-        var templates = await _context.RequirementTemplates
-            .Where(t => t.IsActive && (t.GradeLevel == null || t.GradeLevel == request.GradeLevel))
-            .OrderBy(t => t.DisplayOrder).ThenBy(t => t.DocumentName)
-            .ToListAsync(cancellationToken);
-
-        foreach (var template in templates)
-        {
-            _context.EnrollmentRequirements.Add(new EnrollmentRequirement
-            {
-                EnrollmentId = enrollment.Id,
-                DocumentName = template.DocumentName
-            });
-        }
+        // Seed requirements from the tenant's active templates via the shared builder, exactly like
+        // every other enrollment-creation path (grade-filtered; keep-on-file documents carry over).
+        await EnrollmentRequirements.AddForAsync(_context, enrollment, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
 

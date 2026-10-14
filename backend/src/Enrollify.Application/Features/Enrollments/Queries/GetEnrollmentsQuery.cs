@@ -49,6 +49,7 @@ public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, P
             query = query.Where(e =>
                 e.Student.FirstName.ToLower().Contains(search) ||
                 e.Student.LastName.ToLower().Contains(search) ||
+                e.Student.StudentNumber.Contains(search) ||
                 (e.Student.LRN != null && e.Student.LRN.Contains(search)));
         }
 
@@ -69,7 +70,7 @@ public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, P
                 e.Status, e.Remarks, e.PaymentPlan, e.CreatedAt, null,
                 // Projected as a correlated Count subquery — no N+1.
                 e.Payments.Count(p => p.Status == "Pending"),
-                null, null, null))
+                e.Student.StudentNumber, e.Student.LRN, null))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<EnrollmentDto>

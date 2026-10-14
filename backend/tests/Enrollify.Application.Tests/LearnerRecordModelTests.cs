@@ -119,6 +119,27 @@ public class LearnerRecordModelTests
         Assert.Single(result.Items);
     }
 
+    [Fact]
+    public async Task EnrollmentSearch_FindsByStudentNumber_AndRowsCarryStudentNumberAndLrn()
+    {
+        var ctx = TestDb.Create();
+        var dee = new Student { StudentNumber = "2026-00004", LRN = "136512260001", FirstName = "Dee", LastName = "Lim", Address = "" };
+        var eli = new Student { StudentNumber = "2026-00005", FirstName = "Eli", LastName = "Tan", Address = "" };
+        ctx.Students.AddRange(dee, eli);
+        ctx.Enrollments.Add(new Enrollment { StudentId = dee.Id, SchoolYear = "2026-2027", GradeLevel = "Grade 7", Status = EnrollmentStatus.Draft });
+        ctx.Enrollments.Add(new Enrollment { StudentId = eli.Id, SchoolYear = "2026-2027", GradeLevel = "Grade 7", Status = EnrollmentStatus.Draft });
+        await ctx.SaveChangesAsync();
+
+        var result = await new GetEnrollmentsQueryHandler(ctx).Handle(
+            new GetEnrollmentsQuery(null, null, null, "2026-00004"), default);
+
+        var row = Assert.Single(result.Items);
+        Assert.Equal(dee.Id, row.StudentId);
+        Assert.Equal("2026-00004", row.StudentNumber);
+        Assert.Equal("136512260001", row.Lrn);
+        Assert.Null(row.LearnerInfo);
+    }
+
     [Theory]
     [InlineData("Grade 11", true)]
     [InlineData(" grade 12 ", true)]

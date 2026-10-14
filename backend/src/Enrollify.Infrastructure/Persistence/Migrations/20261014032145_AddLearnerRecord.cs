@@ -614,6 +614,10 @@ WHERE DocumentName LIKE '%PSA%' OR DocumentName LIKE '%Birth Certificate%';");
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            // The old schema needs a non-null, unique LRN. Students without one take their student
+            // number (contains '-', so it can't collide with a 12-digit LRN) — before it is dropped.
+            migrationBuilder.Sql("UPDATE Students SET LRN = StudentNumber WHERE LRN IS NULL;");
+
             migrationBuilder.DropTable(
                 name: "ShsStrands");
 

@@ -24,7 +24,10 @@ public static class LearnerProfileMapping
         : new PsgcAddressDto(a.RegionCode, a.RegionName, a.ProvinceCode, a.ProvinceName,
             a.CityMunicipalityCode, a.CityMunicipalityName, a.BarangayCode, a.BarangayName, a.ZipCode);
 
-    /// <summary>Overwrites every learner field on <paramref name="target"/> (staff edit, new application, new student).</summary>
+    /// <summary>
+    /// Overwrites every learner field on <paramref name="target"/> (staff edit, new application, new student).
+    /// A null HomeAddress means "unchanged" — a new entity's address is already empty.
+    /// </summary>
     public static void Apply(LearnerProfileDto dto, ILearnerProfile target)
     {
         target.ExtensionName = Clean(dto.ExtensionName);
@@ -46,7 +49,8 @@ public static class LearnerProfileMapping
         target.MotherMaidenFirstName = Clean(dto.MotherMaidenFirstName);
         target.MotherMaidenMiddleName = Clean(dto.MotherMaidenMiddleName);
         target.MotherContactNumber = Clean(dto.MotherContactNumber);
-        ApplyAddress(dto.HomeAddress, target.HomeAddress);
+        if (dto.HomeAddress != null)
+            ApplyAddress(dto.HomeAddress, target.HomeAddress);
     }
 
     /// <summary>Overwrites the address in place; a null DTO clears it. Names are dropped when their code is.</summary>

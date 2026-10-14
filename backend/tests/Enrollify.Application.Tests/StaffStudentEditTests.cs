@@ -110,6 +110,26 @@ public class StaffStudentEditTests
     }
 
     [Fact]
+    public async Task UpdateWithProfile_WithoutHomeAddress_KeepsTheStoredAddress()
+    {
+        var ctx = TestDb.Create();
+        var s = Legacy();
+        ctx.Students.Add(s);
+        await ctx.SaveChangesAsync();
+        await new UpdateStudentCommandHandler(ctx).Handle(Update(s, "L-777",
+            profile: new LearnerProfileDto(HomeAddress: ManilaBarangay)), default);
+
+        // A profile with no homeAddress means "unchanged", never "clear".
+        await new UpdateStudentCommandHandler(ctx).Handle(Update(s, "L-777",
+            profile: new LearnerProfileDto(Religion: "Catholic")), default);
+
+        var reloaded = await ctx.Students.SingleAsync();
+        Assert.Equal("Catholic", reloaded.Religion);
+        Assert.Equal("1380601001", reloaded.HomeAddress.BarangayCode);
+        Assert.Equal("City of Manila", reloaded.HomeAddress.CityMunicipalityName);
+    }
+
+    [Fact]
     public async Task ConfirmLrn_ClearsFlag()
     {
         var ctx = TestDb.Create();

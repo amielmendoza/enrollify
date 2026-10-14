@@ -49,7 +49,8 @@ public class ParentController : ControllerBase
         var result = await _sender.Send(new UpdateChildProfileCommand(
             studentId, CurrentUserId(),
             request.ContactNumber, request.Email, request.Address,
-            request.GuardianName, request.GuardianContact));
+            request.GuardianName, request.GuardianContact,
+            request.HomeAddress, request.FatherContactNumber, request.MotherContactNumber));
         return Ok(result);
     }
 

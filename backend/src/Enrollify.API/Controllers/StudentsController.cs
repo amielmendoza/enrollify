@@ -97,7 +97,8 @@ public class StudentsController : ControllerBase
     {
         var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
         var result = await _sender.Send(new UpdateMyProfileCommand(
-            userId, request.ContactNumber, request.Email, request.Address, request.GuardianName, request.GuardianContact));
+            userId, request.ContactNumber, request.Email, request.Address, request.GuardianName, request.GuardianContact,
+            request.HomeAddress, request.FatherContactNumber, request.MotherContactNumber));
         return Ok(result);
     }
 }

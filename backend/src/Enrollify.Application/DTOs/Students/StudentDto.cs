@@ -58,11 +58,17 @@ public record UpdateMyProfileRequest(
     string? Email,
     string? Address,
     string? GuardianName,
-    string? GuardianContact);
+    string? GuardianContact,
+    PsgcAddressDto? HomeAddress = null,
+    string? FatherContactNumber = null,
+    string? MotherContactNumber = null);
 
 public record UpdateChildProfileRequest(
     string? ContactNumber,
     string? Email,
     string? Address,
     string? GuardianName,
-    string? GuardianContact);
+    string? GuardianContact,
+    PsgcAddressDto? HomeAddress = null,
+    string? FatherContactNumber = null,
+    string? MotherContactNumber = null);

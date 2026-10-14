@@ -1,4 +1,5 @@
 using Enrollify.Application.DTOs.Enrollments;
+using Enrollify.Application.DTOs.Learners;
 using Enrollify.Application.Features.Enrollments.Commands;
 using Enrollify.Application.Features.Enrollments.Queries;
 using Enrollify.Application.Features.Payments.Queries;
@@ -100,6 +101,14 @@ public class EnrollmentsController : ControllerBase
     public async Task<IActionResult> BulkReenroll([FromBody] BulkReenrollRequest request)
     {
         var result = await _sender.Send(new BulkReenrollCommand(request.FromSchoolYear, request.ToSchoolYear));
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/learner-info")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> UpdateLearnerInfo(Guid id, [FromBody] EnrollmentLearnerInfoDto request)
+    {
+        var result = await _sender.Send(new UpdateEnrollmentLearnerInfoCommand(id, request));
         return Ok(result);
     }
 

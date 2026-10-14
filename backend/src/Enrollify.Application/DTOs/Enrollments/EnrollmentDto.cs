@@ -1,3 +1,4 @@
+using Enrollify.Application.DTOs.Learners;
 using Enrollify.Domain.Enums;
 
 namespace Enrollify.Application.DTOs.Enrollments;
@@ -15,7 +16,10 @@ public record EnrollmentDto(
     string? PaymentPlan,
     DateTime CreatedAt,
     List<RequirementDto>? Requirements,
-    int PendingPaymentsCount = 0);
+    int PendingPaymentsCount = 0,
+    string? StudentNumber = null,
+    string? Lrn = null,
+    EnrollmentLearnerInfoDto? LearnerInfo = null);
 
 public record RequirementDto(
     Guid Id,

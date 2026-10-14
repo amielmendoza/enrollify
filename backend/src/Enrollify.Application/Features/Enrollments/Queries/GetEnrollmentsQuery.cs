@@ -68,7 +68,8 @@ public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, P
                 e.SchoolYear, e.GradeLevel, e.SectionId, e.Section != null ? e.Section.Name : null,
                 e.Status, e.Remarks, e.PaymentPlan, e.CreatedAt, null,
                 // Projected as a correlated Count subquery — no N+1.
-                e.Payments.Count(p => p.Status == "Pending")))
+                e.Payments.Count(p => p.Status == "Pending"),
+                null, null, null))
             .ToListAsync(cancellationToken);
 
         return new PagedResult<EnrollmentDto>

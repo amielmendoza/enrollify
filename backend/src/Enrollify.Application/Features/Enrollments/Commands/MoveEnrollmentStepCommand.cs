@@ -1,5 +1,6 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Enrollments;
+using Enrollify.Application.Features.ShsStrands;
 using Enrollify.Domain.Entities;
 using Enrollify.Domain.Enums;
 using MediatR;
@@ -45,6 +46,13 @@ public class MoveEnrollmentStepCommandHandler : IRequestHandler<MoveEnrollmentSt
         // Step-specific validations
         if (enrollment.Status == EnrollmentStatus.Submitted)
         {
+            // SHS learners are assessed per strand (strand-based fees land in sub-project 2), so
+            // a Grade 11/12 enrollment can't be assessed without one - unless the school offers no
+            // strands at all. Families may still submit without; the registrar fills it in.
+            if (string.IsNullOrWhiteSpace(enrollment.Strand)
+                && await ShsStrandRules.IsStrandRequiredAsync(_context, enrollment.GradeLevel, cancellationToken))
+                throw new InvalidOperationException("Set the learner's track/strand before assessment.");
+
             // Moving to Assessed: without a matching fee structure the enrollment would be
             // assessed at a zero balance and sail through the payment gate unpaid.
             var activeFees = await _context.Fees

@@ -89,6 +89,83 @@ public class ApprovalLearnerRecordTests
     }
 
     [Fact]
+    public async Task NameDobCandidate_WithADifferentUnverifiedLrn_IsMatched_AndTheRegistrarIsWarned()
+    {
+        // Pre-migration LRNs are flagged because they are probably Enrollify-minted; the family's
+        // real LRN must not split the learner into a second record.
+        var ctx = TestDb.Create();
+        var existing = new Student
+        {
+            StudentNumber = "2025-00001", LRN = "100100100001", LrnNeedsReview = true,
+            FirstName = "Ana", LastName = "Cruz", BirthDate = Dob, Address = ""
+        };
+        ctx.Students.Add(existing);
+        var app = App();
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        var s = await ctx.Students.SingleAsync();
+        Assert.Equal("100100100001", s.LRN);             // never overwritten
+        Assert.True(s.LrnNeedsReview);                   // still flagged
+        var e = await ctx.Enrollments.SingleAsync();
+        Assert.Equal(existing.Id, e.StudentId);
+        Assert.Contains(
+            "Application LRN 136512260001 differs from the LRN on file (100100100001, unverified) — check LIS and correct the student record.",
+            e.Remarks);
+    }
+
+    [Fact]
+    public async Task MalformedApplicationLrn_IsNotRecordedOnTheNewStudent_AndIsNoted()
+    {
+        var ctx = TestDb.Create();
+        var app = App(lrn: "N/A");
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        Assert.Null((await ctx.Students.SingleAsync()).LRN);
+        Assert.Contains("Application LRN \"N/A\" is not 12 digits — not recorded.", (await ctx.Enrollments.SingleAsync()).Remarks);
+    }
+
+    [Fact]
+    public async Task MalformedApplicationLrn_IsNeverUsedForDedup()
+    {
+        var ctx = TestDb.Create();
+        // A legacy student carrying the same junk value under a different name must not be matched.
+        ctx.Students.Add(new Student { StudentNumber = "2025-00001", LRN = "123", LrnNeedsReview = true, FirstName = "Ben", LastName = "Reyes", BirthDate = new DateTime(2010, 1, 1), Address = "" });
+        var app = App(lrn: "123");
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        Assert.Equal(2, await ctx.Students.CountAsync());
+        var created = await ctx.Students.SingleAsync(s => s.FirstName == "Ana");
+        Assert.Null(created.LRN);
+    }
+
+    [Fact]
+    public async Task MalformedApplicationLrn_IsNotAdoptedOntoAMatchedStudent()
+    {
+        var ctx = TestDb.Create();
+        var existing = new Student { StudentNumber = "2025-00001", LRN = null, FirstName = "Ana", LastName = "Cruz", BirthDate = Dob, Address = "" };
+        ctx.Students.Add(existing);
+        var app = App(lrn: "N/A");
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        Assert.Null((await ctx.Students.SingleAsync()).LRN);
+        var e = await ctx.Enrollments.SingleAsync();
+        Assert.Equal(existing.Id, e.StudentId);
+        Assert.Contains("Application LRN \"N/A\" is not 12 digits — not recorded.", e.Remarks);
+    }
+
+    [Fact]
     public async Task MatchedStudent_GetsBlanksFilled_NeverOverwritten_AndAdoptsLrnWhenBlank()
     {
         var ctx = TestDb.Create();

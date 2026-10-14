@@ -1,4 +1,5 @@
 using Enrollify.Application.Features.Enrollments;
+using Enrollify.Application.Common;
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Admissions;
 using Enrollify.Application.Features.Students;
@@ -69,9 +70,19 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     (studentSelfUserId, newAccountEmail) = await CreateStudentUserAsync(app, ct);
                 }
 
+                // Only a 12-digit LRN is trusted — for dedup, for the new student's LRN and for
+                // adopting onto a matched student. Backfilled legacy answers can be anything ("N/A").
+                var notes = new List<string>();
+                var appLrn = LearnerProfileMapping.Clean(app.Lrn);
+                if (appLrn != null && !DepEdLists.IsTwelveDigitLrn(appLrn))
+                {
+                    notes.Add($"Application LRN \"{appLrn}\" is not 12 digits — not recorded.");
+                    appLrn = null;
+                }
+
                 // Dedup: a returning family re-applying must not mint a second student record.
                 // Match an ACTIVE student by the application's LRN, else by name + date of birth.
-                var existingStudent = await FindMatchingActiveStudentAsync(app, ct);
+                var existingStudent = await FindMatchingActiveStudentAsync(app, appLrn, ct);
                 if (existingStudent != null)
                 {
                     var alreadyEnrolled = await _context.Enrollments.AnyAsync(
@@ -92,10 +103,14 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
 
                     // New DepEd details fill blanks only - never overwrite the registrar's record.
                     LearnerProfileMapping.FillBlanks(app, existingStudent);
-                    var appLrn = LearnerProfileMapping.Clean(app.Lrn);
                     if (existingStudent.LRN == null && appLrn != null
                         && !await _context.Students.AnyAsync(s => s.Id != existingStudent.Id && s.LRN == appLrn, ct))
                         existingStudent.LRN = appLrn;
+                    else if (appLrn != null && existingStudent.LRN != null && existingStudent.LRN != appLrn)
+                        // Only an unverified LRN can differ here (see FindMatchingActiveStudentAsync);
+                        // the registrar settles which one is real — never overwritten automatically.
+                        notes.Add($"Application LRN {appLrn} differs from the LRN on file ({existingStudent.LRN}, unverified) — " +
+                                  "check LIS and correct the student record.");
                 }
                 else
                 {
@@ -104,7 +119,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     // Dispatching CreateStudentCommand here would run its FluentValidation rules
                     // (e.g. Address NotEmpty) and reject applications whose form never required
                     // those fields, so the Student is constructed directly instead.
-                    var newLrn = LearnerProfileMapping.Clean(app.Lrn);
+                    var newLrn = appLrn;
                     if (newLrn != null)
                     {
                         // Dedup only matches ACTIVE students; an inactive holder of this LRN would
@@ -148,9 +163,10 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     SchoolYear = app.SchoolYear,
                     GradeLevel = app.GradeLevel,
                     Status = EnrollmentStatus.Draft,
-                    Remarks = existingStudent != null
-                        ? $"Auto-created on application approval — linked to existing student {student.StudentNumber}"
-                        : "Auto-created on application approval",
+                    Remarks = (existingStudent != null
+                            ? $"Auto-created on application approval — linked to existing student {student.StudentNumber}"
+                            : "Auto-created on application approval")
+                        + (notes.Count > 0 ? ". " + string.Join(" ", notes) : string.Empty),
                     LearnerType = app.LearnerType ?? (existingStudent != null ? "Continuing" : "New"),
                     LastGradeLevelCompleted = app.LastGradeLevelCompleted,
                     LastSchoolYearCompleted = app.LastSchoolYearCompleted,
@@ -196,14 +212,15 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
     }
 
     /// <summary>
-    /// Matches an existing ACTIVE student for a re-applying family: the application's LRN first;
-    /// otherwise FirstName + LastName + DateOfBirth (trimmed, case-insensitive) - but a name/DOB
-    /// candidate that already carries a DIFFERENT LRN is a different learner and never matches.
+    /// Matches an existing ACTIVE student for a re-applying family: the application's (trusted,
+    /// 12-digit) LRN first; otherwise FirstName + LastName + DateOfBirth (trimmed, case-insensitive)
+    /// - but a name/DOB candidate that already carries a DIFFERENT, verified LRN is a different
+    /// learner and never matches. A differing LRN still flagged LrnNeedsReview (pre-migration,
+    /// probably Enrollify-minted) does not rule the candidate out.
     /// Inactive students never match - a deactivated record must not resurrect through admissions.
     /// </summary>
-    private async Task<Student?> FindMatchingActiveStudentAsync(AdmissionApplication app, CancellationToken ct)
+    private async Task<Student?> FindMatchingActiveStudentAsync(AdmissionApplication app, string? providedLrn, CancellationToken ct)
     {
-        var providedLrn = LearnerProfileMapping.Clean(app.Lrn);
         if (providedLrn != null)
         {
             var byLrn = await _context.Students.FirstOrDefaultAsync(s => s.IsActive && s.LRN == providedLrn, ct);
@@ -217,7 +234,8 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
             && s.LastName.ToLower() == last
             && s.BirthDate == app.DateOfBirth, ct);
 
-        if (candidate != null && providedLrn != null && candidate.LRN != null && candidate.LRN != providedLrn)
+        if (candidate != null && providedLrn != null && candidate.LRN != null && candidate.LRN != providedLrn
+            && !candidate.LrnNeedsReview)
             return null;
         return candidate;
     }

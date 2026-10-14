@@ -23,11 +23,19 @@ import { Student } from '../../../core/models';
 
       <div class="bg-white rounded-xl border border-[#E2D9C2]">
         <div class="p-4 border-b border-gray-200 flex flex-wrap items-center gap-4">
-          <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search by name or LRN..."
+          <input type="text" [(ngModel)]="search" (ngModelChange)="onSearch()" placeholder="Search by name, student no., or LRN..."
                  class="form-input max-w-sm" />
           <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
             <input type="checkbox" [(ngModel)]="showInactive" (ngModelChange)="onSearch()" />
             Show inactive
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="missingLrn" (ngModelChange)="onSearch()" />
+            Missing LRN
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="lrnNeedsReview" (ngModelChange)="onSearch()" />
+            Check LRN
           </label>
         </div>
 
@@ -35,6 +43,7 @@ import { Student } from '../../../core/models';
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student No.</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LRN</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
@@ -47,7 +56,17 @@ import { Student } from '../../../core/models';
             <tbody class="divide-y divide-gray-200">
               @for (student of students(); track student.id) {
                 <tr class="hover:bg-gray-50 transition-colors" [class.opacity-60]="student.isActive === false">
-                  <td class="px-6 py-4 text-sm folio-mono text-gray-700">{{ student.lrn }}</td>
+                  <td class="px-6 py-4 text-sm folio-mono text-gray-700 whitespace-nowrap">{{ student.studentNumber }}</td>
+                  <td class="px-6 py-4 text-sm whitespace-nowrap">
+                    @if (!student.lrn) {
+                      <span class="text-gray-400">No LRN yet</span>
+                    } @else {
+                      <span class="folio-mono text-gray-700">{{ student.lrn }}</span>
+                      @if (student.lrnNeedsReview) {
+                        <span class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Check LRN</span>
+                      }
+                    }
+                  </td>
                   <td class="px-6 py-4 text-sm font-medium text-gray-900">
                     <div class="flex flex-wrap items-center gap-2">
                       <a [routerLink]="['/students', student.id]" class="hover:text-[#0038A8] hover:underline">{{ student.fullName }}</a>
@@ -84,7 +103,7 @@ import { Student } from '../../../core/models';
                 </tr>
               }
               @empty {
-                <tr><td colspan="7">
+                <tr><td colspan="8">
                   @if (loading()) { <app-loading label="Loading students..." /> }
                   @else { <p class="px-6 py-8 text-center text-gray-400">No students found</p> }
                 </td></tr>
@@ -139,6 +158,8 @@ export class StudentListComponent implements OnInit {
   loading = signal(true);
   search = '';
   showInactive = false;
+  missingLrn = false;
+  lrnNeedsReview = false;
   page = signal(1);
   totalCount = signal(0);
   totalPages = signal(0);
@@ -151,7 +172,7 @@ export class StudentListComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.api.getStudents(this.search, this.page(), 20, this.showInactive).subscribe({
+    this.api.getStudents(this.search, this.page(), 20, this.showInactive, { missingLrn: this.missingLrn, lrnNeedsReview: this.lrnNeedsReview }).subscribe({
       next: result => {
         this.loading.set(false);
         this.students.set(result.items);

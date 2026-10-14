@@ -85,12 +85,18 @@ def main(xlsx):
     level_col = next(k for k, v in header.items() if 'geographic level' in v.lower())
 
     places = {}  # code -> (name, level)
+    stripped = []
     for cells in rows:
         code = normalize_code(cells.get(code_col))
         level = (cells.get(level_col) or '').strip().lower()
-        name = clean_name(cells.get(name_col))
+        raw = re.sub(r'\s+', ' ', (cells.get(name_col) or '').strip())
+        name = clean_name(raw)
         if code and level and name:
             places[code] = (name, level)
+            if name != raw:
+                stripped.append((raw, name))
+    if stripped:
+        print('Footnote markers stripped (check these are not part of the name):', stripped)
 
     def of(*levels):
         return {c: n for c, (n, lv) in places.items() if lv in levels}

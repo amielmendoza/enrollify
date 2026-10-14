@@ -6,21 +6,17 @@ Gap-analysis roadmap item 1a (spec: docs/superpowers/specs/2026-10-12-learner-re
 - Real DepEd LRN (optional, 12 digits, unique when present) + Enrollify student numbers
   (`YYYY-NNNNN`); every pre-migration LRN flagged "Check LRN" with a Confirm action.
 - BEEF learner fields on Student/AdmissionApplication (`ILearnerProfile`), PSGC-structured home
-  address (picker built; the PSGC dataset it reads is still pending — see below), per-enrollment
+  address (PSA PSGC 3Q 2026 publication shipped as static lookup files), per-enrollment
   learner type / previous school / SHS track+strand; strand required at assessment when the
   school offers strands.
 - Per-school SHS strand catalog (Settings); KeepOnFile requirements carry a verified PSA forward.
 - Apply form, staff student form, family profiles, enrollment Learner tab, admissions review
   dialog, staff student page, printouts updated. Tests 207 -> 340.
 
-Blocking before merge/deploy:
-- [ ] Generate the PSGC lookup data (`enrollify.client/public/psgc/`) — psa.gov.ph blocks automated
-  download, so run `scripts/psgc/build_psgc.py` on the PSA workbook (Task 15b), then set the demo
-  students' PSGC addresses. Until the dataset exists the picker has nothing to offer: staff can't
-  create students (New Student always requires a PSGC city + barangay), and schools whose form
-  has Address required can't accept applications (a required address must resolve to a barangay).
-
 Follow-ups (non-blocking):
+- [ ] Refresh `enrollify.client/public/psgc/` when the PSA publishes a new PSGC quarter (steps in
+  `enrollify.client/scripts/psgc/README.md`; psa.gov.ph blocks automated download, so the workbook
+  is downloaded by hand). Stored addresses keep their codes and names, so a refresh is safe.
 - [ ] Sub-project 7 file cleanup must check every requirement that references a FileDocument
   (carried-over documents share files).
 - [ ] Demo seed has no Grade 11 enrollment (spec §5 asked for one); add when the demo seed

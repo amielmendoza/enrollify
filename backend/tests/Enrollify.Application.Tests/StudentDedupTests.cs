@@ -61,13 +61,14 @@ public class StudentDedupTests
     }
 
     [Fact]
-    public async Task Approval_MatchesByProvidedLrn_FromCustomField()
+    public async Task Approval_MatchesByLrnColumn()
     {
         var ctx = TestDb.Create();
         // Different name and the LRN wins the match.
-        var existing = ExistingStudent(lrn: "L-777", first: "Maria Mikaela");
+        var existing = ExistingStudent(lrn: "136512260077", first: "Maria Mikaela");
         ctx.Students.Add(existing);
-        var app = ParentApp(Guid.NewGuid(), customJson: "{\"lrn\":\" L-777 \"}");
+        var app = ParentApp(Guid.NewGuid());
+        app.Lrn = " 136512260077 ";
         ctx.AdmissionApplications.Add(app);
         await ctx.SaveChangesAsync();
 

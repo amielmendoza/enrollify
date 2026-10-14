@@ -70,8 +70,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                 }
 
                 // Dedup: a returning family re-applying must not mint a second student record.
-                // Match an ACTIVE student by exact LRN when the application provides one (via a
-                // custom form field), else by name + date of birth.
+                // Match an ACTIVE student by the application's LRN, else by name + date of birth.
                 var existingStudent = await FindMatchingActiveStudentAsync(app, ct);
                 if (existingStudent != null)
                 {
@@ -90,6 +89,13 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                         student.UserId = studentSelfUserId;
                     if (parentUserId != null && student.ParentUserId == null)
                         student.ParentUserId = parentUserId;
+
+                    // New DepEd details fill blanks only - never overwrite the registrar's record.
+                    LearnerProfileMapping.FillBlanks(app, existingStudent);
+                    var appLrn = LearnerProfileMapping.Clean(app.Lrn);
+                    if (existingStudent.LRN == null && appLrn != null
+                        && !await _context.Students.AnyAsync(s => s.Id != existingStudent.Id && s.LRN == appLrn, ct))
+                        existingStudent.LRN = appLrn;
                 }
                 else
                 {
@@ -98,6 +104,18 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     // Dispatching CreateStudentCommand here would run its FluentValidation rules
                     // (e.g. Address NotEmpty) and reject applications whose form never required
                     // those fields, so the Student is constructed directly instead.
+                    var newLrn = LearnerProfileMapping.Clean(app.Lrn);
+                    if (newLrn != null)
+                    {
+                        // Dedup only matches ACTIVE students; an inactive holder of this LRN would
+                        // otherwise surface as a unique-index failure at save.
+                        var holder = await _context.Students.FirstOrDefaultAsync(s => s.LRN == newLrn, ct);
+                        if (holder != null)
+                            throw new InvalidOperationException(
+                                $"LRN {newLrn} already belongs to student {holder.StudentNumber}, who is inactive. " +
+                                "Reactivate that student, then approve this application again.");
+                    }
+
                     student = new Student
                     {
                         StudentNumber = await StudentNumbering.NextStudentNumberAsync(_context, DateTime.UtcNow, ct),
@@ -106,6 +124,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                         LastName = app.LastName,
                         BirthDate = app.DateOfBirth,
                         Gender = app.Gender,
+                        LRN = newLrn,
                         Address = app.Address ?? string.Empty,
                         ContactNumber = app.ContactNumber,
                         Email = app.Email,
@@ -116,6 +135,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                         TenantId = app.TenantId
                     };
                     _context.Students.Add(student);
+                    LearnerProfileMapping.Apply(LearnerProfileMapping.ToDto(app), student);
                     createdStudent = student;
                 }
 
@@ -131,6 +151,14 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     Remarks = existingStudent != null
                         ? $"Auto-created on application approval — linked to existing student {student.StudentNumber}"
                         : "Auto-created on application approval",
+                    LearnerType = app.LearnerType ?? (existingStudent != null ? "Continuing" : "New"),
+                    LastGradeLevelCompleted = app.LastGradeLevelCompleted,
+                    LastSchoolYearCompleted = app.LastSchoolYearCompleted,
+                    LastSchoolAttended = app.PreviousSchool,
+                    LastSchoolAddress = app.PreviousSchoolAddress,
+                    LastSchoolId = app.LastSchoolId,
+                    Track = app.Track,
+                    Strand = app.Strand,
                     TenantId = app.TenantId
                 };
                 _context.Enrollments.Add(enrollment);
@@ -168,42 +196,30 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
     }
 
     /// <summary>
-    /// Matches an existing ACTIVE student for a re-applying family: exact LRN when the
-    /// application provides one (the built-in form has no LRN field, so tenants that collect
-    /// it do so via a custom field keyed "lrn"), else FirstName + LastName + DateOfBirth,
-    /// case-insensitively on trimmed names. Inactive students never match — a deactivated
-    /// record must not silently resurrect through admissions.
+    /// Matches an existing ACTIVE student for a re-applying family: the application's LRN first;
+    /// otherwise FirstName + LastName + DateOfBirth (trimmed, case-insensitive) - but a name/DOB
+    /// candidate that already carries a DIFFERENT LRN is a different learner and never matches.
+    /// Inactive students never match - a deactivated record must not resurrect through admissions.
     /// </summary>
     private async Task<Student?> FindMatchingActiveStudentAsync(AdmissionApplication app, CancellationToken ct)
     {
-        var providedLrn = ExtractProvidedLrn(app.CustomFieldValues);
-        if (!string.IsNullOrWhiteSpace(providedLrn))
-            return await _context.Students
-                .FirstOrDefaultAsync(s => s.IsActive && s.LRN == providedLrn, ct);
+        var providedLrn = LearnerProfileMapping.Clean(app.Lrn);
+        if (providedLrn != null)
+        {
+            var byLrn = await _context.Students.FirstOrDefaultAsync(s => s.IsActive && s.LRN == providedLrn, ct);
+            if (byLrn != null) return byLrn;
+        }
 
         var first = app.FirstName.Trim().ToLower();
         var last = app.LastName.Trim().ToLower();
-        return await _context.Students.FirstOrDefaultAsync(s => s.IsActive
+        var candidate = await _context.Students.FirstOrDefaultAsync(s => s.IsActive
             && s.FirstName.ToLower() == first
             && s.LastName.ToLower() == last
             && s.BirthDate == app.DateOfBirth, ct);
-    }
 
-    private static string? ExtractProvidedLrn(string? customFieldValues)
-    {
-        if (string.IsNullOrWhiteSpace(customFieldValues)) return null;
-        try
-        {
-            var values = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string?>>(customFieldValues);
-            if (values == null) return null;
-            foreach (var kv in values)
-            {
-                if (string.Equals(kv.Key, "lrn", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(kv.Value))
-                    return kv.Value.Trim();
-            }
+        if (candidate != null && providedLrn != null && candidate.LRN != null && candidate.LRN != providedLrn)
             return null;
-        }
-        catch { return null; }
+        return candidate;
     }
 
     /// <returns>The parent user id, plus the account email when a NEW account was created (null when reused).</returns>

@@ -1,6 +1,7 @@
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Tenants;
 using Enrollify.Application.Features.ApplicationFormFields;
+using Enrollify.Application.Features.ShsStrands;
 using Enrollify.Application.Features.Workflows;
 using Enrollify.Domain.Entities;
 using FluentValidation;
@@ -124,6 +125,7 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, T
         ctx.WorkflowDefinitions.Add(DefaultWorkflow.Build(tenant.Id));
 
         await DefaultApplicationFormFields.EnsureFieldsForTenantAsync(ctx, tenant.Id, ct);
+        await DefaultShsStrands.EnsureForTenantAsync(ctx, tenant.Id, ct);
         await ctx.SaveChangesAsync(ct);
     }
 }

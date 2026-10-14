@@ -1,5 +1,6 @@
 using Enrollify.Application.Common;
 using Enrollify.Application.Features.ApplicationFormFields;
+using Enrollify.Application.Features.ShsStrands;
 using Enrollify.Application.Features.Workflows;
 using Enrollify.Domain.Entities;
 using Enrollify.Domain.Enums;
@@ -41,6 +42,7 @@ public static class ApplicationDbContextSeed
         await SeedRequirementTemplatesAsync(context);
         await SeedDefaultWorkflowsAsync(context);
         await SeedApplicationFormFieldsAsync(context);
+        await SeedShsStrandsAsync(context);
 
         if (await context.Tenants.IgnoreQueryFilters().AnyAsync())
             return;
@@ -340,6 +342,15 @@ public static class ApplicationDbContextSeed
         }
 
         if (anyAdded) await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedShsStrandsAsync(ApplicationDbContext context)
+    {
+        var tenantIds = await context.Tenants.IgnoreQueryFilters().Select(t => t.Id).ToListAsync();
+        var added = 0;
+        foreach (var tenantId in tenantIds)
+            added += await DefaultShsStrands.EnsureForTenantAsync(context, tenantId);
+        if (added > 0) await context.SaveChangesAsync();
     }
 
     // ----- Below: the legacy in-file defaults are no longer used; kept commented for reference. -----

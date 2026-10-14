@@ -3,6 +3,7 @@ using Enrollify.Application.Features.Admissions.Commands;
 using Enrollify.Application.Features.Admissions.Queries;
 using Enrollify.Application.Features.ApplicationFormFields.Queries;
 using Enrollify.Application.Features.SchoolYears.Queries;
+using Enrollify.Application.Features.ShsStrands.Queries;
 using Enrollify.Application.Features.Tenants.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,14 @@ public class SchoolsController : ControllerBase
     public async Task<IActionResult> GetSchool(string slug)
     {
         var result = await _sender.Send(new GetTenantBySlugQuery(slug));
+        return Ok(result);
+    }
+
+    [HttpGet("shs-strands")]
+    public async Task<IActionResult> GetShsStrands(string slug)
+    {
+        var school = await _sender.Send(new GetTenantBySlugQuery(slug));
+        var result = await _sender.Send(new GetShsStrandsByTenantQuery(school.Id));
         return Ok(result);
     }
 

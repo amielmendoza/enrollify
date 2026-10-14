@@ -25,9 +25,9 @@ public static class StudentNumbering
         // can never starve the scan window. Deliberately avoids SQL-Server-only LIKE [0-9]
         // ranges — this must run on any provider, including InMemory in tests.
         var topOfShape = await context.Students
-            .Where(s => s.LRN.Length == Digits && s.LRN.CompareTo("999999999999") <= 0)
+            .Where(s => s.LRN != null && s.LRN.Length == Digits && s.LRN.CompareTo("999999999999") <= 0)
             .OrderByDescending(s => s.LRN)
-            .Select(s => s.LRN)
+            .Select(s => s.LRN!)
             .Take(50)
             .ToListAsync(ct);
 

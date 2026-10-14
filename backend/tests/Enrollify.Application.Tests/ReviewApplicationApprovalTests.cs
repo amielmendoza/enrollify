@@ -47,7 +47,7 @@ public class ReviewApplicationApprovalTests
         Assert.Equal(string.Empty, student.Address);       // transcribed, never re-validated
         Assert.Equal(string.Empty, student.MiddleName);
         Assert.Null(student.ContactNumber);
-        Assert.Equal(12, student.LRN.Length);              // auto-generated LRN
+        Assert.Equal(12, student.LRN?.Length);            // auto-generated LRN
         Assert.NotNull(student.UserId);                    // student-mode login account
 
         var user = await ctx.Users.SingleAsync();

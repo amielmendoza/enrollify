@@ -11,7 +11,10 @@ public class StudentConfiguration : IEntityTypeConfiguration<Student>
         builder.ToTable("Students");
         builder.HasKey(s => s.Id);
 
-        builder.Property(s => s.LRN).HasMaxLength(20).IsRequired();
+        builder.Property(s => s.StudentNumber).HasMaxLength(20).IsRequired();
+        // Nullable since the learner record: a blank LRN is valid (e.g. incoming Kindergarten).
+        // Stays 20 wide so pre-migration values that are not 12 digits survive.
+        builder.Property(s => s.LRN).HasMaxLength(20);
         builder.Property(s => s.FirstName).HasMaxLength(100).IsRequired();
         builder.Property(s => s.MiddleName).HasMaxLength(100);
         builder.Property(s => s.LastName).HasMaxLength(100).IsRequired();
@@ -28,7 +31,10 @@ public class StudentConfiguration : IEntityTypeConfiguration<Student>
         builder.Property(s => s.ParentUserId);
         builder.HasIndex(s => new { s.TenantId, s.ParentUserId });
 
-        builder.HasIndex(s => new { s.TenantId, s.LRN }).IsUnique();
+        builder.HasIndex(s => new { s.TenantId, s.LRN }).IsUnique().HasFilter("[LRN] IS NOT NULL");
+        builder.HasIndex(s => new { s.TenantId, s.StudentNumber }).IsUnique();
+
+        LearnerProfileConfiguration.Configure(builder);
         builder.HasIndex(s => s.TenantId);
 
         builder.Ignore(s => s.FullName);

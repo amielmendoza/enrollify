@@ -49,7 +49,7 @@ public class GetEnrollmentsQueryHandler : IRequestHandler<GetEnrollmentsQuery, P
             query = query.Where(e =>
                 e.Student.FirstName.ToLower().Contains(search) ||
                 e.Student.LastName.ToLower().Contains(search) ||
-                e.Student.LRN.Contains(search));
+                (e.Student.LRN != null && e.Student.LRN.Contains(search)));
         }
 
         // "Needs attention" view: only enrollments with at least one payment awaiting review.

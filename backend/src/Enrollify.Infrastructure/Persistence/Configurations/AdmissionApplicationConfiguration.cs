@@ -37,6 +37,14 @@ public class AdmissionApplicationConfiguration : IEntityTypeConfiguration<Admiss
         builder.Property(a => a.ParentContactNumber).HasMaxLength(50);
         builder.Property(a => a.ParentUserId);
         builder.Property(a => a.CustomFieldValues).HasColumnType("nvarchar(max)");
+        builder.Property(a => a.Lrn).HasMaxLength(20);
+        builder.Property(a => a.LearnerType).HasMaxLength(20);
+        builder.Property(a => a.LastGradeLevelCompleted).HasMaxLength(50);
+        builder.Property(a => a.LastSchoolYearCompleted).HasMaxLength(20);
+        builder.Property(a => a.LastSchoolId).HasMaxLength(6);
+        builder.Property(a => a.Track).HasMaxLength(100);
+        builder.Property(a => a.Strand).HasMaxLength(100);
+        LearnerProfileConfiguration.Configure(builder);
         builder.HasIndex(a => new { a.TenantId, a.ApplicationNumber }).IsUnique();
         builder.HasIndex(a => new { a.TenantId, a.Status });
         builder.HasIndex(a => new { a.TenantId, a.ParentUserId });

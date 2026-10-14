@@ -2,7 +2,7 @@ namespace Enrollify.Application.DTOs.Students;
 
 public record StudentDto(
     Guid Id,
-    string LRN,
+    string? LRN,
     string FirstName,
     string MiddleName,
     string LastName,
@@ -21,7 +21,7 @@ public record StudentDto(
 public record SetStudentActiveRequest(bool IsActive);
 
 public record CreateStudentRequest(
-    string LRN,
+    string? LRN,
     string FirstName,
     string MiddleName,
     string LastName,
@@ -34,7 +34,7 @@ public record CreateStudentRequest(
     string? GuardianContact);
 
 public record UpdateStudentRequest(
-    string LRN,
+    string? LRN,
     string FirstName,
     string MiddleName,
     string LastName,

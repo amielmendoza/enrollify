@@ -23,6 +23,16 @@ public class Enrollment : TenantEntity
     public decimal? AssessedTotal { get; set; }
     public DateTime? AssessedAt { get; set; }
 
+    // DepEd BEEF per-year fields
+    public string? LearnerType { get; set; }               // DepEdLists.LearnerTypes; null on legacy rows
+    public string? LastGradeLevelCompleted { get; set; }
+    public string? LastSchoolYearCompleted { get; set; }
+    public string? LastSchoolAttended { get; set; }
+    public string? LastSchoolAddress { get; set; }
+    public string? LastSchoolId { get; set; }              // 6-digit DepEd School ID
+    public string? Track { get; set; }                     // Grade 11/12 only
+    public string? Strand { get; set; }                    // Grade 11/12 only
+
     public ICollection<EnrollmentStatusHistory> StatusHistory { get; set; } = new List<EnrollmentStatusHistory>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public ICollection<EnrollmentRequirement> Requirements { get; set; } = new List<EnrollmentRequirement>();

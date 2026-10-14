@@ -12,7 +12,7 @@ namespace Enrollify.Application.Features.Reports.Queries;
 public record EnrollmentRegisterRowDto(
     Guid EnrollmentId,
     Guid StudentId,
-    string Lrn,
+    string? Lrn,
     string StudentName,
     string GradeLevel,
     string? SectionName,        // null when unassigned

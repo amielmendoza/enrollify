@@ -1,8 +1,9 @@
 using Enrollify.Domain.Common;
+using Enrollify.Domain.ValueObjects;
 
 namespace Enrollify.Domain.Entities;
 
-public class AdmissionApplication : TenantEntity
+public class AdmissionApplication : TenantEntity, ILearnerProfile
 {
     public string ApplicationNumber { get; set; } = default!;
     public string FirstName { get; set; } = default!;
@@ -44,4 +45,34 @@ public class AdmissionApplication : TenantEntity
     // JSON map of custom-field values, keyed by ApplicationFormField.FieldKey.
     // Only populated for fields that the admin defined as custom (IsBuiltIn=false).
     public string? CustomFieldValues { get; set; }
+
+    // DepEd learner record (transcribed onto Student/Enrollment at approval).
+    // PreviousSchool / PreviousSchoolAddress above double as last-school-attended / its address.
+    public string? Lrn { get; set; }
+    public string? LearnerType { get; set; }
+    public string? LastGradeLevelCompleted { get; set; }
+    public string? LastSchoolYearCompleted { get; set; }
+    public string? LastSchoolId { get; set; }
+    public string? Track { get; set; }
+    public string? Strand { get; set; }
+    public string? ExtensionName { get; set; }
+    public string? PsaBirthCertificateNumber { get; set; }
+    public string? PlaceOfBirth { get; set; }
+    public string? MotherTongue { get; set; }
+    public string? Religion { get; set; }
+    public bool IsIndigenousPeople { get; set; }
+    public string? IpCommunity { get; set; }
+    public bool Is4PsBeneficiary { get; set; }
+    public string? FourPsHouseholdId { get; set; }
+    public bool HasDisability { get; set; }
+    public string? DisabilityTypes { get; set; }
+    public string? FatherLastName { get; set; }
+    public string? FatherFirstName { get; set; }
+    public string? FatherMiddleName { get; set; }
+    public string? FatherContactNumber { get; set; }
+    public string? MotherMaidenLastName { get; set; }
+    public string? MotherMaidenFirstName { get; set; }
+    public string? MotherMaidenMiddleName { get; set; }
+    public string? MotherContactNumber { get; set; }
+    public PsgcAddress HomeAddress { get; set; } = new();
 }

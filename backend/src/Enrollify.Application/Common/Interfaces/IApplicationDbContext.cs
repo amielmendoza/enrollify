@@ -25,6 +25,7 @@ public interface IApplicationDbContext
     DbSet<PaymentTerm> PaymentTerms { get; }
     DbSet<RequirementTemplate> RequirementTemplates { get; }
     DbSet<ApplicationFormField> ApplicationFormFields { get; }
+    DbSet<ShsStrand> ShsStrands { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 

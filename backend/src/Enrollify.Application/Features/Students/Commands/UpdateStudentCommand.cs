@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Enrollify.Application.Features.Students.Commands;
 
 public record UpdateStudentCommand(
-    Guid Id, string LRN, string FirstName, string MiddleName, string LastName,
+    Guid Id, string? LRN, string FirstName, string MiddleName, string LastName,
     DateTime BirthDate, string? Gender, string Address,
     string? ContactNumber, string? Email, string? GuardianName, string? GuardianContact
 ) : IRequest<StudentDto>;
@@ -17,7 +17,7 @@ public class UpdateStudentCommandValidator : AbstractValidator<UpdateStudentComm
     public UpdateStudentCommandValidator()
     {
         RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.LRN).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.LRN).MaximumLength(20);
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
         // DELIBERATE: Address stays NotEmpty here even though the public application form may

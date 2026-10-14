@@ -58,15 +58,43 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DisabilityTypes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("ExtensionName")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("FatherContactNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FatherFirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FatherLastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FatherMiddleName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FourPsHouseholdId")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Gender")
                         .IsRequired()
@@ -90,12 +118,65 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<bool>("HasDisability")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("IpCommunity")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("Is4PsBeneficiary")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsIndigenousPeople")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastGradeLevelCompleted")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("LastSchoolId")
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<string>("LastSchoolYearCompleted")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("LearnerType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Lrn")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("MiddleName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MotherContactNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("MotherMaidenFirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MotherMaidenLastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MotherMaidenMiddleName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MotherTongue")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -118,6 +199,10 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ParentUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("PlaceOfBirth")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("PreviousSchool")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -125,6 +210,14 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.Property<string>("PreviousSchoolAddress")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PsaBirthCertificateNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Religion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ReviewNotes")
                         .HasMaxLength(1000)
@@ -147,11 +240,19 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<string>("Strand")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<Guid?>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Track")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -274,6 +375,30 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("LastGradeLevelCompleted")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LastSchoolAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("LastSchoolAttended")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("LastSchoolId")
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.Property<string>("LastSchoolYearCompleted")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("LearnerType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("PaymentPlan")
                         .HasColumnType("nvarchar(max)");
 
@@ -294,11 +419,19 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Strand")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Track")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -846,6 +979,9 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("KeepOnFile")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
@@ -960,6 +1096,53 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.ToTable("Sections", (string)null);
                 });
 
+            modelBuilder.Entity("Enrollify.Domain.Entities.ShsStrand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Strand")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Track")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "IsActive", "DisplayOrder");
+
+                    b.HasIndex("TenantId", "Track", "Strand")
+                        .IsUnique();
+
+                    b.ToTable("ShsStrands", (string)null);
+                });
+
             modelBuilder.Entity("Enrollify.Domain.Entities.Student", b =>
                 {
                     b.Property<Guid>("Id")
@@ -984,14 +1167,42 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DisabilityTypes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ExtensionName")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("FatherContactNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FatherFirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FatherLastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FatherMiddleName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FourPsHouseholdId")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Gender")
                         .HasMaxLength(20)
@@ -1005,11 +1216,23 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<bool>("HasDisability")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("IpCommunity")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("Is4PsBeneficiary")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsIndigenousPeople")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LRN")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -1018,13 +1241,53 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("LrnNeedsReview")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MiddleName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("MotherContactNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("MotherMaidenFirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MotherMaidenLastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MotherMaidenMiddleName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("MotherTongue")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<Guid?>("ParentUserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PlaceOfBirth")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PsaBirthCertificateNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Religion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StudentNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
@@ -1043,9 +1306,13 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("TenantId", "LRN")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[LRN] IS NOT NULL");
 
                     b.HasIndex("TenantId", "ParentUserId");
+
+                    b.HasIndex("TenantId", "StudentNumber")
+                        .IsUnique();
 
                     b.HasIndex("TenantId", "UserId")
                         .IsUnique()
@@ -1272,6 +1539,70 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                     b.ToTable("WorkflowSteps", (string)null);
                 });
 
+            modelBuilder.Entity("Enrollify.Domain.Entities.AdmissionApplication", b =>
+                {
+                    b.OwnsOne("Enrollify.Domain.ValueObjects.PsgcAddress", "HomeAddress", b1 =>
+                        {
+                            b1.Property<Guid>("AdmissionApplicationId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("BarangayCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressBarangayCode");
+
+                            b1.Property<string>("BarangayName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressBarangayName");
+
+                            b1.Property<string>("CityMunicipalityCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressCityMunicipalityCode");
+
+                            b1.Property<string>("CityMunicipalityName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressCityMunicipalityName");
+
+                            b1.Property<string>("ProvinceCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressProvinceCode");
+
+                            b1.Property<string>("ProvinceName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressProvinceName");
+
+                            b1.Property<string>("RegionCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressRegionCode");
+
+                            b1.Property<string>("RegionName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressRegionName");
+
+                            b1.Property<string>("ZipCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressZipCode");
+
+                            b1.HasKey("AdmissionApplicationId");
+
+                            b1.ToTable("AdmissionApplications");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AdmissionApplicationId");
+                        });
+
+                    b.Navigation("HomeAddress")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Enrollify.Domain.Entities.Enrollment", b =>
                 {
                     b.HasOne("Enrollify.Domain.Entities.Section", "Section")
@@ -1354,6 +1685,70 @@ namespace Enrollify.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Enrollify.Domain.Entities.Student", b =>
+                {
+                    b.OwnsOne("Enrollify.Domain.ValueObjects.PsgcAddress", "HomeAddress", b1 =>
+                        {
+                            b1.Property<Guid>("StudentId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("BarangayCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressBarangayCode");
+
+                            b1.Property<string>("BarangayName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressBarangayName");
+
+                            b1.Property<string>("CityMunicipalityCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressCityMunicipalityCode");
+
+                            b1.Property<string>("CityMunicipalityName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressCityMunicipalityName");
+
+                            b1.Property<string>("ProvinceCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressProvinceCode");
+
+                            b1.Property<string>("ProvinceName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressProvinceName");
+
+                            b1.Property<string>("RegionCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressRegionCode");
+
+                            b1.Property<string>("RegionName")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("AddressRegionName");
+
+                            b1.Property<string>("ZipCode")
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)")
+                                .HasColumnName("AddressZipCode");
+
+                            b1.HasKey("StudentId");
+
+                            b1.ToTable("Students");
+
+                            b1.WithOwner()
+                                .HasForeignKey("StudentId");
+                        });
+
+                    b.Navigation("HomeAddress")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Enrollify.Domain.Entities.WorkflowStep", b =>

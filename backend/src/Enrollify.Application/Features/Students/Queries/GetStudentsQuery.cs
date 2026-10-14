@@ -30,7 +30,7 @@ public class GetStudentsQueryHandler : IRequestHandler<GetStudentsQuery, PagedRe
             query = query.Where(s =>
                 s.FirstName.ToLower().Contains(search) ||
                 s.LastName.ToLower().Contains(search) ||
-                s.LRN.Contains(search));
+                (s.LRN != null && s.LRN.Contains(search)));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

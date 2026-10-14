@@ -9,7 +9,7 @@ public record RosterSectionDto(
     Guid Id, string Name, string GradeLevel, string SchoolYear, int Capacity, int CurrentCount, string? Adviser = null);
 
 public record RosterStudentDto(
-    Guid StudentId, Guid EnrollmentId, string Lrn, string Name, string? Gender, string Status);
+    Guid StudentId, Guid EnrollmentId, string? Lrn, string Name, string? Gender, string Status);
 
 public record SectionRosterDto(RosterSectionDto Section, List<RosterStudentDto> Students);
 

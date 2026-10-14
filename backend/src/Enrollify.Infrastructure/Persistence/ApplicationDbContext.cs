@@ -36,6 +36,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PaymentTerm> PaymentTerms => Set<PaymentTerm>();
     public DbSet<RequirementTemplate> RequirementTemplates => Set<RequirementTemplate>();
     public DbSet<ApplicationFormField> ApplicationFormFields => Set<ApplicationFormField>();
+    public DbSet<ShsStrand> ShsStrands => Set<ShsStrand>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

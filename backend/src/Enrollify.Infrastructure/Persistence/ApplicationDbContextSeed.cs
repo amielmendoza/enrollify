@@ -1,6 +1,7 @@
 using Enrollify.Application.Common;
 using Enrollify.Application.Features.ApplicationFormFields;
 using Enrollify.Application.Features.ShsStrands;
+using Enrollify.Application.Features.Students;
 using Enrollify.Application.Features.Workflows;
 using Enrollify.Domain.Entities;
 using Enrollify.Domain.Enums;
@@ -42,6 +43,7 @@ public static class ApplicationDbContextSeed
         await SeedRequirementTemplatesAsync(context);
         await SeedDefaultWorkflowsAsync(context);
         await SeedApplicationFormFieldsAsync(context);
+        await SeedLearnerRecordBackfillAsync(context);
         await SeedShsStrandsAsync(context);
 
         if (await context.Tenants.IgnoreQueryFilters().AnyAsync())
@@ -343,6 +345,15 @@ public static class ApplicationDbContextSeed
         }
 
         if (anyAdded) await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedLearnerRecordBackfillAsync(ApplicationDbContext context)
+    {
+        var tenantIds = await context.Tenants.IgnoreQueryFilters().Select(t => t.Id).ToListAsync();
+        var changes = 0;
+        foreach (var tenantId in tenantIds)
+            changes += await LearnerRecordBackfill.RunForTenantAsync(context, tenantId);
+        if (changes > 0) await context.SaveChangesAsync();
     }
 
     private static async Task SeedShsStrandsAsync(ApplicationDbContext context)

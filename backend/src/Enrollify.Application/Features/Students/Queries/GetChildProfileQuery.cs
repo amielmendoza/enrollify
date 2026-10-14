@@ -22,9 +22,6 @@ public class GetChildProfileQueryHandler : IRequestHandler<GetChildProfileQuery,
             s => s.Id == request.StudentId && s.ParentUserId == request.ParentUserId, cancellationToken)
             ?? throw new KeyNotFoundException("Child not found or you do not have access to this student.");
 
-        return new StudentDto(s.Id, s.LRN, s.FirstName, s.MiddleName, s.LastName,
-            s.BirthDate, s.Gender, s.Address, s.ContactNumber, s.Email,
-            s.GuardianName, s.GuardianContact, s.FullName,
-            s.UserId, s.ParentUserId, s.IsActive);
+        return StudentMapping.ToDto(s);
     }
 }

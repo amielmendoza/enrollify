@@ -21,9 +21,6 @@ public class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByIdQuery, S
         var s = await _context.Students.FirstOrDefaultAsync(s => s.Id == request.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Student with ID '{request.Id}' not found.");
 
-        return new StudentDto(s.Id, s.LRN, s.FirstName, s.MiddleName, s.LastName,
-            s.BirthDate, s.Gender, s.Address, s.ContactNumber, s.Email,
-            s.GuardianName, s.GuardianContact, s.FullName,
-            s.UserId, s.ParentUserId, s.IsActive);
+        return StudentMapping.ToDto(s);
     }
 }

@@ -1,3 +1,5 @@
+using Enrollify.Application.DTOs.Learners;
+
 namespace Enrollify.Application.DTOs.Students;
 
 public record StudentDto(
@@ -16,7 +18,10 @@ public record StudentDto(
     string FullName,
     Guid? UserId = null,
     Guid? ParentUserId = null,
-    bool IsActive = true);
+    bool IsActive = true,
+    string StudentNumber = "",
+    bool LrnNeedsReview = false,
+    LearnerProfileDto? Profile = null);
 
 public record SetStudentActiveRequest(bool IsActive);
 

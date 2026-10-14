@@ -18,9 +18,6 @@ public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Stude
         var s = await _context.Students.FirstOrDefaultAsync(s => s.UserId == request.UserId, cancellationToken)
             ?? throw new KeyNotFoundException("Student profile not found.");
 
-        return new StudentDto(s.Id, s.LRN, s.FirstName, s.MiddleName, s.LastName,
-            s.BirthDate, s.Gender, s.Address, s.ContactNumber, s.Email,
-            s.GuardianName, s.GuardianContact, s.FullName,
-            s.UserId, s.ParentUserId, s.IsActive);
+        return StudentMapping.ToDto(s);
     }
 }

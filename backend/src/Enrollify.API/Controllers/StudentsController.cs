@@ -22,9 +22,9 @@ public class StudentsController : ControllerBase
     [HttpGet]
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] bool includeInactive = false)
+        [FromQuery] bool includeInactive = false, [FromQuery] bool missingLrn = false, [FromQuery] bool lrnNeedsReview = false)
     {
-        var result = await _sender.Send(new GetStudentsQuery(search, page, pageSize, includeInactive));
+        var result = await _sender.Send(new GetStudentsQuery(search, page, pageSize, includeInactive, missingLrn, lrnNeedsReview));
         return Ok(result);
     }
 

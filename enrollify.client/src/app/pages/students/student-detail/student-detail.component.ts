@@ -7,6 +7,7 @@ import { LoadingComponent } from '../../../core/components/loading.component';
 import { formatApiError } from '../../../core/utils/format-api-error';
 import { ApplicationListDto, Enrollment, Student } from '../../../core/models';
 import { enrollmentStatusBadgeClass, enrollmentStatusName } from '../../../core/constants';
+import { formatPsgcAddress } from '../../../core/learner';
 
 // The student hub: who they are, every enrollment across years, and the application(s)
 // that created or linked to the record. Each row links onward, so student, enrollment and
@@ -36,7 +37,19 @@ import { enrollmentStatusBadgeClass, enrollmentStatusName } from '../../../core/
                 <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Inactive</span>
               }
             </div>
-            <p class="mt-1 text-sm text-gray-500">LRN <span class="folio-mono text-gray-700">{{ s.lrn || '—' }}</span></p>
+            <p class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+              <span>Student No. <span class="folio-mono text-gray-700">{{ s.studentNumber }}</span></span>
+              <span>LRN
+                @if (s.lrn) {
+                  <span class="folio-mono text-gray-700">{{ s.lrn }}</span>
+                  @if (s.lrnNeedsReview) {
+                    <span class="ml-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Check LRN</span>
+                  }
+                } @else {
+                  <span class="text-gray-400">No LRN yet</span>
+                }
+              </span>
+            </p>
           </div>
           <div class="flex flex-wrap gap-2">
             <a [routerLink]="['/students', s.id, 'edit']" class="btn btn-secondary">Edit</a>
@@ -49,7 +62,7 @@ import { enrollmentStatusBadgeClass, enrollmentStatusName } from '../../../core/
           <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <div><dt class="text-xs text-gray-500">Birth Date</dt><dd class="text-gray-900">{{ s.birthDate | date:'mediumDate' }}</dd></div>
             <div><dt class="text-xs text-gray-500">Gender</dt><dd class="text-gray-900">{{ s.gender || '—' }}</dd></div>
-            <div class="sm:col-span-2"><dt class="text-xs text-gray-500">Address</dt><dd class="text-gray-900">{{ s.address || '—' }}</dd></div>
+            <div class="sm:col-span-2"><dt class="text-xs text-gray-500">Address</dt><dd class="text-gray-900">{{ address(s) || '—' }}</dd></div>
             <div><dt class="text-xs text-gray-500">Contact Number</dt><dd class="text-gray-900">{{ s.contactNumber || '—' }}</dd></div>
             <div><dt class="text-xs text-gray-500">Email</dt><dd class="text-gray-900 break-all">{{ s.email || '—' }}</dd></div>
             <div><dt class="text-xs text-gray-500">Guardian</dt><dd class="text-gray-900">{{ s.guardianName || '—' }}</dd></div>
@@ -166,6 +179,8 @@ export class StudentDetailComponent implements OnInit {
       }
     });
   }
+
+  address(s: Student): string { return formatPsgcAddress(s.address, s.profile?.homeAddress); }
 
   statusName(status: string | number): string { return enrollmentStatusName(status); }
 

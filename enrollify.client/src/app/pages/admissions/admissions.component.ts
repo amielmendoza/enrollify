@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -7,6 +7,20 @@ import { NotificationService } from '../../core/services/notification.service';
 import { LoadingComponent } from '../../core/components/loading.component';
 import { ApplicationListDto, ApplicationDetailDto } from '../../core/models';
 import { formatApiError } from '../../core/utils/format-api-error';
+import { formatPsgcAddress } from '../../core/learner';
+
+interface DetailEntry { label: string; value: string; mono?: boolean; }
+
+function withValues(entries: { label: string; value: string | null | undefined; mono?: boolean }[]): DetailEntry[] {
+  return entries.filter((e): e is DetailEntry => !!e.value?.trim());
+}
+
+/** "Cruz, Juan Santos" — null when no name was given. */
+function personName(last: string | null, first: string | null, middle: string | null): string | null {
+  const given = [first, middle].filter(Boolean).join(' ');
+  if (!last && !given) return null;
+  return last && given ? `${last}, ${given}` : (last || given);
+}
 
 @Component({
   selector: 'app-admissions',
@@ -116,17 +130,44 @@ import { formatApiError } from '../../core/utils/format-api-error';
             </div>
             <div class="p-6 space-y-4">
               <div class="grid grid-cols-2 gap-4">
-                <div><p class="text-xs text-gray-500">Full Name</p><p class="text-sm font-medium">{{ selectedApp()!.firstName }} {{ selectedApp()!.middleName || '' }} {{ selectedApp()!.lastName }}</p></div>
+                <div><p class="text-xs text-gray-500">Full Name</p><p class="text-sm font-medium">{{ selectedApp()!.firstName }} {{ selectedApp()!.middleName || '' }} {{ selectedApp()!.lastName }} {{ selectedApp()!.learner?.extensionName || '' }}</p></div>
+                <div>
+                  <p class="text-xs text-gray-500">LRN</p>
+                  @if (selectedApp()!.lrn) {
+                    <p class="text-sm font-medium folio-mono">{{ selectedApp()!.lrn }}</p>
+                  } @else {
+                    <p class="text-sm text-gray-400">No LRN yet</p>
+                  }
+                </div>
                 <div><p class="text-xs text-gray-500">Email</p><p class="text-sm font-medium">{{ selectedApp()!.email }}</p></div>
                 <div><p class="text-xs text-gray-500">Gender</p><p class="text-sm font-medium">{{ selectedApp()!.gender }}</p></div>
                 <div><p class="text-xs text-gray-500">Date of Birth</p><p class="text-sm font-medium">{{ selectedApp()!.dateOfBirth | date:'mediumDate' }}</p></div>
                 <div><p class="text-xs text-gray-500">Contact</p><p class="text-sm font-medium">{{ selectedApp()!.contactNumber || '-' }}</p></div>
-                <div><p class="text-xs text-gray-500">Address</p><p class="text-sm font-medium">{{ selectedApp()!.address || '-' }}</p></div>
+                <div class="col-span-2"><p class="text-xs text-gray-500">Address</p><p class="text-sm font-medium">{{ homeAddress() || '-' }}</p></div>
                 <div><p class="text-xs text-gray-500">Grade Level</p><p class="text-sm font-medium">{{ selectedApp()!.gradeLevel }}</p></div>
                 <div><p class="text-xs text-gray-500">School Year</p><p class="text-sm font-medium">{{ selectedApp()!.schoolYear }}</p></div>
-                <div><p class="text-xs text-gray-500">Previous School</p><p class="text-sm font-medium">{{ selectedApp()!.previousSchool || '-' }}</p></div>
                 <div><p class="text-xs text-gray-500">Guardian</p><p class="text-sm font-medium">{{ selectedApp()!.guardianName || '-' }} {{ selectedApp()!.guardianRelationship ? '(' + selectedApp()!.guardianRelationship + ')' : '' }}</p></div>
               </div>
+              @if (enrollmentEntries().length > 0) {
+                <div class="border-t border-gray-100 pt-4">
+                  <p class="folio-eyebrow mb-3">Enrollment Details</p>
+                  <div class="grid grid-cols-2 gap-4">
+                    @for (entry of enrollmentEntries(); track entry.label) {
+                      <div><p class="text-xs text-gray-500">{{ entry.label }}</p><p class="text-sm font-medium" [class.folio-mono]="entry.mono">{{ entry.value }}</p></div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (learnerEntries().length > 0) {
+                <div class="border-t border-gray-100 pt-4">
+                  <p class="folio-eyebrow mb-3">Learner Details (DepEd)</p>
+                  <div class="grid grid-cols-2 gap-4">
+                    @for (entry of learnerEntries(); track entry.label) {
+                      <div><p class="text-xs text-gray-500">{{ entry.label }}</p><p class="text-sm font-medium" [class.folio-mono]="entry.mono">{{ entry.value }}</p></div>
+                    }
+                  </div>
+                </div>
+              }
               @if (selectedApp()!.parentEmail || selectedApp()!.parentContactNumber) {
                 <div class="border-t border-gray-100 pt-4">
                   <p class="folio-eyebrow mb-3">Parent Contact</p>
@@ -175,6 +216,44 @@ import { formatApiError } from '../../core/utils/format-api-error';
 export class AdmissionsComponent implements OnInit {
   applications = signal<ApplicationListDto[]>([]);
   selectedApp = signal<ApplicationDetailDto | null>(null);
+
+  // The learner record as submitted, for the detail modal. Entries without a value are left out.
+  homeAddress = computed(() => {
+    const a = this.selectedApp();
+    return a ? formatPsgcAddress(a.address, a.learner?.homeAddress) : '';
+  });
+
+  enrollmentEntries = computed<DetailEntry[]>(() => {
+    const a = this.selectedApp();
+    if (!a) return [];
+    const i = a.enrollmentInfo;
+    return withValues([
+      { label: 'Learner Type', value: i?.learnerType },
+      { label: 'Track / Strand', value: [i?.track, i?.strand].filter(Boolean).join(' – ') },
+      { label: 'Last Grade Level Completed', value: i?.lastGradeLevelCompleted },
+      { label: 'Last School Year Completed', value: i?.lastSchoolYearCompleted, mono: true },
+      { label: 'Last School Attended', value: i?.lastSchoolAttended ?? a.previousSchool },
+      { label: 'Last School Address', value: i?.lastSchoolAddress ?? a.previousSchoolAddress },
+      { label: 'DepEd School ID', value: i?.lastSchoolId, mono: true },
+    ]);
+  });
+
+  learnerEntries = computed<DetailEntry[]>(() => {
+    const p = this.selectedApp()?.learner;
+    if (!p) return [];
+    return withValues([
+      { label: 'PSA Birth Certificate No.', value: p.psaBirthCertificateNumber, mono: true },
+      { label: 'Place of Birth', value: p.placeOfBirth },
+      { label: 'Mother Tongue', value: p.motherTongue },
+      { label: 'Religion', value: p.religion },
+      { label: 'IP Community', value: p.isIndigenousPeople ? (p.ipCommunity || 'Yes') : null },
+      { label: '4Ps Household ID', value: p.is4PsBeneficiary ? (p.fourPsHouseholdId || 'Yes') : null, mono: !!p.fourPsHouseholdId },
+      { label: 'Disability', value: p.hasDisability ? (p.disabilityTypes?.join(', ') || 'Yes') : null },
+      { label: "Father's Name", value: personName(p.fatherLastName, p.fatherFirstName, p.fatherMiddleName) },
+      { label: "Mother's Maiden Name", value: personName(p.motherMaidenLastName, p.motherMaidenFirstName, p.motherMaidenMiddleName) },
+    ]);
+  });
+
   loading = signal(true);
   search = '';
   statusFilter = '';

@@ -188,7 +188,7 @@ import { formatApiError } from '../../../core/utils/format-api-error';
           }
           @if (isShs() && (strands().length > 0 || learnerForm.strand)) {
             <app-strand-select [strands]="strands()" [track]="learnerForm.track" [strand]="learnerForm.strand"
-                               [disabled]="learnerLocked()" id="learner-strand"
+                               [disabled]="learnerLocked()" selectId="learner-strand"
                                (changed)="learnerForm.track = $event.track; learnerForm.strand = $event.strand" />
           }
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -615,13 +615,17 @@ export class EnrollmentDetailComponent implements OnInit {
   ngOnInit(): void {
     this.enrollmentId = this.route.snapshot.paramMap.get('id')!;
     this.api.getShsStrands().subscribe(s => this.strands.set(s));
-    this.loadAll();
+    this.loadAll(true);
   }
 
-  loadAll(): void {
+  /**
+   * Reloads the page. The Learner tab's form is re-read from the server only on the first load and
+   * after saving it — other reloads (approve, assign section, payments…) keep the registrar's unsaved edits.
+   */
+  loadAll(resetLearnerForm = false): void {
     this.api.getEnrollment(this.enrollmentId).subscribe(e => {
       this.enrollment.set(e);
-      this.learnerForm = { ...emptyLearnerInfo(), ...(e.learnerInfo ?? {}) };
+      if (resetLearnerForm) this.learnerForm = { ...emptyLearnerInfo(), ...(e.learnerInfo ?? {}) };
       // Land the registrar where the action is — set once on first load only, so
       // reloads after approve/void/advance don't yank the user's chosen tab away.
       if (!this.defaultTabSet) {
@@ -648,7 +652,7 @@ export class EnrollmentDetailComponent implements OnInit {
   saveLearnerInfo(): void {
     this.savingLearner.set(true);
     this.api.updateEnrollmentLearnerInfo(this.enrollmentId, this.learnerForm).subscribe({
-      next: () => { this.savingLearner.set(false); this.notify.success('Learner details saved.'); this.loadAll(); },
+      next: () => { this.savingLearner.set(false); this.notify.success('Learner details saved.'); this.loadAll(true); },
       error: err => { this.savingLearner.set(false); this.notify.error(formatApiError(err, 'Could not save learner details.')); },
     });
   }

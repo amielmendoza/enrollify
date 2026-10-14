@@ -303,7 +303,7 @@ import { formatApiError } from '../../../core/utils/format-api-error';
           <p class="text-gray-400 mb-4">No enrollment found for this child for the active school year.</p>
           @if (offerStrand()) {
             <div class="mx-auto mb-4 max-w-sm text-left">
-              <app-strand-select [strands]="strands()" [track]="pick.track" [strand]="pick.strand" id="child-reenroll-strand"
+              <app-strand-select [strands]="strands()" [track]="pick.track" [strand]="pick.strand" selectId="child-reenroll-strand"
                                  label="Senior High track / strand (optional)" (changed)="pick = $event" />
               <p class="mt-1 text-xs text-gray-400">You can leave this blank — the registrar can set it later.</p>
             </div>

@@ -311,7 +311,7 @@ type ApplyMode = 'Parent' | 'Student';
                   @if (showStrand(a)) {
                     <div class="mt-4">
                       <app-strand-select [strands]="strands()" [track]="a.track" [strand]="a.strand" [required]="true"
-                                         [id]="'strand_' + i" [label]="fieldLabel('strand', 'Track / Strand')"
+                                         [selectId]="'strand_' + i" [label]="fieldLabel('strand', 'Track / Strand')"
                                          (changed)="a.track = $event.track; a.strand = $event.strand" />
                     </div>
                   }

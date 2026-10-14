@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, shareReplay } from 'rxjs';
+import { Observable, catchError, map, shareReplay, throwError } from 'rxjs';
 
 export interface PsgcPlace { code: string; name: string; }
 export interface PsgcProvince extends PsgcPlace { regionCode: string; }
@@ -21,7 +21,13 @@ export class PsgcService {
 
   index(): Observable<PsgcIndex> {
     // Relative URL: resolves against <base href>, so it works under any deployment path.
-    this.index$ ??= this.http.get<PsgcIndex>('psgc/index.json').pipe(shareReplay(1));
+    // A failed load is never cached: drop it so the next call fetches again.
+    this.index$ ??= this.http.get<PsgcIndex>('psgc/index.json').pipe(
+      catchError(err => {
+        this.index$ = undefined;
+        return throwError(() => err);
+      }),
+      shareReplay(1));
     return this.index$;
   }
 

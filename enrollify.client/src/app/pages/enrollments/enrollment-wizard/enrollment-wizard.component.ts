@@ -75,7 +75,7 @@ import { formatApiError } from '../../../core/utils/format-api-error';
               </select>
             </div>
             @if (showStrand()) {
-              <app-strand-select [strands]="strands()" [track]="track" [strand]="strand" id="wizard-strand"
+              <app-strand-select [strands]="strands()" [track]="track" [strand]="strand" selectId="wizard-strand"
                                  (changed)="track = $event.track; strand = $event.strand" />
             }
             <div>

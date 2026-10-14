@@ -21,9 +21,12 @@ import { PsgcCity, PsgcIndex, PsgcPlace, PsgcService } from '../services/psgc.se
         <label class="form-label" [attr.for]="idPrefix + '-region'">Region <span *ngIf="required">*</span></label>
         <select class="form-input" [id]="idPrefix + '-region'" [disabled]="disabled || !index()"
                 [ngModel]="address.regionCode" (ngModelChange)="selectRegion($event)" [ngModelOptions]="{ standalone: true }">
-          <option [ngValue]="null">{{ index() ? 'Select region' : 'Loading…' }}</option>
+          <option [ngValue]="null">{{ index() ? 'Select region' : (indexFailed() ? 'Unavailable' : 'Loading…') }}</option>
           @for (r of index()?.regions ?? []; track r.code) { <option [ngValue]="r.code">{{ r.name }}</option> }
         </select>
+        @if (indexFailed()) {
+          <p class="mt-1 text-xs text-red-600">Address list unavailable — reload the page to try again.</p>
+        }
       </div>
       @if (showProvinceStep()) {
         <div>
@@ -70,6 +73,7 @@ export class PsgcAddressComponent implements OnChanges, OnDestroy {
   readonly NO_PROVINCE = '__none__';
 
   index = signal<PsgcIndex | null>(null);
+  indexFailed = signal(false);
   provinceChoice = signal<string | null>(null);
   barangays = signal<PsgcPlace[]>([]);
   loadingBarangays = signal(false);
@@ -90,7 +94,10 @@ export class PsgcAddressComponent implements OnChanges, OnDestroy {
   });
 
   constructor(private psgc: PsgcService) {
-    this.indexSub = this.psgc.index().subscribe(ix => { this.index.set(ix); this.syncFromAddress(); });
+    this.indexSub = this.psgc.index().subscribe({
+      next: ix => { this.index.set(ix); this.syncFromAddress(); },
+      error: () => this.indexFailed.set(true),
+    });
   }
 
   ngOnChanges(): void { this.syncFromAddress(); }

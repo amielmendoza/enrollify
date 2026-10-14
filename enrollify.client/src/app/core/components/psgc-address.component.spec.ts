@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, Subject, of, throwError } from 'rxjs';
 import { PsgcAddressComponent } from './psgc-address.component';
 import { PsgcIndex, PsgcService } from '../services/psgc.service';
 import { emptyPsgcAddress } from '../learner';
@@ -132,6 +132,23 @@ describe('PsgcAddressComponent', () => {
     pending['A'].next([{ code: '0702201001', name: 'Cabadiangan' }]);
 
     expect(c.barangays().map(b => b.name)).toEqual(['Adlaon']);
+  });
+
+  it('shows a reload message instead of "Loading…" when the address list fails to load', () => {
+    TestBed.configureTestingModule({
+      imports: [PsgcAddressComponent],
+      providers: [{
+        provide: PsgcService,
+        useValue: { index: () => throwError(() => new Error('404 psgc/index.json')), barangaysOf: () => of([]) },
+      }],
+    });
+    const fixture = TestBed.createComponent(PsgcAddressComponent);
+    fixture.componentRef.setInput('address', emptyPsgcAddress());
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Address list unavailable — reload the page to try again.');
+    expect(text).not.toContain('Loading…');
   });
 
   it('emits changed after every selection', () => {

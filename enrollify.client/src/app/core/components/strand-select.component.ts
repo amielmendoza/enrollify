@@ -9,8 +9,8 @@ import { ShsStrand } from '../models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <label class="form-label" [attr.for]="id">{{ label }} <span *ngIf="required">*</span></label>
-    <select class="form-input" [id]="id" [disabled]="disabled"
+    <label class="form-label" [attr.for]="selectId">{{ label }} <span *ngIf="required">*</span></label>
+    <select class="form-input" [id]="selectId" [disabled]="disabled"
             [ngModel]="selectedId()" (ngModelChange)="select($event)" [ngModelOptions]="{ standalone: true }">
       <option [ngValue]="null">Select track / strand</option>
       @if (selectedId() === LEGACY) {
@@ -31,7 +31,8 @@ export class StrandSelectComponent {
   @Input() required = false;
   @Input() disabled = false;
   @Input() label = 'Track / Strand';
-  @Input() id = 'strand';
+  // Not "id": a static id attribute would also land on the host element, duplicating the DOM id.
+  @Input() selectId = 'strand';
   @Output() changed = new EventEmitter<{ track: string | null; strand: string | null }>();
 
   readonly LEGACY = '__legacy__';

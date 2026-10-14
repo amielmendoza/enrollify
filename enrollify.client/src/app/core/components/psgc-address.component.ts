@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, OnChanges, Output, computed, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { PsgcAddress } from '../models';
 import { PsgcCity, PsgcIndex, PsgcPlace, PsgcService } from '../services/psgc.service';
 
@@ -59,7 +60,7 @@ import { PsgcCity, PsgcIndex, PsgcPlace, PsgcService } from '../services/psgc.se
     </div>
   `
 })
-export class PsgcAddressComponent implements OnChanges {
+export class PsgcAddressComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) address!: PsgcAddress;
   @Input() idPrefix = 'addr';
   @Input() required = false;
@@ -73,6 +74,8 @@ export class PsgcAddressComponent implements OnChanges {
   barangays = signal<PsgcPlace[]>([]);
   loadingBarangays = signal(false);
   private regionCode = signal<string | null>(null);
+  private indexSub: Subscription;
+  private barangaySub?: Subscription;
 
   provinces = computed(() => (this.index()?.provinces ?? []).filter(p => p.regionCode === this.regionCode()));
   private regionCities = computed(() => (this.index()?.cities ?? []).filter(c => c.regionCode === this.regionCode()));
@@ -87,10 +90,15 @@ export class PsgcAddressComponent implements OnChanges {
   });
 
   constructor(private psgc: PsgcService) {
-    this.psgc.index().subscribe(ix => { this.index.set(ix); this.syncFromAddress(); });
+    this.indexSub = this.psgc.index().subscribe(ix => { this.index.set(ix); this.syncFromAddress(); });
   }
 
   ngOnChanges(): void { this.syncFromAddress(); }
+
+  ngOnDestroy(): void {
+    this.indexSub.unsubscribe();
+    this.barangaySub?.unsubscribe();
+  }
 
   selectRegion(code: string | null): void {
     const r = this.index()?.regions.find(x => x.code === code) ?? null;
@@ -102,7 +110,7 @@ export class PsgcAddressComponent implements OnChanges {
     });
     this.regionCode.set(this.address.regionCode);
     this.provinceChoice.set(null);
-    this.barangays.set([]);
+    this.clearBarangays();
     this.changed.emit(this.address);
   }
 
@@ -114,7 +122,7 @@ export class PsgcAddressComponent implements OnChanges {
       barangayCode: null, barangayName: null,
     });
     this.provinceChoice.set(choice);
-    this.barangays.set([]);
+    this.clearBarangays();
     this.changed.emit(this.address);
   }
 
@@ -125,7 +133,7 @@ export class PsgcAddressComponent implements OnChanges {
       barangayCode: null, barangayName: null,
     });
     if (c && c.provinceCode === null) Object.assign(this.address, { provinceCode: null, provinceName: null });
-    this.barangays.set([]);
+    this.clearBarangays();
     if (c) this.loadBarangays(c);
     this.changed.emit(this.address);
   }
@@ -145,19 +153,27 @@ export class PsgcAddressComponent implements OnChanges {
     const a = this.address;
     if (!a || !this.index()) return;
     this.regionCode.set(a.regionCode);
-    this.provinceChoice.set(a.provinceCode ?? (a.cityMunicipalityCode ? this.NO_PROVINCE : null));
+    const keepNoProvince = this.provinceChoice() === this.NO_PROVINCE && !a.provinceCode && !a.cityMunicipalityCode;
+    if (!keepNoProvince) this.provinceChoice.set(a.provinceCode ?? (a.cityMunicipalityCode ? this.NO_PROVINCE : null));
     const city = this.cityByCode(a.cityMunicipalityCode);
     if (city) this.loadBarangays(city);
-    else this.barangays.set([]);
+    else this.clearBarangays();
   }
 
   private cityByCode(code: string | null): PsgcCity | undefined {
     return code ? this.index()?.cities.find(c => c.code === code) : undefined;
   }
 
+  private clearBarangays(): void {
+    this.barangaySub?.unsubscribe();
+    this.barangays.set([]);
+    this.loadingBarangays.set(false);
+  }
+
   private loadBarangays(city: PsgcCity): void {
+    this.barangaySub?.unsubscribe();
     this.loadingBarangays.set(true);
-    this.psgc.barangaysOf(city).subscribe({
+    this.barangaySub = this.psgc.barangaysOf(city).subscribe({
       next: list => { this.barangays.set(list); this.loadingBarangays.set(false); },
       error: () => { this.barangays.set([]); this.loadingBarangays.set(false); },
     });

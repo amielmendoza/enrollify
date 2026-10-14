@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { SchoolYearService } from '../../core/services/school-year.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { WorkflowDefinition, Fee, Section, SchoolYear, PaymentTerm, RequirementTemplate, ApplicationFormField, FormFieldType, FormFieldSection, FormFieldAppliesTo, Registrar } from '../../core/models';
+import { WorkflowDefinition, Fee, Section, SchoolYear, PaymentTerm, RequirementTemplate, ShsStrand, ApplicationFormField, FormFieldType, FormFieldSection, FormFieldAppliesTo, Registrar } from '../../core/models';
 import { GRADE_LEVELS } from '../../core/constants';
 import { formatApiError } from '../../core/utils/format-api-error';
 import { LoadingComponent } from '../../core/components/loading.component';
@@ -450,7 +450,7 @@ import { LoadingComponent } from '../../core/components/loading.component';
             <h2 class="text-lg font-semibold text-gray-900 mb-1">Add Requirement</h2>
             <p class="text-sm text-gray-500 mb-4">These documents are auto-attached to every new enrollment as the default checklist.</p>
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
-              <div class="sm:col-span-6">
+              <div class="sm:col-span-4">
                 <label class="form-label">Document Name *</label>
                 <input type="text" [(ngModel)]="newRequirement.documentName" class="form-input" placeholder="e.g. PSA Birth Certificate" />
               </div>
@@ -464,6 +464,12 @@ import { LoadingComponent } from '../../core/components/loading.component';
               <div class="sm:col-span-1">
                 <label class="form-label">Order</label>
                 <input type="number" [(ngModel)]="newRequirement.displayOrder" class="form-input" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="inline-flex items-center gap-2 text-sm text-gray-700 pb-2.5">
+                  <input type="checkbox" [(ngModel)]="newRequirement.keepOnFile" />
+                  Keep on file
+                </label>
               </div>
               <div class="sm:col-span-2">
                 <button (click)="addRequirementTemplate()" [disabled]="!newRequirement.documentName"
@@ -481,6 +487,7 @@ import { LoadingComponent } from '../../core/components/loading.component';
             <div class="p-4 border-b border-gray-100">
               <h2 class="text-lg font-semibold text-gray-900">Requirement Templates</h2>
               <p class="text-sm text-gray-500 mt-1">Toggle Active to control which requirements seed new enrollments.</p>
+              <p class="text-sm text-gray-500 mt-1">"Kept on file" documents (like the PSA birth certificate) are submitted once: a verified copy carries forward to the learner's later enrollments.</p>
             </div>
             <div class="overflow-x-auto">
               <table class="w-full">
@@ -489,6 +496,7 @@ import { LoadingComponent } from '../../core/components/loading.component';
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Order</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document Name</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade Level</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kept on file</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -499,6 +507,7 @@ import { LoadingComponent } from '../../core/components/loading.component';
                       <td class="px-6 py-4 text-sm text-gray-500">{{ t.displayOrder }}</td>
                       <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ t.documentName }}</td>
                       <td class="px-6 py-4 text-sm text-gray-500">{{ t.gradeLevel || 'All' }}</td>
+                      <td class="px-6 py-4 text-sm text-gray-500">{{ t.keepOnFile ? 'Once per learner' : 'Every enrollment' }}</td>
                       <td class="px-6 py-4 text-sm">
                         @if (t.isActive) {
                           <span class="badge badge-success">Active</span>
@@ -507,6 +516,7 @@ import { LoadingComponent } from '../../core/components/loading.component';
                         }
                       </td>
                       <td class="px-6 py-4 text-right text-sm">
+                        <button (click)="toggleKeepOnFile(t)" class="text-[#0038A8] hover:underline mr-3">{{ t.keepOnFile ? "Don't keep on file" : 'Keep on file' }}</button>
                         <button (click)="toggleRequirementTemplate(t)" class="text-[#0038A8] hover:underline mr-3">
                           {{ t.isActive ? 'Deactivate' : 'Activate' }}
                         </button>
@@ -515,11 +525,82 @@ import { LoadingComponent } from '../../core/components/loading.component';
                     </tr>
                   }
                   @if (requirementTemplates().length === 0) {
-                    <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No requirement templates yet. Add one above.</td></tr>
+                    <tr><td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">No requirement templates yet. Add one above.</td></tr>
                   }
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      }
+
+      <!-- SHS Strands Tab -->
+      @if (activeTab === 'strands') {
+        <div class="mt-6 space-y-6">
+          <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-1">Add Strand</h2>
+            <p class="text-sm text-gray-500 mb-4">The Senior High tracks and strands your school offers. Grade 11–12 applicants and enrollments choose from the active ones.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
+              <div class="sm:col-span-4">
+                <label class="form-label" for="new-track">Track *</label>
+                <input id="new-track" type="text" maxlength="100" [(ngModel)]="newStrand.track" class="form-input" placeholder="e.g. Academic" />
+              </div>
+              <div class="sm:col-span-4">
+                <label class="form-label" for="new-strand">Strand *</label>
+                <input id="new-strand" type="text" maxlength="100" [(ngModel)]="newStrand.strand" class="form-input" placeholder="e.g. STEM" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="form-label" for="new-strand-order">Order</label>
+                <input id="new-strand-order" type="number" [(ngModel)]="newStrand.displayOrder" class="form-input" />
+              </div>
+              <div class="sm:col-span-2">
+                <button (click)="addStrand()" [disabled]="!newStrand.track.trim() || !newStrand.strand.trim()" class="btn btn-primary w-full disabled:opacity-50">Add</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-[#E2D9C2] overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Order</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Track</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strand</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                @for (s of strands(); track s.id) {
+                  <tr class="hover:bg-gray-50" [class.opacity-60]="!s.isActive">
+                    @if (editingStrandId() === s.id) {
+                      <td class="px-6 py-3"><input type="number" [(ngModel)]="strandEdit.displayOrder" class="form-input" /></td>
+                      <td class="px-6 py-3"><input type="text" maxlength="100" [(ngModel)]="strandEdit.track" class="form-input" /></td>
+                      <td class="px-6 py-3"><input type="text" maxlength="100" [(ngModel)]="strandEdit.strand" class="form-input" /></td>
+                      <td class="px-6 py-3 text-sm text-gray-500">{{ s.isActive ? 'Active' : 'Inactive' }}</td>
+                      <td class="px-6 py-3 text-right text-sm whitespace-nowrap">
+                        <button (click)="saveStrand(s)" class="text-[#0038A8] hover:underline mr-3">Save</button>
+                        <button (click)="editingStrandId.set(null)" class="text-gray-500 hover:underline">Cancel</button>
+                      </td>
+                    } @else {
+                      <td class="px-6 py-4 text-sm text-gray-500">{{ s.displayOrder }}</td>
+                      <td class="px-6 py-4 text-sm text-gray-900">{{ s.track }}</td>
+                      <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ s.strand }}</td>
+                      <td class="px-6 py-4 text-sm">
+                        @if (s.isActive) { <span class="badge badge-success">Active</span> } @else { <span class="badge bg-gray-100 text-gray-600">Inactive</span> }
+                      </td>
+                      <td class="px-6 py-4 text-right text-sm whitespace-nowrap">
+                        <button (click)="startEditStrand(s)" class="text-[#0038A8] hover:underline mr-3">Edit</button>
+                        <button (click)="toggleStrand(s)" class="text-[#0038A8] hover:underline">{{ s.isActive ? 'Deactivate' : 'Activate' }}</button>
+                      </td>
+                    }
+                  </tr>
+                }
+                @if (strands().length === 0) {
+                  <tr><td colspan="5">@if (strandsLoading()) { <app-loading label="Loading strands..." /> } @else { <p class="px-6 py-8 text-center text-sm text-gray-500">No strands yet. Add the ones your school offers above.</p> }</td></tr>
+                }
+              </tbody>
+            </table>
           </div>
         </div>
       }
@@ -1045,7 +1126,7 @@ export class SettingsComponent implements OnInit {
   sections = signal<Section[]>([]);
   schoolYearList = signal<SchoolYear[]>([]);
   requirementTemplates = signal<RequirementTemplate[]>([]);
-  newRequirement = { documentName: '', gradeLevel: '', displayOrder: 0 };
+  newRequirement = { documentName: '', gradeLevel: '', displayOrder: 0, keepOnFile: false };
   reqError = signal('');
 
   activeTab = 'school-year';
@@ -1055,6 +1136,7 @@ export class SettingsComponent implements OnInit {
     { id: 'sections', label: 'Sections' },
     { id: 'payment-terms', label: 'Payment Terms' },
     { id: 'requirements', label: 'Requirements' },
+    { id: 'strands', label: 'SHS Strands' },
     { id: 'application-form', label: 'Application Form' },
     { id: 'users', label: 'Registrars' },
     { id: 'workflows', label: 'Workflows' },
@@ -1074,7 +1156,7 @@ export class SettingsComponent implements OnInit {
   // Application Form tab state
   formFields = signal<ApplicationFormField[]>([]);
   formFieldsBySection = computed(() => {
-    const order: FormFieldSection[] = ['Parent', 'Student', 'Enrollment', 'Guardian'];
+    const order: FormFieldSection[] = ['Parent', 'Student', 'Family', 'Enrollment', 'Guardian'];
     const grouped = new Map<FormFieldSection, ApplicationFormField[]>();
     for (const sec of order) grouped.set(sec, []);
     for (const f of this.formFields()) grouped.get(f.section)?.push(f);
@@ -1098,7 +1180,7 @@ export class SettingsComponent implements OnInit {
   };
   ffError = signal('');
   ffFieldTypes: FormFieldType[] = ['Text', 'TextArea', 'Number', 'Date', 'Checkbox', 'Dropdown'];
-  ffSections: FormFieldSection[] = ['Parent', 'Student', 'Enrollment', 'Guardian'];
+  ffSections: FormFieldSection[] = ['Parent', 'Student', 'Family', 'Enrollment', 'Guardian'];
   ffAppliesToOptions: FormFieldAppliesTo[] = ['Both', 'ParentMode', 'StudentMode'];
 
   schoolYearNames = computed(() => this.schoolYearList().map(sy => sy.name));
@@ -1147,6 +1229,7 @@ export class SettingsComponent implements OnInit {
       this.workflows.set(w);
     });
     this.loadRequirementTemplates();
+    this.loadStrands();
     this.loadFormFields();
     this.loadRegistrars();
   }
@@ -1162,10 +1245,10 @@ export class SettingsComponent implements OnInit {
       documentName: this.newRequirement.documentName.trim(),
       gradeLevel: this.newRequirement.gradeLevel || null,
       displayOrder: this.newRequirement.displayOrder || 0,
-      keepOnFile: false
+      keepOnFile: this.newRequirement.keepOnFile
     }).subscribe({
       next: () => {
-        this.newRequirement = { documentName: '', gradeLevel: '', displayOrder: 0 };
+        this.newRequirement = { documentName: '', gradeLevel: '', displayOrder: 0, keepOnFile: false };
         this.loadRequirementTemplates();
       },
       error: (err) => this.reqError.set(formatApiError(err, 'Failed to add requirement template.'))
@@ -1187,7 +1270,60 @@ export class SettingsComponent implements OnInit {
     this.api.deleteRequirementTemplate(t.id).subscribe(() => this.loadRequirementTemplates());
   }
 
+  toggleKeepOnFile(t: RequirementTemplate) {
+    this.api.updateRequirementTemplate(t.id, {
+      documentName: t.documentName, gradeLevel: t.gradeLevel, isActive: t.isActive,
+      displayOrder: t.displayOrder, keepOnFile: !t.keepOnFile,
+    }).subscribe({
+      next: () => this.loadRequirementTemplates(),
+      error: err => this.notify.error(formatApiError(err, 'Failed to update the requirement.')),
+    });
+  }
+
+  // SHS strands tab state
+  strands = signal<ShsStrand[]>([]);
+  newStrand = { track: '', strand: '', displayOrder: 0 };
+  editingStrandId = signal<string | null>(null);
+  strandEdit = { track: '', strand: '', displayOrder: 0 };
+
+  loadStrands() {
+    this.strandsLoading.set(true);
+    this.api.getShsStrands(true).subscribe({
+      next: list => { this.strandsLoading.set(false); this.strands.set(list); },
+      error: (err) => this.listLoadFailed(this.strandsLoading, err, 'strands')
+    });
+  }
+
+  addStrand() {
+    this.api.createShsStrand({
+      track: this.newStrand.track.trim(), strand: this.newStrand.strand.trim(), displayOrder: this.newStrand.displayOrder || 0,
+    }).subscribe({
+      next: () => { this.newStrand = { track: '', strand: '', displayOrder: 0 }; this.loadStrands(); this.notify.success('Strand added.'); },
+      error: err => this.notify.error(formatApiError(err, 'Failed to add the strand.')),
+    });
+  }
+
+  startEditStrand(s: ShsStrand) {
+    this.strandEdit = { track: s.track, strand: s.strand, displayOrder: s.displayOrder };
+    this.editingStrandId.set(s.id);
+  }
+
+  saveStrand(s: ShsStrand) {
+    this.api.updateShsStrand(s.id, { ...this.strandEdit, isActive: s.isActive }).subscribe({
+      next: () => { this.editingStrandId.set(null); this.loadStrands(); },
+      error: err => this.notify.error(formatApiError(err, 'Failed to save the strand.')),
+    });
+  }
+
+  toggleStrand(s: ShsStrand) {
+    this.api.updateShsStrand(s.id, { track: s.track, strand: s.strand, isActive: !s.isActive, displayOrder: s.displayOrder }).subscribe({
+      next: () => this.loadStrands(),
+      error: err => this.notify.error(formatApiError(err, 'Failed to update the strand.')),
+    });
+  }
+
   // Each list shows a spinner until loaded, so "No … configured" never flashes on arrival.
+  strandsLoading = signal(true);
   syLoading = signal(true);
   feesLoading = signal(true);
   sectionsLoading = signal(true);
@@ -1282,7 +1418,7 @@ export class SettingsComponent implements OnInit {
     this.api.bulkReenroll(this.reenrollFrom, this.reenrollTo).subscribe({
       next: (res) => {
         this.reenrolling.set(false);
-        this.notify.success(`Created ${res.created} enrollments (${res.skippedExisting} already enrolled, ${res.skippedGraduates} graduates skipped).`);
+        this.notify.success(`Created ${res.created} enrollments (${res.skippedExisting} already enrolled, ${res.skippedGraduates} graduates skipped)${res.needsStrand ? `. ${res.needsStrand} Grade 11 learner(s) need a track/strand before assessment.` : '.'}`);
       },
       error: (err) => {
         this.reenrolling.set(false);

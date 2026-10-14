@@ -9,7 +9,7 @@ public record RosterSectionDto(
     Guid Id, string Name, string GradeLevel, string SchoolYear, int Capacity, int CurrentCount, string? Adviser = null);
 
 public record RosterStudentDto(
-    Guid StudentId, Guid EnrollmentId, string? Lrn, string Name, string? Gender, string Status);
+    Guid StudentId, Guid EnrollmentId, string? Lrn, string Name, string? Gender, string Status, string StudentNumber = "");
 
 public record SectionRosterDto(RosterSectionDto Section, List<RosterStudentDto> Students);
 
@@ -43,6 +43,7 @@ public class GetSectionRosterQueryHandler : IRequestHandler<GetSectionRosterQuer
                 e.StudentId,
                 EnrollmentId = e.Id,
                 e.Student.LRN,
+                e.Student.StudentNumber,
                 e.Student.LastName,
                 e.Student.FirstName,
                 e.Student.MiddleName,
@@ -55,7 +56,7 @@ public class GetSectionRosterQueryHandler : IRequestHandler<GetSectionRosterQuer
             .Select(r => new RosterStudentDto(
                 r.StudentId, r.EnrollmentId, r.LRN,
                 $"{r.LastName}, {r.FirstName} {r.MiddleName}".TrimEnd(),
-                r.Gender, r.Status.ToString()))
+                r.Gender, r.Status.ToString(), StudentNumber: r.StudentNumber))
             .ToList();
 
         return new SectionRosterDto(

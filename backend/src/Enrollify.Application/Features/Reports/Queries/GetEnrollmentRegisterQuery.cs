@@ -21,7 +21,8 @@ public record EnrollmentRegisterRowDto(
     decimal? AssessedTotal,     // null pre-assessment
     decimal TotalPaid,
     decimal? Balance,           // null pre-assessment — never a faked zero
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string StudentNumber = "");
 
 public record RegisterStatusCountDto(string Status, int Count);
 
@@ -140,6 +141,7 @@ internal static class EnrollmentRegisterReport
                 e.Id,
                 e.StudentId,
                 e.Student.LRN,
+                e.Student.StudentNumber,
                 e.Student.LastName,
                 e.Student.FirstName,
                 e.Student.MiddleName,
@@ -207,7 +209,7 @@ internal static class EnrollmentRegisterReport
                 r.Id, r.StudentId, r.LRN,
                 $"{r.LastName}, {r.FirstName} {r.MiddleName}".TrimEnd(),
                 r.GradeLevel, r.SectionName, r.Status.ToString(), r.PaymentPlan,
-                assessed, paid, balance, r.CreatedAt);
+                assessed, paid, balance, r.CreatedAt, StudentNumber: r.StudentNumber);
         }).ToList();
     }
 

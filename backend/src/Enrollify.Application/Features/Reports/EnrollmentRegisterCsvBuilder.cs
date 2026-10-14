@@ -11,7 +11,7 @@ namespace Enrollify.Application.Features.Reports;
 /// </summary>
 public static class EnrollmentRegisterCsvBuilder
 {
-    public const string Header = "LRN,Student,Grade Level,Section,Status,Payment Plan,Assessed Total,Total Paid,Balance,Created";
+    public const string Header = "LRN,Student No.,Student,Grade Level,Section,Status,Payment Plan,Assessed Total,Total Paid,Balance,Created";
 
     public static string Build(IEnumerable<EnrollmentRegisterRowDto> rows)
     {
@@ -22,6 +22,7 @@ public static class EnrollmentRegisterCsvBuilder
         {
             sb.AppendLine(string.Join(",",
                 CollectionsCsvBuilder.EscapeText(row.Lrn),
+                CollectionsCsvBuilder.EscapeText(row.StudentNumber),
                 CollectionsCsvBuilder.EscapeText(row.StudentName),
                 CollectionsCsvBuilder.EscapeText(row.GradeLevel),
                 CollectionsCsvBuilder.EscapeText(row.SectionName),

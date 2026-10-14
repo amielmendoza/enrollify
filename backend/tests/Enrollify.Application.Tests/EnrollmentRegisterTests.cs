@@ -287,7 +287,7 @@ public class EnrollmentRegisterTests
 
         var line = EnrollmentRegisterCsvBuilder.Build(new[] { row }).TrimEnd().Split(Environment.NewLine)[1];
 
-        Assert.StartsWith("'=1+1,\"'@SUM(A1), Ana\",Grade 7,'+Section,Draft,'-Plan,-50.00,0.00,-125.50,", line);
+        Assert.StartsWith("'=1+1,,\"'@SUM(A1), Ana\",Grade 7,'+Section,Draft,'-Plan,-50.00,0.00,-125.50,", line);
     }
 
     // Created dates are stored in UTC; the register prints the school's (Manila) calendar day.
@@ -300,5 +300,16 @@ public class EnrollmentRegisterTests
         var line = EnrollmentRegisterCsvBuilder.Build(new[] { row }).TrimEnd().Split(Environment.NewLine)[1];
 
         Assert.EndsWith(",2026-06-02", line);
+    }
+
+    [Fact]
+    public void Csv_IncludesStudentNumber_AndRendersMissingLrnAsEmpty()
+    {
+        var row = new EnrollmentRegisterRowDto(Guid.NewGuid(), Guid.NewGuid(), null, "Cruz, Ana", "Grade 7", null,
+            "Draft", null, null, 0m, null, new DateTime(2026, 6, 1), StudentNumber: "2026-00042");
+
+        var line = EnrollmentRegisterCsvBuilder.Build(new[] { row }).TrimEnd().Split(Environment.NewLine)[1];
+
+        Assert.StartsWith(",2026-00042,\"Cruz, Ana\",", line);
     }
 }

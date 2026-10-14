@@ -88,4 +88,22 @@ public class SectionRosterTests
 
         Assert.Equal("Ms. Liza Cruz", dto.Section.Adviser);
     }
+
+    [Fact]
+    public async Task Roster_IncludesStudentNumber_AndToleratesMissingLrn()
+    {
+        var ctx = TestDb.Create();
+        var section = new Section { Name = "Curie", GradeLevel = "Grade 7", SchoolYear = "2026-2027", Capacity = 40 };
+        ctx.Sections.Add(section);
+        var kim = new Student { StudentNumber = "2026-00001", LRN = null, FirstName = "Kim", LastName = "Tan", Gender = "Female", Address = "" };
+        ctx.Students.Add(kim);
+        ctx.Enrollments.Add(new Enrollment { StudentId = kim.Id, SchoolYear = "2026-2027", GradeLevel = "Grade 7", SectionId = section.Id, Status = EnrollmentStatus.Enrolled });
+        await ctx.SaveChangesAsync();
+
+        var dto = await new GetSectionRosterQueryHandler(ctx).Handle(new GetSectionRosterQuery(section.Id), default);
+
+        var only = Assert.Single(dto.Students);
+        Assert.Equal("2026-00001", only.StudentNumber);
+        Assert.Null(only.Lrn);
+    }
 }

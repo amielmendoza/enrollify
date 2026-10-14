@@ -14,9 +14,12 @@ public static class DefaultApplicationFormFields
 {
     public const string LrnHelpText = "12 digits. Leave blank if none yet (e.g. incoming Kindergarten).";
 
-    private record FieldDefault(
+    internal sealed record FieldDefault(
         string Key, string Label, string Type, string Section, string AppliesTo,
         bool Required, bool Core, int Order, string? Options, string? HelpText = null);
+
+    /// <summary>The default built-in definitions (read-only), e.g. for the startup backfill.</summary>
+    internal static IReadOnlyList<FieldDefault> All => Defaults;
 
     private static readonly FieldDefault[] Defaults = new[]
     {
@@ -72,14 +75,18 @@ public static class DefaultApplicationFormFields
 
     /// <summary>
     /// Adds any missing default fields for the given tenant. Returns the number of fields inserted.
+    /// Keys compare case-insensitively, like SQL Server's (TenantId, FieldKey) unique index: a custom
+    /// "mothertongue" blocks the built-in (LearnerRecordBackfill converts it in place instead).
     /// Caller is responsible for SaveChangesAsync.
     /// </summary>
     public static async Task<int> EnsureFieldsForTenantAsync(IApplicationDbContext context, Guid tenantId, CancellationToken ct = default)
     {
-        var existingKeys = await context.ApplicationFormFields.IgnoreQueryFilters()
-            .Where(f => f.TenantId == tenantId)
-            .Select(f => f.FieldKey)
-            .ToListAsync(ct);
+        var existingKeys = new HashSet<string>(
+            await context.ApplicationFormFields.IgnoreQueryFilters()
+                .Where(f => f.TenantId == tenantId)
+                .Select(f => f.FieldKey)
+                .ToListAsync(ct),
+            StringComparer.OrdinalIgnoreCase);
 
         var added = 0;
         foreach (var d in Defaults)

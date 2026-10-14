@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Enrollments.Commands;
 
-public record RequestEnrollmentCommand(Guid StudentId, Guid ParentUserId) : IRequest<EnrollmentDto>;
+public record RequestEnrollmentCommand(Guid StudentId, Guid ParentUserId, string? Track = null, string? Strand = null) : IRequest<EnrollmentDto>;
 
 public class RequestEnrollmentCommandHandler : IRequestHandler<RequestEnrollmentCommand, EnrollmentDto>
 {
@@ -39,33 +39,16 @@ public class RequestEnrollmentCommandHandler : IRequestHandler<RequestEnrollment
         if (existingEnrollment != null)
             throw new InvalidOperationException($"You already have an enrollment for {schoolYear}.");
 
-        // Grade resolution order: (1) promote from the most recent non-cancelled enrollment
-        // in a different school year (re-enrollment); (2) the approved application's grade
-        // (first-time enrollment); (3) "Grade 7" as a last resort.
-        var previousEnrollment = await _context.Enrollments
-            .Where(e => e.StudentId == student.Id
-                && e.SchoolYear != schoolYear
-                && e.Status != EnrollmentStatus.Cancelled)
-            .OrderByDescending(e => e.SchoolYear).ThenByDescending(e => e.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        string gradeLevel;
-        if (previousEnrollment != null)
-        {
-            gradeLevel = Common.GradeLevels.Promote(previousEnrollment.GradeLevel);
-        }
-        else
-        {
-            var application = await _context.AdmissionApplications
-                .FirstOrDefaultAsync(a => a.StudentId == student.Id && a.Status == "Approved", cancellationToken);
-            gradeLevel = application?.GradeLevel ?? "Grade 7";
-        }
+        var plan = await EnrollmentRequestPlanner.PlanAsync(_context, student.Id, schoolYear, request.Track, request.Strand, cancellationToken);
 
         var enrollment = new Enrollment
         {
             StudentId = student.Id,
             SchoolYear = schoolYear,
-            GradeLevel = gradeLevel,
+            GradeLevel = plan.GradeLevel,
+            LearnerType = plan.LearnerType,
+            Track = plan.Track,
+            Strand = plan.Strand,
             Status = EnrollmentStatus.Draft,
             Remarks = "Enrollment requested by parent"
         };

@@ -11,6 +11,7 @@ using Enrollify.Application.Features.Students.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Enrollify.API.Controllers;
 
@@ -62,9 +63,10 @@ public class ParentController : ControllerBase
     }
 
     [HttpPost("children/{studentId:guid}/enrollments/request")]
-    public async Task<IActionResult> RequestEnrollment(Guid studentId)
+    public async Task<IActionResult> RequestEnrollment(Guid studentId,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RequestEnrollmentRequest? request)
     {
-        var result = await _sender.Send(new RequestEnrollmentCommand(studentId, CurrentUserId()));
+        var result = await _sender.Send(new RequestEnrollmentCommand(studentId, CurrentUserId(), request?.Track, request?.Strand));
         return Ok(result);
     }
 

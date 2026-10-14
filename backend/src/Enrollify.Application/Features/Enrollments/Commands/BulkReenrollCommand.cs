@@ -1,4 +1,6 @@
+using Enrollify.Application.Common;
 using Enrollify.Application.Common.Interfaces;
+using Enrollify.Application.Features.ShsStrands;
 using Enrollify.Domain.Entities;
 using Enrollify.Domain.Enums;
 using FluentValidation;
@@ -15,7 +17,7 @@ namespace Enrollify.Application.Features.Enrollments.Commands;
 /// </summary>
 public record BulkReenrollCommand(string FromSchoolYear, string ToSchoolYear) : IRequest<BulkReenrollResultDto>;
 
-public record BulkReenrollResultDto(int Created, int SkippedExisting, int SkippedGraduates);
+public record BulkReenrollResultDto(int Created, int SkippedExisting, int SkippedGraduates, int NeedsStrand = 0);
 
 public class BulkReenrollCommandValidator : AbstractValidator<BulkReenrollCommand>
 {
@@ -44,11 +46,13 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
             throw new InvalidOperationException(
                 $"School year '{request.ToSchoolYear}' does not exist. Create it first under Settings → School Years.");
 
-        int created = 0, skippedExisting = 0, skippedGraduates = 0;
+        int created = 0, skippedExisting = 0, skippedGraduates = 0, needsStrand = 0;
+
+        var offersStrands = await _context.ShsStrands.AnyAsync(s => s.IsActive, cancellationToken);
 
         await _context.ExecuteInTransactionAsync(async ct =>
         {
-            created = 0; skippedExisting = 0; skippedGraduates = 0;
+            created = 0; skippedExisting = 0; skippedGraduates = 0; needsStrand = 0;
 
             // Students who completed the source year: one row per student (Enrolled is terminal
             // per year, so duplicates would be data noise — take the most recent).
@@ -90,10 +94,15 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
                     SchoolYear = request.ToSchoolYear,
                     GradeLevel = newGrade,
                     Status = EnrollmentStatus.Draft,
+                    LearnerType = "Continuing",
+                    // 11 → 12 keeps the strand; 10 → 11 leaves it for the registrar.
+                    Track = DepEdLists.IsShsGrade(source.GradeLevel) ? source.Track : null,
+                    Strand = DepEdLists.IsShsGrade(source.GradeLevel) ? source.Strand : null,
                     Remarks = $"Bulk re-enrolled from {request.FromSchoolYear}"
                 };
                 _context.Enrollments.Add(enrollment);
                 createdEnrollments.Add(enrollment);
+                if (offersStrands && DepEdLists.IsShsGrade(newGrade) && string.IsNullOrWhiteSpace(enrollment.Strand)) needsStrand++;
 
                 _context.EnrollmentStatusHistories.Add(new EnrollmentStatusHistory
                 {
@@ -111,6 +120,6 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
             await _context.SaveChangesAsync(ct);
         }, cancellationToken);
 
-        return new BulkReenrollResultDto(created, skippedExisting, skippedGraduates);
+        return new BulkReenrollResultDto(created, skippedExisting, skippedGraduates, needsStrand);
     }
 }

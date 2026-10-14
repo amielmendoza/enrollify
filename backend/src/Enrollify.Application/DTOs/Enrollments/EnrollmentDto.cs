@@ -61,7 +61,12 @@ public record ReviewRequirementRequest(bool IsVerified, string? Notes);
 public record CreateEnrollmentRequest(
     Guid StudentId,
     string SchoolYear,
-    string GradeLevel);
+    string GradeLevel,
+    string? LearnerType = null,
+    string? Track = null,
+    string? Strand = null);
+
+public record RequestEnrollmentRequest(string? Track, string? Strand);
 
 public record BulkReenrollRequest(
     string FromSchoolYear,

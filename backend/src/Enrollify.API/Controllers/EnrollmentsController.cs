@@ -7,6 +7,7 @@ using Enrollify.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Enrollify.API.Controllers;
 
@@ -92,7 +93,8 @@ public class EnrollmentsController : ControllerBase
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> Create([FromBody] CreateEnrollmentRequest request)
     {
-        var result = await _sender.Send(new CreateEnrollmentCommand(request.StudentId, request.SchoolYear, request.GradeLevel));
+        var result = await _sender.Send(new CreateEnrollmentCommand(request.StudentId, request.SchoolYear, request.GradeLevel,
+            request.LearnerType, request.Track, request.Strand));
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -172,10 +174,11 @@ public class EnrollmentsController : ControllerBase
 
     [HttpPost("request")]
     [Authorize(Roles = "Student")]
-    public async Task<IActionResult> RequestEnrollment()
+    public async Task<IActionResult> RequestEnrollment(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RequestEnrollmentRequest? request)
     {
         var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-        var result = await _sender.Send(new StudentRequestEnrollmentCommand(userId));
+        var result = await _sender.Send(new StudentRequestEnrollmentCommand(userId, request?.Track, request?.Strand));
         return Ok(result);
     }
 

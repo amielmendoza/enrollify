@@ -1,5 +1,7 @@
+using Enrollify.Application.Common;
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Enrollments;
+using Enrollify.Application.Features.ShsStrands;
 using Enrollify.Domain.Entities;
 using Enrollify.Domain.Enums;
 using FluentValidation;
@@ -8,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Enrollify.Application.Features.Enrollments.Commands;
 
-public record CreateEnrollmentCommand(Guid StudentId, string SchoolYear, string GradeLevel) : IRequest<EnrollmentDto>;
+public record CreateEnrollmentCommand(Guid StudentId, string SchoolYear, string GradeLevel, string? LearnerType = null, string? Track = null, string? Strand = null) : IRequest<EnrollmentDto>;
 
 public class CreateEnrollmentCommandValidator : AbstractValidator<CreateEnrollmentCommand>
 {
@@ -17,6 +19,9 @@ public class CreateEnrollmentCommandValidator : AbstractValidator<CreateEnrollme
         RuleFor(x => x.StudentId).NotEmpty();
         RuleFor(x => x.SchoolYear).NotEmpty().MaximumLength(20);
         RuleFor(x => x.GradeLevel).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.LearnerType).Must(t => DepEdLists.LearnerTypes.Contains(t!.Trim()))
+            .When(x => !string.IsNullOrWhiteSpace(x.LearnerType))
+            .WithMessage("Learner type must be New, Continuing, Transferee, or Returning.");
     }
 }
 
@@ -41,11 +46,20 @@ public class CreateEnrollmentCommandHandler : IRequestHandler<CreateEnrollmentCo
         if (existingEnrollment)
             throw new InvalidOperationException("Student already has an enrollment for this school year.");
 
+        var (track, strand) = await ShsStrandRules.ResolveAsync(_context, request.GradeLevel, request.Track, request.Strand, cancellationToken);
+        var learnerType = string.IsNullOrWhiteSpace(request.LearnerType)
+            ? (await _context.Enrollments.AnyAsync(e => e.StudentId == request.StudentId && e.Status != EnrollmentStatus.Cancelled, cancellationToken)
+                ? "Continuing" : "New")
+            : request.LearnerType.Trim();
+
         var enrollment = new Enrollment
         {
             StudentId = request.StudentId,
             SchoolYear = request.SchoolYear,
             GradeLevel = request.GradeLevel,
+            LearnerType = learnerType,
+            Track = track,
+            Strand = strand,
             Status = EnrollmentStatus.Draft
         };
 

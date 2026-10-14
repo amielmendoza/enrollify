@@ -5,7 +5,8 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { SchoolYearService } from '../../core/services/school-year.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { Enrollment, BalanceInfo, PaymentTerm } from '../../core/models';
+import { Enrollment, BalanceInfo, PaymentTerm, ShsStrand } from '../../core/models';
+import { StrandSelectComponent } from '../../core/components/strand-select.component';
 import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, enrollmentStatusName } from '../../core/constants';
 import { LoadingComponent } from '../../core/components/loading.component';
 import { formatApiError } from '../../core/utils/format-api-error';
@@ -13,7 +14,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
 @Component({
   selector: 'app-my-enrollment',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, LoadingComponent],
+  imports: [CommonModule, FormsModule, RouterLink, LoadingComponent, StrandSelectComponent],
   template: `
     <div>
       <h1 class="text-2xl font-bold text-gray-900">My Enrollment</h1>
@@ -296,6 +297,13 @@ import { formatApiError } from '../../core/utils/format-api-error';
       } @else {
         <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-12 text-center">
           <p class="text-gray-400 mb-4">No enrollment found for the active school year.</p>
+          @if (offerStrand()) {
+            <div class="mx-auto mb-4 max-w-sm text-left">
+              <app-strand-select [strands]="strands()" [track]="pick.track" [strand]="pick.strand" id="my-reenroll-strand"
+                                 label="Senior High track / strand (optional)" (changed)="pick = $event" />
+              <p class="mt-1 text-xs text-gray-400">You can leave this blank — the registrar can set it later.</p>
+            </div>
+          }
           <button (click)="requestEnrollment()" [disabled]="requesting()"
                   class="inline-flex items-center gap-2 rounded-xl bg-[#0038A8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#002B85] disabled:opacity-60">
             @if (requesting()) {
@@ -314,6 +322,12 @@ export class MyEnrollmentComponent implements OnInit {
   // Request button) flash before the real state arrives.
   loaded = signal(false);
   loadFailed = signal(false);
+  strands = signal<ShsStrand[]>([]);
+  priorGrade = signal<string | null>(null);
+  pick: { track: string | null; strand: string | null } = { track: null, strand: null };
+  // Moving up from Grade 10 lands in Grade 11 — the family may choose a strand now (optional;
+  // the registrar can set it later). 11 → 12 carries the strand automatically.
+  offerStrand = computed(() => this.priorGrade() === 'Grade 10' && this.strands().length > 0);
 
   private failLoad(err: unknown): void {
     this.loaded.set(true);
@@ -413,6 +427,7 @@ export class MyEnrollmentComponent implements OnInit {
   constructor(private api: ApiService, private syService: SchoolYearService, private notify: NotificationService) {}
 
   ngOnInit() {
+    this.api.getShsStrands().subscribe(s => this.strands.set(s));
     this.syService.ensureLoaded().subscribe({
       next: () => this.load(),
       error: (err) => this.failLoad(err)
@@ -426,6 +441,10 @@ export class MyEnrollmentComponent implements OnInit {
       // Skip cancelled enrollments so the student can request a fresh one.
       const match = enrollments.find(e => e.schoolYear === activeSY && enrollmentStatusName(e.status) !== 'Cancelled') ?? null;
       this.enrollment.set(match);
+      const prior = enrollments
+        .filter(e => e.schoolYear !== activeSY && enrollmentStatusName(e.status) !== 'Cancelled')
+        .sort((a, b) => b.schoolYear.localeCompare(a.schoolYear))[0];
+      this.priorGrade.set(prior?.gradeLevel ?? null);
       this.loaded.set(true);
       this.loadFailed.set(false);
       },
@@ -443,7 +462,7 @@ export class MyEnrollmentComponent implements OnInit {
 
   requestEnrollment() {
     this.requesting.set(true);
-    this.api.requestEnrollment().subscribe({
+    this.api.requestEnrollment(this.offerStrand() && this.pick.track && this.pick.strand ? { track: this.pick.track, strand: this.pick.strand } : null).subscribe({
       next: () => { this.requesting.set(false); this.load(); },
       error: (err) => { this.requesting.set(false); this.notify.error(formatApiError(err, 'Failed to request enrollment')); }
     });

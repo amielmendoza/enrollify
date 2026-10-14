@@ -4,13 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Student } from '../../../core/models';
+import { PsgcAddress, Student } from '../../../core/models';
+import { emptyPsgcAddress } from '../../../core/learner';
+import { PsgcAddressComponent } from '../../../core/components/psgc-address.component';
+import { LearnerSummaryComponent } from '../../../core/components/learner-summary.component';
 import { formatApiError } from '../../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-child-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, PsgcAddressComponent, LearnerSummaryComponent],
   template: `
     <div>
       <a routerLink="/parent/dashboard" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2">
@@ -38,8 +41,8 @@ import { formatApiError } from '../../../core/utils/format-api-error';
                     <input type="text" [value]="student()!.fullName" disabled class="form-input bg-gray-50 cursor-not-allowed" />
                   </div>
                   <div>
-                    <label class="form-label">LRN</label>
-                    <input type="text" [value]="student()!.lrn" disabled class="form-input folio-mono bg-gray-50 cursor-not-allowed" />
+                    <label class="form-label">Student No.</label>
+                    <input type="text" [value]="student()!.studentNumber" disabled class="form-input folio-mono bg-gray-50 cursor-not-allowed" />
                   </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -66,9 +69,23 @@ import { formatApiError } from '../../../core/utils/format-api-error';
                     <input type="email" [(ngModel)]="editEmail" class="form-input" />
                   </div>
                 </div>
-                <div>
-                  <label class="form-label">Address</label>
-                  <input type="text" [(ngModel)]="editAddress" class="form-input" />
+                <div class="space-y-4">
+                  <p class="form-label">Home Address</p>
+                  <app-psgc-address [address]="editHome" idPrefix="child-addr" />
+                  <div>
+                    <label class="form-label" for="child-street">House no. / Street / Sitio / Purok</label>
+                    <input id="child-street" type="text" maxlength="500" [(ngModel)]="editAddress" class="form-input" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="form-label" for="child-father-contact">Father's Contact Number</label>
+                    <input id="child-father-contact" type="text" maxlength="50" [(ngModel)]="editFatherContact" class="form-input" />
+                  </div>
+                  <div>
+                    <label class="form-label" for="child-mother-contact">Mother's Contact Number</label>
+                    <input id="child-mother-contact" type="text" maxlength="50" [(ngModel)]="editMotherContact" class="form-input" />
+                  </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -87,6 +104,12 @@ import { formatApiError } from '../../../core/utils/format-api-error';
               </div>
             }
           </div>
+          @if (student()) {
+            <div class="mt-6 bg-white rounded-xl border border-[#E2D9C2] p-6">
+              <h2 class="text-lg font-semibold text-gray-900 mb-4">DepEd Learner Details</h2>
+              <app-learner-summary [student]="student()!" />
+            </div>
+          }
         </div>
 
         <!-- Change Password -->
@@ -134,6 +157,9 @@ export class ChildProfileComponent implements OnInit {
   editContact = '';
   editEmail = '';
   editAddress = '';
+  editHome: PsgcAddress = emptyPsgcAddress();
+  editFatherContact = '';
+  editMotherContact = '';
   editGuardianName = '';
   editGuardianContact = '';
   savingProfile = signal(false);
@@ -155,6 +181,9 @@ export class ChildProfileComponent implements OnInit {
       this.editContact = s.contactNumber || '';
       this.editEmail = s.email || '';
       this.editAddress = s.address || '';
+      this.editHome = { ...emptyPsgcAddress(), ...(s.profile?.homeAddress ?? {}) };
+      this.editFatherContact = s.profile?.fatherContactNumber || '';
+      this.editMotherContact = s.profile?.motherContactNumber || '';
       this.editGuardianName = s.guardianName || '';
       this.editGuardianContact = s.guardianContact || '';
     });
@@ -168,7 +197,10 @@ export class ChildProfileComponent implements OnInit {
       email: this.editEmail,
       address: this.editAddress,
       guardianName: this.editGuardianName,
-      guardianContact: this.editGuardianContact
+      guardianContact: this.editGuardianContact,
+      homeAddress: this.editHome,
+      fatherContactNumber: this.editFatherContact,
+      motherContactNumber: this.editMotherContact
     }).subscribe({
       next: (s) => {
         this.student.set(s);

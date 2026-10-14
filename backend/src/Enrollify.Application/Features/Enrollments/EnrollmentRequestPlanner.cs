@@ -13,6 +13,7 @@ namespace Enrollify.Application.Features.Enrollments;
 /// the approved application's grade; else Grade 7. Track/strand: the requested pair (validated)
 /// when given; else carried from a previous SHS enrollment (11 → 12); else the approved
 /// application's pair when the grade is SHS; else empty — the registrar sets it before assessment.
+/// Carried strands are kept even if since deactivated (continuing learners finish their program).
 /// Learner type: Continuing when there's a previous enrollment, else the application's, else New.
 /// </summary>
 public static class EnrollmentRequestPlanner
@@ -50,7 +51,7 @@ public static class EnrollmentRequestPlanner
                 (track, strand) = (application.Track, application.Strand);
         }
 
-        var learnerType = previous != null ? "Continuing" : application?.LearnerType ?? "New";
+        var learnerType = previous != null ? "Continuing" : string.IsNullOrWhiteSpace(application?.LearnerType) ? "New" : application!.LearnerType!;
         return new Plan(grade, learnerType, track, strand);
     }
 }

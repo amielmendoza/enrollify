@@ -135,4 +135,58 @@ public class EnrollmentCreationLearnerTests
         Assert.Equal("Continuing", twelve.LearnerType);
         Assert.Null((await ctx.Enrollments.SingleAsync(e => e.SchoolYear == Next && e.StudentId == g10.Id)).Strand);
     }
+
+    [Fact]
+    public async Task ParentRequest_Grade11To12_KeepsCarriedStrand_EvenIfNowInactive()
+    {
+        var (ctx, s, parentId) = await SeedAsync(priorGrade: "Grade 11", priorTrack: "Academic", priorStrand: "STEM");
+        foreach (var x in ctx.ShsStrands.Where(x => x.Strand == "STEM")) x.IsActive = false;
+        await ctx.SaveChangesAsync();
+        await new RequestEnrollmentCommandHandler(ctx).Handle(new RequestEnrollmentCommand(s.Id, parentId), default);
+        Assert.Equal("STEM", (await NewestAsync(ctx)).Strand);
+    }
+
+    [Fact]
+    public async Task ParentRequest_InactiveRequestedStrand_IsRefused()
+    {
+        var (ctx, s, parentId) = await SeedAsync(priorGrade: "Grade 10");
+        foreach (var x in ctx.ShsStrands.Where(x => x.Strand == "STEM")) x.IsActive = false;
+        await ctx.SaveChangesAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new RequestEnrollmentCommandHandler(ctx).Handle(new RequestEnrollmentCommand(s.Id, parentId, "Academic", "STEM"), default));
+    }
+
+    [Fact]
+    public async Task Bulk_11To12_WithInactivePriorStrand_CarriesItAndDoesNotCountNeedsStrand()
+    {
+        var ctx = TestDb.Create();
+        ctx.ShsStrands.Add(new ShsStrand { Track = "Academic", Strand = "STEM", IsActive = false });
+        ctx.ShsStrands.Add(new ShsStrand { Track = "Academic", Strand = "ABM", IsActive = true });
+        ctx.SchoolYears.Add(new SchoolYear { Name = Next, StartDate = new DateTime(2026, 6, 1), EndDate = new DateTime(2027, 3, 31) });
+        var st = new Student { StudentNumber = "2025-00001", FirstName = "Elf", LastName = "A", Address = "" };
+        ctx.Students.Add(st);
+        ctx.Enrollments.Add(new Enrollment { StudentId = st.Id, SchoolYear = Prev, GradeLevel = "Grade 11", Status = EnrollmentStatus.Enrolled, Track = "Academic", Strand = "STEM" });
+        await ctx.SaveChangesAsync();
+
+        var result = await new BulkReenrollCommandHandler(ctx).Handle(new BulkReenrollCommand(Prev, Next), default);
+
+        Assert.Equal(0, result.NeedsStrand);
+        Assert.Equal("STEM", (await NewestAsync(ctx)).Strand);
+    }
+
+    [Fact]
+    public async Task Bulk_10To11_WhenSchoolHasNoActiveStrands_DoesNotCountNeedsStrand()
+    {
+        var ctx = TestDb.Create();
+        ctx.SchoolYears.Add(new SchoolYear { Name = Next, StartDate = new DateTime(2026, 6, 1), EndDate = new DateTime(2027, 3, 31) });
+        var st = new Student { StudentNumber = "2025-00001", FirstName = "Ten", LastName = "B", Address = "" };
+        ctx.Students.Add(st);
+        ctx.Enrollments.Add(new Enrollment { StudentId = st.Id, SchoolYear = Prev, GradeLevel = "Grade 10", Status = EnrollmentStatus.Enrolled });
+        await ctx.SaveChangesAsync();
+
+        var result = await new BulkReenrollCommandHandler(ctx).Handle(new BulkReenrollCommand(Prev, Next), default);
+
+        Assert.Equal(1, result.Created);
+        Assert.Equal(0, result.NeedsStrand);
+    }
 }

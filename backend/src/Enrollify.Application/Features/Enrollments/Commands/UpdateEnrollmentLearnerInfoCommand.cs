@@ -42,7 +42,14 @@ public class UpdateEnrollmentLearnerInfoCommandHandler : IRequestHandler<UpdateE
                 "Learner details are locked once the enrollment is assessed. Send it back for re-assessment to change them.");
 
         var info = request.Info;
-        var (track, strand) = await ShsStrandRules.ResolveAsync(_context, e.GradeLevel, info.Track, info.Strand, cancellationToken);
+        // An unchanged pair is kept as-is: it may have been carried from last year and since deactivated,
+        // and the registrar must still be able to save other fields. Only a changed pair is validated.
+        var sameAsCurrent = e.Track != null && e.Strand != null
+            && string.Equals(info.Track?.Trim(), e.Track, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(info.Strand?.Trim(), e.Strand, StringComparison.OrdinalIgnoreCase);
+        var (track, strand) = sameAsCurrent
+            ? (e.Track, e.Strand)
+            : await ShsStrandRules.ResolveAsync(_context, e.GradeLevel, info.Track, info.Strand, cancellationToken);
 
         e.LearnerType = LearnerProfileMapping.Clean(info.LearnerType);
         e.LastGradeLevelCompleted = LearnerProfileMapping.Clean(info.LastGradeLevelCompleted);

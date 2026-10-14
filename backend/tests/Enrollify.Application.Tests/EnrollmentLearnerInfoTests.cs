@@ -114,4 +114,31 @@ public class EnrollmentLearnerInfoTests
         Assert.Equal("New", dto.LearnerInfo!.LearnerType);
         Assert.Equal("STEM", dto.LearnerInfo.Strand);
     }
+
+    [Fact]
+    public async Task InactiveCarriedPair_ResentUnchanged_IsKept_WhileOtherFieldsChange()
+    {
+        var (ctx, e) = await SeedAsync(strandActive: false);
+        e.Track = "Academic"; e.Strand = "STEM";
+        await ctx.SaveChangesAsync();
+
+        var dto = await new UpdateEnrollmentLearnerInfoCommandHandler(ctx).Handle(Set(e.Id, "ACADEMIC", " stem "), default);
+
+        Assert.Equal("STEM", dto.Strand);
+        var reloaded = await ctx.Enrollments.SingleAsync();
+        Assert.Equal("Academic", reloaded.Track);
+        Assert.Equal("Transferee", reloaded.LearnerType);
+    }
+
+    [Fact]
+    public async Task ChangingToADifferentInactivePair_IsRefused()
+    {
+        var (ctx, e) = await SeedAsync(strandActive: false);
+        ctx.ShsStrands.Add(new ShsStrand { Track = "Academic", Strand = "ABM", IsActive = false });
+        e.Track = "Academic"; e.Strand = "STEM";
+        await ctx.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new UpdateEnrollmentLearnerInfoCommandHandler(ctx).Handle(Set(e.Id, "Academic", "ABM"), default));
+    }
 }

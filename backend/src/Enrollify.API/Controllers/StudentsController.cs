@@ -43,7 +43,7 @@ public class StudentsController : ControllerBase
         var result = await _sender.Send(new CreateStudentCommand(
             request.LRN, request.FirstName, request.MiddleName, request.LastName,
             request.BirthDate, request.Gender, request.Address,
-            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact));
+            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact, Profile: request.Profile));
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -54,7 +54,15 @@ public class StudentsController : ControllerBase
         var result = await _sender.Send(new UpdateStudentCommand(
             id, request.LRN, request.FirstName, request.MiddleName, request.LastName,
             request.BirthDate, request.Gender, request.Address,
-            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact));
+            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact, request.Profile));
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/confirm-lrn")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> ConfirmLrn(Guid id)
+    {
+        var result = await _sender.Send(new ConfirmLrnCommand(id));
         return Ok(result);
     }
 

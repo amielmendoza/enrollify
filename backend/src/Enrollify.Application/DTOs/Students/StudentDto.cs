@@ -36,7 +36,8 @@ public record CreateStudentRequest(
     string? ContactNumber,
     string? Email,
     string? GuardianName,
-    string? GuardianContact);
+    string? GuardianContact,
+    LearnerProfileDto? Profile = null);
 
 public record UpdateStudentRequest(
     string? LRN,
@@ -49,7 +50,8 @@ public record UpdateStudentRequest(
     string? ContactNumber,
     string? Email,
     string? GuardianName,
-    string? GuardianContact);
+    string? GuardianContact,
+    LearnerProfileDto? Profile = null);
 
 public record UpdateMyProfileRequest(
     string? ContactNumber,

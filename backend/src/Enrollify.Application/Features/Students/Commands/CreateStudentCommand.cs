@@ -1,5 +1,6 @@
 using Enrollify.Application.Common;
 using Enrollify.Application.Common.Interfaces;
+using Enrollify.Application.DTOs.Learners;
 using Enrollify.Application.DTOs.Students;
 using Enrollify.Domain.Entities;
 using FluentValidation;
@@ -13,7 +14,8 @@ public record CreateStudentCommand(
     DateTime BirthDate, string? Gender, string Address,
     string? ContactNumber, string? Email, string? GuardianName, string? GuardianContact,
     Guid? UserId = null,        // Set for Student-mode applications (student logs in as themselves)
-    Guid? ParentUserId = null   // Set for Parent-mode applications (parent owns this student)
+    Guid? ParentUserId = null,  // Set for Parent-mode applications (parent owns this student)
+    LearnerProfileDto? Profile = null
 ) : IRequest<StudentDto>;
 
 public class CreateStudentCommandValidator : AbstractValidator<CreateStudentCommand>
@@ -27,7 +29,13 @@ public class CreateStudentCommandValidator : AbstractValidator<CreateStudentComm
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.BirthDate).NotEmpty().LessThan(DateTime.UtcNow);
-        RuleFor(x => x.Address).NotEmpty().MaximumLength(500);
+        // Staff-created learners must be PSGC-resolved down to the barangay (SF1 needs it);
+        // the free-text line is now just house/street and may be blank (rural sitios).
+        RuleFor(x => x.Address).MaximumLength(500);
+        RuleFor(x => x.Profile)
+            .Must(p => !string.IsNullOrWhiteSpace(p?.HomeAddress?.CityMunicipalityCode) && !string.IsNullOrWhiteSpace(p.HomeAddress.BarangayCode))
+            .WithMessage("Choose the learner's city/municipality and barangay.");
+        RuleFor(x => x.Profile!).SetValidator(new LearnerProfileDtoValidator()).When(x => x.Profile != null);
     }
 }
 
@@ -65,6 +73,8 @@ public class CreateStudentCommandHandler : IRequestHandler<CreateStudentCommand,
         };
 
         _context.Students.Add(student);
+        if (request.Profile != null)
+            LearnerProfileMapping.Apply(request.Profile, student);
 
         // Two concurrent creates can mint the same student number; the (TenantId, StudentNumber)
         // unique index rejects the loser — regenerate and retry a couple of times.

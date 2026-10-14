@@ -64,6 +64,11 @@ def normalize_code(raw):
     return s.zfill(10)
 
 
+def clean_name(raw):
+    # PSA appends footnote markers to some names ("City of Lucenaa/", "Fuentes*"); they aren't part of the name.
+    return re.sub(r'\s*(?:[a-z]/|\*+)$', '', re.sub(r'\s+', ' ', (raw or '').strip()))
+
+
 def main(xlsx):
     rows = read_rows(xlsx)
     header = None
@@ -83,7 +88,7 @@ def main(xlsx):
     for cells in rows:
         code = normalize_code(cells.get(code_col))
         level = (cells.get(level_col) or '').strip().lower()
-        name = (cells.get(name_col) or '').strip()
+        name = clean_name(cells.get(name_col))
         if code and level and name:
             places[code] = (name, level)
 

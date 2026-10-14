@@ -6,22 +6,28 @@ Gap-analysis roadmap item 1a (spec: docs/superpowers/specs/2026-10-12-learner-re
 - Real DepEd LRN (optional, 12 digits, unique when present) + Enrollify student numbers
   (`YYYY-NNNNN`); every pre-migration LRN flagged "Check LRN" with a Confirm action.
 - BEEF learner fields on Student/AdmissionApplication (`ILearnerProfile`), PSGC-structured home
-  address (shipped PSA dataset + picker), per-enrollment learner type / previous school / SHS
-  track+strand; strand required at assessment when the school offers strands.
+  address (picker built; the PSGC dataset it reads is still pending — see below), per-enrollment
+  learner type / previous school / SHS track+strand; strand required at assessment when the
+  school offers strands.
 - Per-school SHS strand catalog (Settings); KeepOnFile requirements carry a verified PSA forward.
-- Apply form, staff student form, family profiles, enrollment Learner tab, printouts updated.
-  Tests 207 -> 329.
+- Apply form, staff student form, family profiles, enrollment Learner tab, admissions review
+  dialog, staff student page, printouts updated. Tests 207 -> 340.
+
+Blocking before merge/deploy:
+- [ ] Generate the PSGC lookup data (`enrollify.client/public/psgc/`) — psa.gov.ph blocks automated
+  download, so run `scripts/psgc/build_psgc.py` on the PSA workbook (Task 15b), then set the demo
+  students' PSGC addresses. Until the dataset exists the picker has nothing to offer: staff can't
+  create students (New Student always requires a PSGC city + barangay), and schools whose form
+  has Address required can't accept applications (a required address must resolve to a barangay).
 
 Follow-ups (non-blocking):
 - [ ] Sub-project 7 file cleanup must check every requirement that references a FileDocument
   (carried-over documents share files).
 - [ ] Demo seed has no Grade 11 enrollment (spec §5 asked for one); add when the demo seed
   gains enrollments.
-- [ ] PSGC lookup data (`enrollify.client/public/psgc/`) not generated yet — psa.gov.ph blocks
-  automated download; run `scripts/psgc/build_psgc.py` on the PSA workbook (Task 15b), then set
-  the demo students' PSGC addresses.
 - [ ] UI not browser-tested in this session (no browser automation) — click through apply, staff
-  student form, enrollment Learner tab, family profiles, Settings → SHS Strands.
+  student form, student page, admissions review dialog, enrollment Learner tab, family profiles,
+  Settings → SHS Strands.
 
 ## Batch E — Quality sweep + reports (delivered 2026-10-12)
 

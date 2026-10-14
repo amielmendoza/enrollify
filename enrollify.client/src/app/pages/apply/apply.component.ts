@@ -5,9 +5,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SchoolYearService } from '../../core/services/school-year.service';
-import { ApplicantData, ApplicationFormField, FormFieldSection, PublicTenant, SubmitApplicationRequest } from '../../core/models';
-import { GRADE_LEVELS } from '../../core/constants';
-import { emptyLearnerProfile } from '../../core/learner';
+import { ApplicantData, ApplicationFormField, FormFieldSection, PublicTenant, ShsStrand, SubmitApplicationRequest } from '../../core/models';
+import { GRADE_LEVELS, LEARNER_TYPES, EXTENSION_NAME_SUGGESTIONS, isShsGrade } from '../../core/constants';
+import { emptyLearnerProfile, FieldConfigView } from '../../core/learner';
+import { PsgcAddressComponent } from '../../core/components/psgc-address.component';
+import { LearnerBackgroundFieldsComponent } from '../../core/components/learner-background-fields.component';
+import { LearnerFamilyFieldsComponent } from '../../core/components/learner-family-fields.component';
+import { StrandSelectComponent } from '../../core/components/strand-select.component';
 import { DynamicFieldComponent } from '../../core/components/dynamic-field.component';
 import { formatApiError } from '../../core/utils/format-api-error';
 
@@ -16,7 +20,7 @@ type ApplyMode = 'Parent' | 'Student';
 @Component({
   selector: 'app-apply',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DynamicFieldComponent],
+  imports: [CommonModule, FormsModule, RouterLink, DynamicFieldComponent, PsgcAddressComponent, LearnerBackgroundFieldsComponent, LearnerFamilyFieldsComponent, StrandSelectComponent],
   template: `
     <div class="folio min-h-screen px-6 py-8 sm:py-12">
       <div class="mx-auto max-w-2xl">
@@ -86,6 +90,7 @@ type ApplyMode = 'Parent' | 'Student';
             }
 
             <form (ngSubmit)="onSubmit()" class="mt-6 space-y-6">
+              <datalist id="extension-names">@for (x of extensionNames; track x) { <option [value]="x"></option> }</datalist>
               <!-- Mode toggle (anonymous applicants only) -->
               @if (!isParentLoggedIn()) {
                 <div class="folio-card p-6">
@@ -205,6 +210,23 @@ type ApplyMode = 'Parent' | 'Student';
                     </div>
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    @if (isFieldVisible('lrn')) {
+                      <div>
+                        <label class="form-label" [attr.for]="'lrn_' + i">{{ fieldLabel('lrn', 'LRN (Learner Reference Number)') }} <span *ngIf="isFieldRequired('lrn')">*</span></label>
+                        <input type="text" inputmode="numeric" maxlength="12" class="form-input folio-mono" [id]="'lrn_' + i" [name]="'lrn_' + i"
+                               [ngModel]="a.lrn" (ngModelChange)="a.lrn = $event || null" />
+                        @if (fieldHelp('lrn')) { <p class="mt-1 text-xs text-gray-400">{{ fieldHelp('lrn') }}</p> }
+                      </div>
+                    }
+                    @if (isFieldVisible('extensionName')) {
+                      <div>
+                        <label class="form-label" [attr.for]="'ext_' + i">{{ fieldLabel('extensionName', 'Name Extension (Jr., III)') }}</label>
+                        <input type="text" maxlength="10" class="form-input" list="extension-names" [id]="'ext_' + i" [name]="'ext_' + i"
+                               [ngModel]="a.learner.extensionName" (ngModelChange)="a.learner.extensionName = $event || null" />
+                      </div>
+                    }
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div>
                       <label class="form-label">{{ fieldLabel('dateOfBirth', 'Date of Birth') }} *</label>
                       <input type="date" [(ngModel)]="a.dateOfBirth" [name]="'dateOfBirth_' + i" required class="form-input" />
@@ -233,12 +255,22 @@ type ApplyMode = 'Parent' | 'Student';
                         <input type="text" [ngModel]="a.contactNumber" (ngModelChange)="a.contactNumber = $event" [name]="'contactNumber_' + i" [required]="isFieldRequired('contactNumber')" class="form-input" />
                       </div>
                     }
-                    @if (isFieldVisible('address')) {
-                      <div>
-                        <label class="form-label">{{ fieldLabel('address', 'Address') }} <span *ngIf="isFieldRequired('address')">*</span></label>
-                        <input type="text" [ngModel]="a.address" (ngModelChange)="a.address = $event" [name]="'address_' + i" [required]="isFieldRequired('address')" class="form-input" />
+                  </div>
+
+                  @if (isFieldVisible('address')) {
+                    <div class="mt-4">
+                      <p class="form-label">{{ fieldLabel('address', 'Home Address') }} <span *ngIf="isFieldRequired('address')">*</span></p>
+                      <app-psgc-address [address]="a.learner.homeAddress!" [idPrefix]="'addr-' + i" [required]="isFieldRequired('address')" />
+                      <div class="mt-4">
+                        <label class="form-label" [attr.for]="'street_' + i">House no. / Street / Sitio / Purok</label>
+                        <input type="text" maxlength="500" class="form-input" [id]="'street_' + i" [name]="'address_' + i"
+                               [ngModel]="a.address" (ngModelChange)="a.address = $event || null" />
                       </div>
-                    }
+                    </div>
+                  }
+
+                  <div class="mt-4">
+                    <app-learner-background-fields [profile]="a.learner" [config]="fieldView" [namePrefix]="'bg-' + i" />
                   </div>
 
                   <!-- Student-section custom fields (admin-defined) -->
@@ -249,12 +281,24 @@ type ApplyMode = 'Parent' | 'Student';
                     </div>
                   }
 
+                  @if (isFieldVisible('fatherName') || isFieldVisible('motherMaidenName') || customFieldsFor('Family').length > 0) {
+                    <hr class="my-5 border-[#EFE9D8]" />
+                    <p class="folio-eyebrow mb-3">Family</p>
+                    <app-learner-family-fields [profile]="a.learner" [config]="fieldView" [namePrefix]="'fam-' + i" />
+                    @for (cf of customFieldsFor('Family'); track cf.id) {
+                      <div class="mt-4">
+                        <app-dynamic-field [field]="cf" [name]="'cf_' + i + '_' + cf.fieldKey"
+                                           [value]="customValue(i, cf.fieldKey)" (valueChange)="setCustomValue(i, cf.fieldKey, $event)" />
+                      </div>
+                    }
+                  }
+
                   <hr class="my-5 border-[#EFE9D8]" />
                   <p class="folio-eyebrow mb-3">Enrollment details</p>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label class="form-label">{{ fieldLabel('gradeLevel', 'Grade Level') }} *</label>
-                      <select [(ngModel)]="a.gradeLevel" [name]="'gradeLevel_' + i" required class="form-input">
+                      <select [ngModel]="a.gradeLevel" (ngModelChange)="onGradeChange(a, $event)" [name]="'gradeLevel_' + i" required class="form-input">
                         <option value="">Select</option>
                         @for (g of gradeLevels; track g) { <option [value]="g">{{ g }}</option> }
                       </select>
@@ -264,16 +308,56 @@ type ApplyMode = 'Parent' | 'Student';
                       <input type="text" [value]="a.schoolYear || ''" [name]="'schoolYear_' + i" readonly class="form-input bg-gray-50 cursor-not-allowed" />
                     </div>
                   </div>
+                  @if (showStrand(a)) {
+                    <div class="mt-4">
+                      <app-strand-select [strands]="strands()" [track]="a.track" [strand]="a.strand" [required]="true"
+                                         [id]="'strand_' + i" [label]="fieldLabel('strand', 'Track / Strand')"
+                                         (changed)="a.track = $event.track; a.strand = $event.strand" />
+                    </div>
+                  }
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    @if (isFieldVisible('learnerType')) {
+                      <div>
+                        <label class="form-label" [attr.for]="'ltype_' + i">{{ fieldLabel('learnerType', 'Learner Type') }} <span *ngIf="isFieldRequired('learnerType')">*</span></label>
+                        <select class="form-input" [id]="'ltype_' + i" [name]="'ltype_' + i" [ngModel]="a.learnerType" (ngModelChange)="a.learnerType = $event || null">
+                          @for (t of learnerTypes; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+                        </select>
+                      </div>
+                    }
+                    @if (isFieldVisible('lastGradeLevelCompleted')) {
+                      <div>
+                        <label class="form-label" [attr.for]="'lastgrade_' + i">{{ fieldLabel('lastGradeLevelCompleted', 'Last Grade Level Completed') }} <span *ngIf="isFieldRequired('lastGradeLevelCompleted')">*</span></label>
+                        <select class="form-input" [id]="'lastgrade_' + i" [name]="'lastgrade_' + i" [ngModel]="a.lastGradeLevelCompleted" (ngModelChange)="a.lastGradeLevelCompleted = $event || null">
+                          <option [ngValue]="null">Not applicable</option>
+                          @for (g of gradeLevels; track g) { <option [value]="g">{{ g }}</option> }
+                        </select>
+                      </div>
+                    }
+                    @if (isFieldVisible('lastSchoolYearCompleted')) {
+                      <div>
+                        <label class="form-label" [attr.for]="'lastsy_' + i">{{ fieldLabel('lastSchoolYearCompleted', 'Last School Year Completed') }} <span *ngIf="isFieldRequired('lastSchoolYearCompleted')">*</span></label>
+                        <input type="text" maxlength="9" placeholder="2025-2026" class="form-input folio-mono" [id]="'lastsy_' + i" [name]="'lastsy_' + i"
+                               [ngModel]="a.lastSchoolYearCompleted" (ngModelChange)="a.lastSchoolYearCompleted = $event || null" />
+                      </div>
+                    }
+                    @if (isFieldVisible('lastSchoolId')) {
+                      <div>
+                        <label class="form-label" [attr.for]="'lastsid_' + i">{{ fieldLabel('lastSchoolId', "Last School's DepEd School ID") }} <span *ngIf="isFieldRequired('lastSchoolId')">*</span></label>
+                        <input type="text" inputmode="numeric" maxlength="6" class="form-input folio-mono" [id]="'lastsid_' + i" [name]="'lastsid_' + i"
+                               [ngModel]="a.lastSchoolId" (ngModelChange)="a.lastSchoolId = $event || null" />
+                      </div>
+                    }
+                  </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     @if (isFieldVisible('previousSchool')) {
                       <div>
-                        <label class="form-label">{{ fieldLabel('previousSchool', 'Previous School') }} <span *ngIf="isFieldRequired('previousSchool')">*</span></label>
+                        <label class="form-label">{{ fieldLabel('previousSchool', 'Last School Attended') }} <span *ngIf="isFieldRequired('previousSchool')">*</span></label>
                         <input type="text" [ngModel]="a.previousSchool" (ngModelChange)="a.previousSchool = $event" [name]="'previousSchool_' + i" [required]="isFieldRequired('previousSchool')" class="form-input" />
                       </div>
                     }
                     @if (isFieldVisible('previousSchoolAddress')) {
                       <div>
-                        <label class="form-label">{{ fieldLabel('previousSchoolAddress', 'Previous School Address') }} <span *ngIf="isFieldRequired('previousSchoolAddress')">*</span></label>
+                        <label class="form-label">{{ fieldLabel('previousSchoolAddress', 'Last School Address') }} <span *ngIf="isFieldRequired('previousSchoolAddress')">*</span></label>
                         <input type="text" [ngModel]="a.previousSchoolAddress" (ngModelChange)="a.previousSchoolAddress = $event" [name]="'previousSchoolAddress_' + i" [required]="isFieldRequired('previousSchoolAddress')" class="form-input" />
                       </div>
                     }
@@ -399,6 +483,30 @@ export class ApplyComponent {
 
   gradeLevels = GRADE_LEVELS;
 
+  strands = signal<ShsStrand[]>([]);
+  learnerTypes = LEARNER_TYPES;
+  extensionNames = EXTENSION_NAME_SUGGESTIONS;
+
+  // School form settings, in the shape the shared learner field components expect.
+  fieldView: FieldConfigView = {
+    visible: k => this.isFieldVisible(k),
+    required: k => this.isFieldRequired(k),
+    label: (k, f) => this.fieldLabel(k, f),
+  };
+
+  fieldHelp(key: string): string {
+    return this.getField(key)?.helpText ?? '';
+  }
+
+  showStrand(a: ApplicantData): boolean {
+    return isShsGrade(a.gradeLevel) && this.strands().length > 0;
+  }
+
+  onGradeChange(a: ApplicantData, grade: string): void {
+    a.gradeLevel = grade;
+    if (!isShsGrade(grade)) { a.track = null; a.strand = null; }
+  }
+
   constructor(private api: ApiService, private auth: AuthService, private router: Router, private route: ActivatedRoute, public syService: SchoolYearService) {
     this.slug = this.route.snapshot.paramMap.get('slug');
 
@@ -415,6 +523,7 @@ export class ApplyComponent {
       this.api.getSchoolFormFields(this.slug).subscribe(fields => {
         this.fieldConfig.set(fields);
       });
+      this.api.getSchoolShsStrands(this.slug).subscribe(list => this.strands.set(list));
     } else if (this.auth.isLoggedIn()) {
       // Authenticated parent re-applying for another child — resolve via auth.
       this.tenantId = this.auth.getTenantId();
@@ -425,6 +534,7 @@ export class ApplyComponent {
       this.api.getPublicApplicationFormFields(this.tenantId).subscribe(fields => {
         this.fieldConfig.set(fields);
       });
+      this.api.getShsStrands().subscribe(list => this.strands.set(list));
     } else {
       // No tenant context at all — bounce to the directory.
       this.router.navigate(['/tenants']);

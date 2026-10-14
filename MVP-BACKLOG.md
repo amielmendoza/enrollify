@@ -1,5 +1,28 @@
 # MVP Backlog
 
+## Sub-project 1a — Philippine learner record (delivered 2026-10-14)
+
+Gap-analysis roadmap item 1a (spec: docs/superpowers/specs/2026-10-12-learner-record-design.md):
+- Real DepEd LRN (optional, 12 digits, unique when present) + Enrollify student numbers
+  (`YYYY-NNNNN`); every pre-migration LRN flagged "Check LRN" with a Confirm action.
+- BEEF learner fields on Student/AdmissionApplication (`ILearnerProfile`), PSGC-structured home
+  address (shipped PSA dataset + picker), per-enrollment learner type / previous school / SHS
+  track+strand; strand required at assessment when the school offers strands.
+- Per-school SHS strand catalog (Settings); KeepOnFile requirements carry a verified PSA forward.
+- Apply form, staff student form, family profiles, enrollment Learner tab, printouts updated.
+  Tests 207 -> 329.
+
+Follow-ups (non-blocking):
+- [ ] Sub-project 7 file cleanup must check every requirement that references a FileDocument
+  (carried-over documents share files).
+- [ ] Demo seed has no Grade 11 enrollment (spec §5 asked for one); add when the demo seed
+  gains enrollments.
+- [ ] PSGC lookup data (`enrollify.client/public/psgc/`) not generated yet — psa.gov.ph blocks
+  automated download; run `scripts/psgc/build_psgc.py` on the PSA workbook (Task 15b), then set
+  the demo students' PSGC addresses.
+- [ ] UI not browser-tested in this session (no browser automation) — click through apply, staff
+  student form, enrollment Learner tab, family profiles, Settings → SHS Strands.
+
 ## Batch E — Quality sweep + reports (delivered 2026-10-12)
 
 Closes probe theme T5 and the open Batch C/D review follow-ups:

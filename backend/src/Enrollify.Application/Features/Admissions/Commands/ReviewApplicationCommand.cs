@@ -80,10 +80,10 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                              && e.Status != EnrollmentStatus.Cancelled, ct);
                     if (alreadyEnrolled)
                         throw new InvalidOperationException(
-                            $"This applicant matches existing student {existingStudent.LRN}, who is already enrolled for {app.SchoolYear}; " +
+                            $"This applicant matches existing student {existingStudent.StudentNumber}, who is already enrolled for {app.SchoolYear}; " +
                             "reject this application or cancel the existing enrollment first.");
 
-                    student = existingStudent; // reuse — no new Student row, no new LRN
+                    student = existingStudent; // reuse — no new Student row, no new student number
                     // Attach the accounts this approval created/resolved, but never overwrite links.
                     if (studentSelfUserId != null && student.UserId == null)
                         student.UserId = studentSelfUserId;
@@ -99,7 +99,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     // those fields, so the Student is constructed directly instead.
                     student = new Student
                     {
-                        LRN = await StudentNumbering.NextLrnAsync(_context, ct),
+                        StudentNumber = await StudentNumbering.NextStudentNumberAsync(_context, DateTime.UtcNow, ct),
                         FirstName = app.FirstName,
                         MiddleName = app.MiddleName ?? string.Empty,
                         LastName = app.LastName,
@@ -128,7 +128,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                     GradeLevel = app.GradeLevel,
                     Status = EnrollmentStatus.Draft,
                     Remarks = existingStudent != null
-                        ? $"Auto-created on application approval — linked to existing student {student.LRN}"
+                        ? $"Auto-created on application approval — linked to existing student {student.StudentNumber}"
                         : "Auto-created on application approval",
                     TenantId = app.TenantId
                 };
@@ -155,7 +155,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
             }
 
             // Single save for the whole review. Two concurrent approvals can mint the same
-            // auto-generated LRN; the (TenantId, LRN) unique index rejects the loser —
+            // student number; the (TenantId, StudentNumber) unique index rejects the loser —
             // regenerate and retry a couple of times before giving up.
             const int maxAttempts = 3;
             for (var attempt = 1; ; attempt++)
@@ -167,8 +167,8 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                 }
                 catch (DbUpdateException) when (createdStudent != null && attempt < maxAttempts)
                 {
-                    // Only a freshly minted LRN may be regenerated — never a reused student's.
-                    createdStudent.LRN = await StudentNumbering.NextLrnAsync(_context, ct);
+                    // Only a freshly minted student number may be regenerated — never a reused student's.
+                    createdStudent.StudentNumber = await StudentNumbering.NextStudentNumberAsync(_context, DateTime.UtcNow, ct);
                 }
             }
         }, cancellationToken);

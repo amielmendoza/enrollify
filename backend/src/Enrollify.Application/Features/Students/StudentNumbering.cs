@@ -4,43 +4,29 @@ using Microsoft.EntityFrameworkCore;
 namespace Enrollify.Application.Features.Students;
 
 /// <summary>
-/// Auto-generated student numbers (LRNs): 12-digit values starting at 100100100001,
-/// shared by CreateStudentCommandHandler and application approval so both mint from the
-/// same sequence. Two concurrent requests can compute the same next number — the
-/// (TenantId, LRN) unique index rejects the loser, so callers inserting an auto-generated
-/// LRN must retry a couple of times, regenerating between attempts.
+/// Enrollify student numbers: "YYYY-NNNNN" — the Manila calendar year plus a per-tenant,
+/// per-year 5-digit sequence. Deliberately NOT LRN-shaped (LRNs are DepEd-issued, 12 digits).
+/// Two concurrent requests can compute the same next number; the (TenantId, StudentNumber)
+/// unique index rejects the loser, so callers inserting a fresh number retry a couple of times,
+/// regenerating between attempts.
 /// </summary>
 public static class StudentNumbering
 {
-    public const long Seed = 100100100001L;
-    private const int Digits = 12;
+    private static readonly TimeSpan ManilaOffset = TimeSpan.FromHours(8); // PH has no DST
 
-    public static async Task<string> NextLrnAsync(IApplicationDbContext context, CancellationToken ct)
+    public static int ManilaYear(DateTime utcNow) => (utcNow + ManilaOffset).Year;
+
+    public static async Task<string> NextStudentNumberAsync(IApplicationDbContext context, DateTime utcNow, CancellationToken ct)
     {
-        // Only LRNs in the auto-generated shape (exactly 12 chars) can affect the sequence,
-        // so instead of loading every LRN we scan from the string-max of that shape downward:
-        // for equal-length digit strings lexicographic order equals numeric order, making the
-        // first PARSEABLE value the numeric max. The upper bound excludes 12-char manual
-        // alphabetic LRNs (which sort above all digits) so a pile of letter-prefixed values
-        // can never starve the scan window. Deliberately avoids SQL-Server-only LIKE [0-9]
-        // ranges — this must run on any provider, including InMemory in tests.
-        var topOfShape = await context.Students
-            .Where(s => s.LRN != null && s.LRN.Length == Digits && s.LRN.CompareTo("999999999999") <= 0)
-            .OrderByDescending(s => s.LRN)
-            .Select(s => s.LRN!)
-            .Take(50)
-            .ToListAsync(ct);
+        var prefix = $"{ManilaYear(utcNow)}-";
+        // Fixed width within a year, so lexicographic max == numeric max.
+        var max = await context.Students
+            .Where(s => s.StudentNumber.StartsWith(prefix) && s.StudentNumber.Length == prefix.Length + 5)
+            .OrderByDescending(s => s.StudentNumber)
+            .Select(s => s.StudentNumber)
+            .FirstOrDefaultAsync(ct);
 
-        var next = Seed;
-        foreach (var lrn in topOfShape)
-        {
-            if (long.TryParse(lrn, out var value))
-            {
-                if (value >= next) next = value + 1;
-                break;
-            }
-        }
-
-        return next.ToString("D12");
+        var next = max != null && int.TryParse(max.AsSpan(prefix.Length), out var seq) ? seq + 1 : 1;
+        return $"{prefix}{next:D5}";
     }
 }

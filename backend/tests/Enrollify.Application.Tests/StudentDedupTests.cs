@@ -15,7 +15,7 @@ public class StudentDedupTests
     private static Student ExistingStudent(string lrn = "100100100001", string first = "Mika", string last = "Velasco",
         bool isActive = true, Guid? parentUserId = null) => new()
     {
-        LRN = lrn, FirstName = first, LastName = last,
+        StudentNumber = "2026-00001", LRN = lrn, FirstName = first, LastName = last,
         BirthDate = Dob, Address = "Manila", IsActive = isActive, ParentUserId = parentUserId
     };
 
@@ -57,7 +57,7 @@ public class StudentDedupTests
         var enrollment = await ctx.Enrollments.SingleAsync();
         Assert.Equal(existing.Id, enrollment.StudentId);
         Assert.Equal("2026-2027", enrollment.SchoolYear);
-        Assert.Contains($"existing student {existing.LRN}", enrollment.Remarks);
+        Assert.Contains($"existing student {existing.StudentNumber}", enrollment.Remarks);
     }
 
     [Fact]

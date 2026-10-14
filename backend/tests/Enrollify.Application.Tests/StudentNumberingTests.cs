@@ -10,54 +10,74 @@ namespace Enrollify.Application.Tests;
 
 public class StudentNumberingTests
 {
-    private static Student StudentWith(string lrn) => new()
+    private static readonly DateTime Mid2026Utc = new(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private static Student StudentWith(string number) => new()
     {
-        LRN = lrn,
-        FirstName = "Test",
-        LastName = "Student",
-        Address = "Manila"
+        StudentNumber = number, FirstName = "Test", LastName = "Student", Address = "Manila"
     };
 
     [Fact]
-    public async Task NextLrn_StartsAtSeed_WhenNoStudentsExist()
+    public async Task Next_StartsAt00001_ForTheYear()
     {
         var ctx = TestDb.Create();
-
-        Assert.Equal("100100100001", await StudentNumbering.NextLrnAsync(ctx, default));
+        Assert.Equal("2026-00001", await StudentNumbering.NextStudentNumberAsync(ctx, Mid2026Utc, default));
     }
 
     [Fact]
-    public async Task NextLrn_IncrementsPastMax_IgnoringNonNumericLrns()
+    public async Task Next_IncrementsPastMax_IgnoringOtherYears()
     {
         var ctx = TestDb.Create();
-        ctx.Students.Add(StudentWith("100100100002"));
-        ctx.Students.Add(StudentWith("100100100007"));
-        ctx.Students.Add(StudentWith("LRN-MANUAL-1")); // 12 chars but not numeric — ignored
-        ctx.Students.Add(StudentWith("55"));           // numeric but not the generated shape — ignored
+        ctx.Students.Add(StudentWith("2026-00002"));
+        ctx.Students.Add(StudentWith("2026-00007"));
+        ctx.Students.Add(StudentWith("2025-00099"));
         await ctx.SaveChangesAsync();
 
-        Assert.Equal("100100100008", await StudentNumbering.NextLrnAsync(ctx, default));
+        Assert.Equal("2026-00008", await StudentNumbering.NextStudentNumberAsync(ctx, Mid2026Utc, default));
     }
 
     [Fact]
-    public async Task CreateStudent_GeneratesSequentialLrns()
+    public void ManilaYear_RollsOverEightHoursBeforeUtc()
+    {
+        // 2025-12-31 16:30 UTC is already 2026-01-01 00:30 in Manila.
+        Assert.Equal(2026, StudentNumbering.ManilaYear(new DateTime(2025, 12, 31, 16, 30, 0, DateTimeKind.Utc)));
+        Assert.Equal(2025, StudentNumbering.ManilaYear(new DateTime(2025, 12, 31, 15, 59, 0, DateTimeKind.Utc)));
+    }
+
+    [Fact]
+    public async Task CreateStudent_BlankLrn_StaysNull_AndGetsStudentNumber()
     {
         var ctx = TestDb.Create();
-        var handler = new CreateStudentCommandHandler(ctx);
-
-        var first = await handler.Handle(new CreateStudentCommand(
+        var dto = await new CreateStudentCommandHandler(ctx).Handle(new CreateStudentCommand(
             null, "Ana", "", "Reyes", new DateTime(2012, 1, 1), null, "Manila", null, null, null, null), default);
-        var second = await handler.Handle(new CreateStudentCommand(
-            null, "Ben", "", "Reyes", new DateTime(2013, 2, 2), null, "Manila", null, null, null, null), default);
 
-        Assert.Equal("100100100001", first.LRN);
-        Assert.Equal("100100100002", second.LRN);
+        Assert.Null(dto.LRN);
+        var year = StudentNumbering.ManilaYear(DateTime.UtcNow);
+        Assert.Equal($"{year}-00001", (await ctx.Students.SingleAsync()).StudentNumber);
+    }
+
+    [Fact]
+    public async Task CreateStudent_KeepsProvidedLrn()
+    {
+        var ctx = TestDb.Create();
+        var dto = await new CreateStudentCommandHandler(ctx).Handle(new CreateStudentCommand(
+            " 136512260001 ", "Ben", "", "Reyes", new DateTime(2013, 2, 2), null, "Manila", null, null, null, null), default);
+
+        Assert.Equal("136512260001", dto.LRN);
+    }
+
+    [Fact]
+    public void CreateStudentValidator_RejectsNonTwelveDigitLrn()
+    {
+        var result = new CreateStudentCommandValidator().Validate(new CreateStudentCommand(
+            "100100", "Ben", "", "Reyes", new DateTime(2013, 2, 2), null, "Manila", null, null, null, null));
+
+        Assert.Contains(result.Errors, e => e.PropertyName == "LRN");
     }
 
     /// <summary>
-    /// Simulates the concurrency race: a rival request lands the same freshly-minted LRN
-    /// between our generation and save, and the save fails the way the (TenantId, LRN)
-    /// unique index would. The handler must regenerate and retry.
+    /// A rival request lands the same freshly-minted student number between our generation
+    /// and save; the save fails the way the (TenantId, StudentNumber) unique index would.
     /// </summary>
     private class RacingContext : ApplicationDbContext
     {
@@ -73,9 +93,9 @@ public class StudentNumberingTests
             {
                 _raced = true;
                 using var rival = TestDb.Create(_dbName);
-                rival.Students.Add(StudentWith("100100100001"));
+                rival.Students.Add(StudentWith($"{StudentNumbering.ManilaYear(DateTime.UtcNow)}-00001"));
                 await rival.SaveChangesAsync(cancellationToken);
-                throw new DbUpdateException("Simulated unique index violation on (TenantId, LRN).");
+                throw new DbUpdateException("Simulated unique index violation on (TenantId, StudentNumber).");
             }
 
             return await base.SaveChangesAsync(cancellationToken);
@@ -83,19 +103,17 @@ public class StudentNumberingTests
     }
 
     [Fact]
-    public async Task CreateStudent_RetriesWithFreshLrn_OnUniqueCollision()
+    public async Task CreateStudent_RetriesWithFreshNumber_OnUniqueCollision()
     {
-        var dbName = $"lrn-race-{Guid.NewGuid()}";
+        var dbName = $"sn-race-{Guid.NewGuid()}";
         using var ctx = new RacingContext(dbName);
 
-        var handler = new CreateStudentCommandHandler(ctx);
-        var dto = await handler.Handle(new CreateStudentCommand(
+        await new CreateStudentCommandHandler(ctx).Handle(new CreateStudentCommand(
             null, "Cara", "", "Reyes", new DateTime(2012, 5, 5), null, "Manila", null, null, null, null), default);
 
-        // The rival took 100100100001; the retry regenerated past it.
-        Assert.Equal("100100100002", dto.LRN);
-
         using var verify = TestDb.Create(dbName);
-        Assert.Equal(2, await verify.Students.CountAsync());
+        var numbers = await verify.Students.Select(s => s.StudentNumber).OrderBy(n => n).ToListAsync();
+        var year = StudentNumbering.ManilaYear(DateTime.UtcNow);
+        Assert.Equal(new[] { $"{year}-00001", $"{year}-00002" }, numbers);
     }
 }

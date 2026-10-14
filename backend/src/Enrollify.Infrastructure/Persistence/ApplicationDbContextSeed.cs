@@ -202,9 +202,9 @@ public static class ApplicationDbContextSeed
         // Seed sample students
         var students = new List<Student>
         {
-            new() { TenantId = tenantId, LRN = "100100100001", FirstName = "Juan", MiddleName = "Reyes", LastName = "Dela Cruz", BirthDate = new DateTime(2012, 5, 15), Gender = "Male", Address = "123 Rizal St, Manila", ContactNumber = "+63-912-345-6789", GuardianName = "Pedro Dela Cruz", GuardianContact = "+63-912-345-6780" },
-            new() { TenantId = tenantId, LRN = "100100100002", FirstName = "Maria", MiddleName = "Santos", LastName = "Garcia", BirthDate = new DateTime(2012, 8, 22), Gender = "Female", Address = "456 Mabini St, Manila", ContactNumber = "+63-912-345-6790", GuardianName = "Rosa Garcia", GuardianContact = "+63-912-345-6791" },
-            new() { TenantId = tenantId, LRN = "100100100003", FirstName = "Jose", MiddleName = "Luna", LastName = "Reyes", BirthDate = new DateTime(2012, 3, 10), Gender = "Male", Address = "789 Bonifacio Ave, Manila", ContactNumber = "+63-912-345-6792", GuardianName = "Carlos Reyes", GuardianContact = "+63-912-345-6793" },
+            new() { TenantId = tenantId, StudentNumber = "2026-00001", LRN = "136512260001", FirstName = "Juan", MiddleName = "Reyes", LastName = "Dela Cruz", BirthDate = new DateTime(2012, 5, 15), Gender = "Male", Address = "123 Rizal St, Manila", ContactNumber = "+63-912-345-6789", GuardianName = "Pedro Dela Cruz", GuardianContact = "+63-912-345-6780" },
+            new() { TenantId = tenantId, StudentNumber = "2026-00002", LRN = null, FirstName = "Maria", MiddleName = "Santos", LastName = "Garcia", BirthDate = new DateTime(2012, 8, 22), Gender = "Female", Address = "456 Mabini St, Manila", ContactNumber = "+63-912-345-6790", GuardianName = "Rosa Garcia", GuardianContact = "+63-912-345-6791" },
+            new() { TenantId = tenantId, StudentNumber = "2026-00003", LRN = "136512260002", FirstName = "Jose", MiddleName = "Luna", LastName = "Reyes", BirthDate = new DateTime(2012, 3, 10), Gender = "Male", Address = "789 Bonifacio Ave, Manila", ContactNumber = "+63-912-345-6792", GuardianName = "Carlos Reyes", GuardianContact = "+63-912-345-6793" },
         };
 
         // Sample logins demonstrating both flows:

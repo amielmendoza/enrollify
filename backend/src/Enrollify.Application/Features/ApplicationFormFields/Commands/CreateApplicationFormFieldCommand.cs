@@ -15,7 +15,7 @@ public record CreateApplicationFormFieldCommand(
 public class CreateApplicationFormFieldCommandValidator : AbstractValidator<CreateApplicationFormFieldCommand>
 {
     private static readonly HashSet<string> ValidTypes = new() { "Text", "TextArea", "Number", "Date", "Checkbox", "Dropdown" };
-    private static readonly HashSet<string> ValidSections = new() { "Parent", "Student", "Enrollment", "Guardian" };
+    private static readonly HashSet<string> ValidSections = new() { "Parent", "Student", "Enrollment", "Guardian", "Family" };
     private static readonly HashSet<string> ValidApplies = new() { "Both", "ParentMode", "StudentMode" };
 
     public CreateApplicationFormFieldCommandValidator()

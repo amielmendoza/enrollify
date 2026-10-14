@@ -1,4 +1,5 @@
 using Enrollify.Application.DTOs.Admissions;
+using Enrollify.Application.Features.Admissions;
 using Enrollify.Application.Features.Admissions.Commands;
 using Enrollify.Application.Features.Admissions.Queries;
 using MediatR;
@@ -29,14 +30,7 @@ public class AdmissionsController : ControllerBase
         }
 
         var applicants = (request.Applicants ?? new List<ApplicantData>())
-            .Select(a => new SubmitApplicationCommand.Applicant(
-                a.FirstName, a.MiddleName, a.LastName,
-                a.Email, a.ContactNumber, a.Gender,
-                a.DateOfBirth, a.Address,
-                a.GradeLevel, a.SchoolYear,
-                a.PreviousSchool, a.PreviousSchoolAddress,
-                a.GuardianName, a.GuardianContact, a.GuardianRelationship,
-                a.CustomFieldValues))
+            .Select(ApplicationMapping.ToCommandApplicant)
             .ToList();
 
         var result = await _sender.Send(new SubmitApplicationCommand(

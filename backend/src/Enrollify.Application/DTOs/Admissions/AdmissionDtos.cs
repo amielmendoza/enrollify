@@ -1,3 +1,5 @@
+using Enrollify.Application.DTOs.Learners;
+
 namespace Enrollify.Application.DTOs.Admissions;
 
 public record SubmitApplicationRequest(
@@ -30,7 +32,16 @@ public record ApplicantData(
     string? GuardianContact,
     string? GuardianRelationship,
     // Map keyed by ApplicationFormField.FieldKey for any custom fields the admin has defined.
-    Dictionary<string, string?>? CustomFieldValues);
+    Dictionary<string, string?>? CustomFieldValues,
+    // DepEd learner record (optional; blanks are fine unless the school's form requires them).
+    string? Lrn = null,
+    LearnerProfileDto? Learner = null,
+    string? LearnerType = null,
+    string? LastGradeLevelCompleted = null,
+    string? LastSchoolYearCompleted = null,
+    string? LastSchoolId = null,
+    string? Track = null,
+    string? Strand = null);
 
 public record ReviewApplicationRequest(
     bool IsApproved,
@@ -87,4 +98,7 @@ public record ApplicationDetailDto(
     string? ParentLastName,
     string? ParentEmail,
     string? ParentContactNumber,
-    Dictionary<string, string?>? CustomFieldValues);
+    Dictionary<string, string?>? CustomFieldValues,
+    string? Lrn = null,
+    LearnerProfileDto? Learner = null,
+    EnrollmentLearnerInfoDto? EnrollmentInfo = null);

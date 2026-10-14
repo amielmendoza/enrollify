@@ -164,21 +164,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
         // Best-effort notification AFTER the transaction has committed; IEmailSender never throws.
         await SendReviewOutcomeEmailAsync(app, newAccountEmail, cancellationToken);
 
-        Dictionary<string, string?>? custom = null;
-        if (!string.IsNullOrWhiteSpace(app.CustomFieldValues))
-        {
-            try { custom = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string?>>(app.CustomFieldValues); }
-            catch { /* ignore malformed JSON */ }
-        }
-
-        return new ApplicationDetailDto(
-            app.Id, app.ApplicationNumber, app.FirstName, app.MiddleName, app.LastName,
-            app.Email, app.ContactNumber, app.Gender, app.DateOfBirth, app.Address,
-            app.GradeLevel, app.SchoolYear, app.PreviousSchool, app.PreviousSchoolAddress,
-            app.GuardianName, app.GuardianContact, app.GuardianRelationship,
-            app.Status, app.CreatedAt, app.ReviewedAt, app.ReviewNotes, app.StudentId,
-            app.ApplicationType, app.ParentFirstName, app.ParentLastName, app.ParentEmail, app.ParentContactNumber,
-            custom);
+        return ApplicationMapping.ToDetailDto(app);
     }
 
     /// <summary>

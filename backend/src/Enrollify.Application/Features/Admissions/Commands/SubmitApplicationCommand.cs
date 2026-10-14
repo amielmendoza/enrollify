@@ -1,6 +1,10 @@
 using System.Text.Json;
+using Enrollify.Application.Common;
 using Enrollify.Application.Common.Interfaces;
 using Enrollify.Application.DTOs.Admissions;
+using Enrollify.Application.DTOs.Learners;
+using Enrollify.Application.Features.ShsStrands;
+using Enrollify.Application.Features.Students;
 using Enrollify.Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -30,7 +34,21 @@ public record SubmitApplicationCommand(
         string GradeLevel, string SchoolYear,
         string? PreviousSchool, string? PreviousSchoolAddress,
         string? GuardianName, string? GuardianContact, string? GuardianRelationship,
-        Dictionary<string, string?>? CustomFieldValues);
+        Dictionary<string, string?>? CustomFieldValues,
+        string? Lrn = null,
+        LearnerProfileDto? Learner = null,
+        string? LearnerType = null,
+        string? LastGradeLevelCompleted = null,
+        string? LastSchoolYearCompleted = null,
+        string? LastSchoolId = null,
+        string? Track = null,
+        string? Strand = null)
+    {
+        /// <summary>The per-enrollment DepEd fields as one DTO (PreviousSchool = last school attended).</summary>
+        public EnrollmentLearnerInfoDto ToLearnerInfo() => new(
+            LearnerType, LastGradeLevelCompleted, LastSchoolYearCompleted,
+            PreviousSchool, PreviousSchoolAddress, LastSchoolId, Track, Strand);
+    }
 }
 
 public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplicationCommand>
@@ -99,6 +117,13 @@ public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplica
             a.RuleFor(x => x.GuardianName).MaximumLength(200);
             a.RuleFor(x => x.GuardianContact).MaximumLength(50);
             a.RuleFor(x => x.GuardianRelationship).MaximumLength(50);
+            a.RuleFor(x => x.Lrn)
+                .Must(l => DepEdLists.IsTwelveDigitLrn(l!.Trim()))
+                .When(x => !string.IsNullOrWhiteSpace(x.Lrn))
+                .WithMessage("LRN must be exactly 12 digits (leave it blank if the learner has none yet).");
+            a.RuleFor(x => x.Learner!).SetValidator(new LearnerProfileDtoValidator()).When(x => x.Learner != null);
+            a.RuleFor(x => x.ToLearnerInfo()).SetValidator(new EnrollmentLearnerInfoDtoValidator())
+                .OverridePropertyName("Enrollment");
         });
     }
 }
@@ -176,7 +201,20 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
                 {
                     case "middleName": value = applicant.MiddleName; break;
                     case "contactNumber": value = applicant.ContactNumber; break;
-                    case "address": value = applicant.Address; break;
+                    // The address field is the PSGC picker: "required" means resolved to a barangay.
+                    case "address": value = applicant.Learner?.HomeAddress?.BarangayCode; break;
+                    case "lrn": value = applicant.Lrn; break;
+                    case "extensionName": value = applicant.Learner?.ExtensionName; break;
+                    case "psaBirthCertificateNumber": value = applicant.Learner?.PsaBirthCertificateNumber; break;
+                    case "placeOfBirth": value = applicant.Learner?.PlaceOfBirth; break;
+                    case "motherTongue": value = applicant.Learner?.MotherTongue; break;
+                    case "religion": value = applicant.Learner?.Religion; break;
+                    case "fatherName": value = BothNames(applicant.Learner?.FatherLastName, applicant.Learner?.FatherFirstName); break;
+                    case "motherMaidenName": value = BothNames(applicant.Learner?.MotherMaidenLastName, applicant.Learner?.MotherMaidenFirstName); break;
+                    case "learnerType": value = applicant.LearnerType; break;
+                    case "lastGradeLevelCompleted": value = applicant.LastGradeLevelCompleted; break;
+                    case "lastSchoolYearCompleted": value = applicant.LastSchoolYearCompleted; break;
+                    case "lastSchoolId": value = applicant.LastSchoolId; break;
                     case "previousSchool": value = applicant.PreviousSchool; break;
                     case "previousSchoolAddress": value = applicant.PreviousSchoolAddress; break;
                     case "guardianName": value = applicant.GuardianName; break;
@@ -200,6 +238,21 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
                 if (string.IsNullOrWhiteSpace(value))
                     throw new InvalidOperationException($"'{field.Label}' is required.");
             }
+
+            // SHS track/strand against THIS school's catalog (explicit tenant — the public apply
+            // flow has no tenant context). Errors name the child so siblings aren't confused.
+            string? track, strand;
+            try
+            {
+                (track, strand) = await ShsStrandRules.ResolveAsync(
+                    _context, applicant.GradeLevel, applicant.Track, applicant.Strand, cancellationToken, request.TenantId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"{applicant.FirstName}: {ex.Message}");
+            }
+            if (strand == null && await ShsStrandRules.IsStrandRequiredAsync(_context, applicant.GradeLevel, cancellationToken, request.TenantId))
+                throw new InvalidOperationException($"Choose a track/strand for {applicant.FirstName} ({applicant.GradeLevel}).");
 
             // Validate required custom fields and trim values to known keys
             var sanitizedCustomValues = new Dictionary<string, string?>();
@@ -249,8 +302,18 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
                 ParentLastName = effectiveType == "Parent" ? request.ParentLastName : null,
                 ParentEmail = normalizedParentEmail,
                 ParentContactNumber = effectiveType == "Parent" ? request.ParentContactNumber : null,
-                CustomFieldValues = customJson
+                CustomFieldValues = customJson,
+                Lrn = LearnerProfileMapping.Clean(applicant.Lrn),
+                LearnerType = LearnerProfileMapping.Clean(applicant.LearnerType),
+                LastGradeLevelCompleted = LearnerProfileMapping.Clean(applicant.LastGradeLevelCompleted),
+                LastSchoolYearCompleted = LearnerProfileMapping.Clean(applicant.LastSchoolYearCompleted),
+                LastSchoolId = LearnerProfileMapping.Clean(applicant.LastSchoolId),
+                Track = track,
+                Strand = strand,
             };
+
+            if (applicant.Learner != null)
+                LearnerProfileMapping.Apply(applicant.Learner, application);
 
             _context.AdmissionApplications.Add(application);
             created.Add(application);
@@ -258,22 +321,10 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return created.Select(ToDetailDto).ToList();
+        return created.Select(ApplicationMapping.ToDetailDto).ToList();
     }
 
-    private static ApplicationDetailDto ToDetailDto(AdmissionApplication a) => new(
-        a.Id, a.ApplicationNumber, a.FirstName, a.MiddleName, a.LastName,
-        a.Email, a.ContactNumber, a.Gender, a.DateOfBirth, a.Address,
-        a.GradeLevel, a.SchoolYear, a.PreviousSchool, a.PreviousSchoolAddress,
-        a.GuardianName, a.GuardianContact, a.GuardianRelationship,
-        a.Status, a.CreatedAt, a.ReviewedAt, a.ReviewNotes, a.StudentId,
-        a.ApplicationType, a.ParentFirstName, a.ParentLastName, a.ParentEmail, a.ParentContactNumber,
-        ParseCustomFieldValues(a.CustomFieldValues));
-
-    private static Dictionary<string, string?>? ParseCustomFieldValues(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json)) return null;
-        try { return JsonSerializer.Deserialize<Dictionary<string, string?>>(json); }
-        catch { return null; }
-    }
+    // A required parent name needs at least last + first name.
+    private static string? BothNames(string? last, string? first) =>
+        string.IsNullOrWhiteSpace(last) || string.IsNullOrWhiteSpace(first) ? null : "provided";
 }

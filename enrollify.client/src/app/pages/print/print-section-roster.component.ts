@@ -60,6 +60,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
             <thead>
               <tr class="border-b-2 border-gray-900 text-left">
                 <th class="py-2 pr-2 font-semibold text-gray-900 w-10">No.</th>
+                <th class="py-2 pr-2 font-semibold text-gray-900">Student No.</th>
                 <th class="py-2 pr-2 font-semibold text-gray-900">LRN</th>
                 <th class="py-2 pr-2 font-semibold text-gray-900">Name</th>
                 <th class="py-2 pr-2 font-semibold text-gray-900">Sex</th>
@@ -70,13 +71,14 @@ import { formatApiError } from '../../core/utils/format-api-error';
               @for (s of r.students; track s.enrollmentId; let i = $index) {
                 <tr class="border-b border-gray-100">
                   <td class="py-1.5 pr-2 text-gray-500 folio-mono">{{ i + 1 }}</td>
+                  <td class="py-1.5 pr-2 text-gray-700 folio-mono whitespace-nowrap">{{ s.studentNumber }}</td>
                   <td class="py-1.5 pr-2 text-gray-700 folio-mono whitespace-nowrap">{{ s.lrn || '—' }}</td>
                   <td class="py-1.5 pr-2 text-gray-900">{{ s.name }}</td>
                   <td class="py-1.5 pr-2 text-gray-700">{{ s.gender || '—' }}</td>
                   <td class="py-1.5 text-gray-700">{{ s.status }}</td>
                 </tr>
               } @empty {
-                <tr><td colspan="5" class="py-4 text-center text-gray-400">No learners assigned to this section yet.</td></tr>
+                <tr><td colspan="6" class="py-4 text-center text-gray-400">No learners assigned to this section yet.</td></tr>
               }
             </tbody>
           </table>

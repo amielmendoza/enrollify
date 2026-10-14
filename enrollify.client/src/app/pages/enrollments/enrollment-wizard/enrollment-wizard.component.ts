@@ -4,14 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { SchoolYearService } from '../../../core/services/school-year.service';
-import { Student } from '../../../core/models';
-import { GRADE_LEVELS } from '../../../core/constants';
+import { Student, ShsStrand } from '../../../core/models';
+import { GRADE_LEVELS, LEARNER_TYPES, isShsGrade } from '../../../core/constants';
+import { StrandSelectComponent } from '../../../core/components/strand-select.component';
 import { formatApiError } from '../../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-enrollment-wizard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StrandSelectComponent],
   template: `
     <div class="max-w-2xl">
       <h2 class="text-2xl font-bold text-gray-900 mb-6">New Enrollment</h2>
@@ -40,13 +41,13 @@ import { formatApiError } from '../../../core/utils/format-api-error';
           <div>
             <label class="form-label">Search Student</label>
             <input type="text" [(ngModel)]="studentSearch" (ngModelChange)="searchStudents()"
-                   (focus)="loadStudents()" placeholder="Type name or LRN..." class="form-input mb-3" />
+                   (focus)="loadStudents()" placeholder="Type name, student no., or LRN..." class="form-input mb-3" />
             <div class="space-y-2 max-h-60 overflow-auto">
               @for (s of studentResults(); track s.id) {
                 <button (click)="selectStudent(s)" class="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-blue-50 transition-colors"
                         [class.border-[#0038A8]]="selectedStudent()?.id === s.id" [class.bg-blue-50]="selectedStudent()?.id === s.id">
                   <span class="font-medium text-gray-900">{{ s.fullName }}</span>
-                  <span class="text-gray-400 text-sm ml-2">LRN: <span class="folio-mono">{{ s.lrn }}</span></span>
+                  <span class="text-gray-400 text-sm ml-2"><span class="folio-mono">{{ s.studentNumber }}</span> · LRN <span class="folio-mono">{{ s.lrn || '—' }}</span></span>
                 </button>
               }
             </div>
@@ -69,8 +70,19 @@ import { formatApiError } from '../../../core/utils/format-api-error';
             </div>
             <div>
               <label class="form-label">Grade Level *</label>
-              <select [(ngModel)]="gradeLevel" class="form-input">
+              <select [ngModel]="gradeLevel" (ngModelChange)="onGradeChange($event)" class="form-input">
                 @for (g of gradeLevels; track g) { <option [value]="g">{{ g }}</option> }
+              </select>
+            </div>
+            @if (showStrand()) {
+              <app-strand-select [strands]="strands()" [track]="track" [strand]="strand" id="wizard-strand"
+                                 (changed)="track = $event.track; strand = $event.strand" />
+            }
+            <div>
+              <label class="form-label" for="wizard-learner-type">Learner Type</label>
+              <select id="wizard-learner-type" [(ngModel)]="learnerType" class="form-input">
+                <option [ngValue]="null">Automatic (New, or Continuing if previously enrolled)</option>
+                @for (t of learnerTypes; track t.value) { <option [ngValue]="t.value">{{ t.label }}</option> }
               </select>
             </div>
             <div class="flex justify-between mt-4">
@@ -85,7 +97,7 @@ import { formatApiError } from '../../../core/utils/format-api-error';
           <div class="space-y-3">
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <p class="text-sm text-gray-500">Student</p>
-              <p class="font-medium text-gray-900">{{ selectedStudent()?.fullName }} (<span class="folio-mono text-sm">{{ selectedStudent()?.lrn }}</span>)</p>
+              <p class="font-medium text-gray-900">{{ selectedStudent()?.fullName }} (<span class="folio-mono text-sm">{{ selectedStudent()?.studentNumber }}</span>)</p>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <p class="text-sm text-gray-500">School Year</p>
@@ -95,6 +107,12 @@ import { formatApiError } from '../../../core/utils/format-api-error';
               <p class="text-sm text-gray-500">Grade Level</p>
               <p class="font-medium text-gray-900">{{ gradeLevel }}</p>
             </div>
+            @if (strand) {
+              <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p class="text-sm text-gray-500">Track / Strand</p>
+                <p class="font-medium text-gray-900">{{ track }} – {{ strand }}</p>
+              </div>
+            }
             <div class="flex justify-between mt-4">
               <button (click)="step.set(1)" class="btn btn-secondary">Back</button>
               <button (click)="submit()" [disabled]="saving()" class="btn btn-primary disabled:opacity-50">
@@ -118,12 +136,25 @@ export class EnrollmentWizardComponent {
   gradeLevel = 'Grade 7';
   gradeLevels = GRADE_LEVELS;
   stepLabels = ['Select Student', 'Details', 'Confirm'];
+  strands = signal<ShsStrand[]>([]);
+  learnerType: string | null = null;
+  track: string | null = null;
+  strand: string | null = null;
+  readonly learnerTypes = LEARNER_TYPES;
+
+  showStrand(): boolean { return isShsGrade(this.gradeLevel) && this.strands().length > 0; }
+
+  onGradeChange(grade: string): void {
+    this.gradeLevel = grade;
+    if (!isShsGrade(grade)) { this.track = null; this.strand = null; }
+  }
 
   constructor(private api: ApiService, private router: Router, public syService: SchoolYearService) {
     this.syService.ensureLoaded().subscribe(list => {
       const active = list.find(sy => sy.isActive);
       if (active && !this.schoolYear) this.schoolYear = active.name;
     });
+    this.api.getShsStrands().subscribe(s => this.strands.set(s));
   }
 
   loadStudents(): void {
@@ -145,7 +176,10 @@ export class EnrollmentWizardComponent {
     this.api.createEnrollment({
       studentId: this.selectedStudent()!.id,
       schoolYear: this.schoolYear,
-      gradeLevel: this.gradeLevel
+      gradeLevel: this.gradeLevel,
+      learnerType: this.learnerType,
+      track: this.track,
+      strand: this.strand
     }).subscribe({
       next: (e) => this.router.navigate(['/enrollments', e.id]),
       error: (err) => { this.saving.set(false); this.error.set(formatApiError(err, 'Failed to create enrollment')); }

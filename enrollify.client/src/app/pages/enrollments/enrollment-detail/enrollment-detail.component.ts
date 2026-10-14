@@ -5,14 +5,16 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { Enrollment, Section, BalanceInfo, Payment, EnrollmentHistoryItem, EnrollmentLedger } from '../../../core/models';
-import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES } from '../../../core/constants';
+import { Enrollment, Section, BalanceInfo, Payment, EnrollmentHistoryItem, EnrollmentLedger, ShsStrand, EnrollmentLearnerInfo } from '../../../core/models';
+import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, LEARNER_TYPES, GRADE_LEVELS, isShsGrade } from '../../../core/constants';
+import { emptyLearnerInfo } from '../../../core/learner';
+import { StrandSelectComponent } from '../../../core/components/strand-select.component';
 import { formatApiError } from '../../../core/utils/format-api-error';
 
 @Component({
   selector: 'app-enrollment-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, StrandSelectComponent],
   template: `
     <div class="max-w-4xl">
       @if (enrollment()) {
@@ -21,7 +23,8 @@ import { formatApiError } from '../../../core/utils/format-api-error';
             <h2 class="text-2xl font-bold text-gray-900">
               <a [routerLink]="['/students', enrollment()!.studentId]" class="hover:text-[#0038A8] hover:underline" title="Open the student record">{{ enrollment()!.studentName }}</a>
             </h2>
-            <p class="text-sm text-gray-500">{{ enrollment()!.schoolYear }} - {{ enrollment()!.gradeLevel }}</p>
+            <p class="text-sm text-gray-500">{{ enrollment()!.schoolYear }} - {{ enrollment()!.gradeLevel }}@if (enrollment()!.learnerInfo?.strand) { · {{ enrollment()!.learnerInfo!.track }} – {{ enrollment()!.learnerInfo!.strand }} }</p>
+            <p class="mt-0.5 text-xs text-gray-500">Student No. <span class="folio-mono text-gray-700">{{ enrollment()!.studentNumber || '—' }}</span> · LRN <span class="folio-mono text-gray-700">{{ enrollment()!.lrn || '—' }}</span></p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium" [ngClass]="getStatusClass(getStatusName())">
@@ -134,6 +137,14 @@ import { formatApiError } from '../../../core/utils/format-api-error';
         <!-- Tabs -->
         <div class="mb-6 border-b border-gray-200">
           <nav class="flex gap-6 overflow-x-auto whitespace-nowrap">
+            <button (click)="activeTab.set('learner')"
+                    class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
+                    [class]="activeTab() === 'learner' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
+              Learner
+              @if (missingStrand()) {
+                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Needs strand</span>
+              }
+            </button>
             <button (click)="activeTab.set('requirements')"
                     class="shrink-0 pb-3 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2"
                     [class]="activeTab() === 'requirements' ? 'border-[#0038A8] text-[#0038A8]' : 'border-transparent text-gray-500 hover:text-gray-700'">
@@ -162,6 +173,69 @@ import { formatApiError } from '../../../core/utils/format-api-error';
             </button>
           </nav>
         </div>
+
+        <!-- Learner -->
+        @if (activeTab() === 'learner') {
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-gray-900">Learner details</h3>
+            <a [routerLink]="['/students', enrollment()!.studentId, 'edit']" class="text-xs text-[#0038A8] hover:underline">Edit student record</a>
+          </div>
+          @if (learnerLocked()) {
+            <p class="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-3">Locked after assessment. Use “Send back for re-assessment” to change these.</p>
+          } @else if (missingStrand()) {
+            <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">Set the learner's track/strand before assessing this enrollment.</p>
+          }
+          @if (isShs() && (strands().length > 0 || learnerForm.strand)) {
+            <app-strand-select [strands]="strands()" [track]="learnerForm.track" [strand]="learnerForm.strand"
+                               [disabled]="learnerLocked()" id="learner-strand"
+                               (changed)="learnerForm.track = $event.track; learnerForm.strand = $event.strand" />
+          }
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label" for="learner-type">Learner Type</label>
+              <select id="learner-type" class="form-input" [disabled]="learnerLocked()"
+                      [ngModel]="learnerForm.learnerType" (ngModelChange)="learnerForm.learnerType = $event" [ngModelOptions]="{ standalone: true }">
+                <option [ngValue]="null">Not set</option>
+                @for (t of learnerTypes; track t.value) { <option [ngValue]="t.value">{{ t.label }}</option> }
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="last-grade">Last Grade Level Completed</label>
+              <select id="last-grade" class="form-input" [disabled]="learnerLocked()"
+                      [ngModel]="learnerForm.lastGradeLevelCompleted" (ngModelChange)="learnerForm.lastGradeLevelCompleted = $event" [ngModelOptions]="{ standalone: true }">
+                <option [ngValue]="null">Not applicable</option>
+                @for (g of gradeLevels; track g) { <option [ngValue]="g">{{ g }}</option> }
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="last-sy">Last School Year Completed</label>
+              <input id="last-sy" type="text" maxlength="9" placeholder="2025-2026" class="form-input folio-mono" [disabled]="learnerLocked()"
+                     [ngModel]="learnerForm.lastSchoolYearCompleted" (ngModelChange)="learnerForm.lastSchoolYearCompleted = $event || null" [ngModelOptions]="{ standalone: true }" />
+            </div>
+            <div>
+              <label class="form-label" for="last-school-id">Last School's DepEd School ID</label>
+              <input id="last-school-id" type="text" inputmode="numeric" maxlength="6" class="form-input folio-mono" [disabled]="learnerLocked()"
+                     [ngModel]="learnerForm.lastSchoolId" (ngModelChange)="learnerForm.lastSchoolId = $event || null" [ngModelOptions]="{ standalone: true }" />
+            </div>
+            <div>
+              <label class="form-label" for="last-school">Last School Attended</label>
+              <input id="last-school" type="text" maxlength="200" class="form-input" [disabled]="learnerLocked()"
+                     [ngModel]="learnerForm.lastSchoolAttended" (ngModelChange)="learnerForm.lastSchoolAttended = $event || null" [ngModelOptions]="{ standalone: true }" />
+            </div>
+            <div>
+              <label class="form-label" for="last-school-address">Last School Address</label>
+              <input id="last-school-address" type="text" maxlength="500" class="form-input" [disabled]="learnerLocked()"
+                     [ngModel]="learnerForm.lastSchoolAddress" (ngModelChange)="learnerForm.lastSchoolAddress = $event || null" [ngModelOptions]="{ standalone: true }" />
+            </div>
+          </div>
+          @if (!learnerLocked()) {
+            <div class="flex justify-end">
+              <button (click)="saveLearnerInfo()" [disabled]="savingLearner()" class="btn btn-primary">{{ savingLearner() ? 'Saving…' : 'Save learner details' }}</button>
+            </div>
+          }
+        </div>
+        }
 
         <!-- Requirements Review (Admin) -->
         @if (activeTab() === 'requirements') {
@@ -492,7 +566,7 @@ export class EnrollmentDetailComponent implements OnInit {
   ledger = signal<EnrollmentLedger | null>(null);
 
   // Tabbed workbench: workflow controls stay above the tabs; review surfaces live inside them.
-  activeTab = signal<'requirements' | 'payments' | 'ledger' | 'history'>('payments');
+  activeTab = signal<'learner' | 'requirements' | 'payments' | 'ledger' | 'history'>('payments');
   private defaultTabSet = false;
   toVerifyCount = computed(() => (this.enrollment()?.requirements ?? []).filter(r => r.isSubmitted && !r.isVerified).length);
   pendingPaymentsCount = computed(() => this.payments().filter(p => p.status === 'Pending').length);
@@ -520,6 +594,15 @@ export class EnrollmentDetailComponent implements OnInit {
 
   statuses = ENROLLMENT_STEP_NAMES;
 
+  strands = signal<ShsStrand[]>([]);
+  learnerForm: EnrollmentLearnerInfo = emptyLearnerInfo();
+  savingLearner = signal(false);
+  readonly learnerTypes = LEARNER_TYPES;
+  readonly gradeLevels = GRADE_LEVELS;
+  isShs = computed(() => isShsGrade(this.enrollment()?.gradeLevel));
+  learnerLocked = computed(() => !['Draft', 'Submitted'].includes(this.getStatusName()));
+  missingStrand = computed(() => this.isShs() && this.strands().length > 0 && !this.enrollment()?.learnerInfo?.strand);
+
   private enrollmentId = '';
 
   constructor(private api: ApiService, private route: ActivatedRoute, private auth: AuthService, private notify: NotificationService) {}
@@ -531,12 +614,14 @@ export class EnrollmentDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.enrollmentId = this.route.snapshot.paramMap.get('id')!;
+    this.api.getShsStrands().subscribe(s => this.strands.set(s));
     this.loadAll();
   }
 
   loadAll(): void {
     this.api.getEnrollment(this.enrollmentId).subscribe(e => {
       this.enrollment.set(e);
+      this.learnerForm = { ...emptyLearnerInfo(), ...(e.learnerInfo ?? {}) };
       // Land the registrar where the action is — set once on first load only, so
       // reloads after approve/void/advance don't yank the user's chosen tab away.
       if (!this.defaultTabSet) {
@@ -557,6 +642,14 @@ export class EnrollmentDetailComponent implements OnInit {
     this.api.getEnrollmentLedger(this.enrollmentId).subscribe({
       next: l => this.ledger.set(l),
       error: () => this.ledger.set(null)
+    });
+  }
+
+  saveLearnerInfo(): void {
+    this.savingLearner.set(true);
+    this.api.updateEnrollmentLearnerInfo(this.enrollmentId, this.learnerForm).subscribe({
+      next: () => { this.savingLearner.set(false); this.notify.success('Learner details saved.'); this.loadAll(); },
+      error: err => { this.savingLearner.set(false); this.notify.error(formatApiError(err, 'Could not save learner details.')); },
     });
   }
 

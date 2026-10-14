@@ -70,9 +70,23 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
                     <td class="py-2.5 font-semibold text-gray-900">{{ e.studentName }}</td>
                   </tr>
                   <tr class="border-b border-gray-200">
+                    <td class="py-2.5 text-gray-500">Student No.</td>
+                    <td class="py-2.5 font-medium text-gray-900 folio-mono">{{ e.studentNumber || '—' }}</td>
+                  </tr>
+                  <tr class="border-b border-gray-200">
+                    <td class="py-2.5 text-gray-500">LRN</td>
+                    <td class="py-2.5 font-medium text-gray-900 folio-mono">{{ e.lrn || '—' }}</td>
+                  </tr>
+                  <tr class="border-b border-gray-200">
                     <td class="py-2.5 text-gray-500">Grade Level</td>
                     <td class="py-2.5 font-medium text-gray-900">{{ e.gradeLevel }}</td>
                   </tr>
+                  @if (e.learnerInfo?.strand) {
+                    <tr class="border-b border-gray-200">
+                      <td class="py-2.5 text-gray-500">Track / Strand</td>
+                      <td class="py-2.5 font-medium text-gray-900">{{ e.learnerInfo!.track }} – {{ e.learnerInfo!.strand }}</td>
+                    </tr>
+                  }
                   <tr class="border-b border-gray-200">
                     <td class="py-2.5 text-gray-500">Section</td>
                     <td class="py-2.5 font-medium text-gray-900">{{ e.sectionName || 'Not yet assigned' }}</td>
@@ -107,6 +121,7 @@ type PrintDoc = 'cor' | 'assessment' | 'receipt' | 'soa';
             <div class="mt-8">
               <div class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
                 <div><p class="text-xs text-gray-500">Student</p><p class="font-semibold text-gray-900">{{ e.studentName }}</p></div>
+                <div><p class="text-xs text-gray-500">Student No. / LRN</p><p class="font-medium text-gray-900 folio-mono">{{ e.studentNumber || '—' }} / {{ e.lrn || '—' }}</p></div>
                 <div><p class="text-xs text-gray-500">Grade Level</p><p class="font-medium text-gray-900">{{ e.gradeLevel }}</p></div>
                 <div><p class="text-xs text-gray-500">Payment Plan</p><p class="font-medium text-gray-900">{{ e.paymentPlan || 'Not yet selected' }}</p></div>
                 <div><p class="text-xs text-gray-500">Enrollment Status</p><p class="font-medium text-gray-900">{{ statusName() }}</p></div>

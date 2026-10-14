@@ -103,6 +103,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student No.</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LRN</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
@@ -117,6 +118,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
             <tbody class="divide-y divide-gray-100">
               @for (row of report()?.items ?? []; track row.enrollmentId) {
                 <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-sm folio-mono text-gray-700 whitespace-nowrap">{{ row.studentNumber }}</td>
                   <td class="px-4 py-3 text-sm folio-mono text-gray-700 whitespace-nowrap">{{ row.lrn || '—' }}</td>
                   <td class="px-4 py-3 text-sm whitespace-nowrap">
                     <a [routerLink]="['/enrollments', row.enrollmentId]" class="font-medium text-[#0038A8] hover:text-[#002B85]">{{ row.studentName }}</a>
@@ -132,7 +134,7 @@ import { formatApiError } from '../../core/utils/format-api-error';
                   <td class="px-4 py-3 text-sm text-right folio-mono whitespace-nowrap" [class.text-red-700]="(row.balance ?? 0) > 0" [class.text-gray-700]="(row.balance ?? 0) <= 0">{{ row.balance === null ? '—' : '₱' + (row.balance | number:'1.2-2') }}</td>
                 </tr>
               } @empty {
-                <tr><td colspan="9">
+                <tr><td colspan="10">
                   @if (loading()) { <app-loading label="Loading register..." /> }
                   @else if (loadFailed()) { <p class="px-6 py-8 text-center text-red-600">The register couldn't be loaded. Adjust the filters or refresh to try again.</p> }
                   @else { <p class="px-6 py-8 text-center text-gray-400">No enrollments match these filters.</p> }

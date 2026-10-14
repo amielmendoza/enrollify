@@ -40,3 +40,24 @@ export function enrollmentStatusName(status: string | number): string {
   }
   return status;
 }
+
+export const LEARNER_TYPES: { value: string; label: string }[] = [
+  { value: 'New', label: 'New' },
+  { value: 'Continuing', label: 'Continuing' },
+  { value: 'Transferee', label: 'Transferee' },
+  { value: 'Returning', label: 'Returning (Balik-Aral)' },
+];
+
+export const DISABILITY_TYPES: string[] = [
+  'Visual Impairment', 'Hearing Impairment', 'Learning Disability', 'Intellectual Disability',
+  'Autism Spectrum Disorder', 'Emotional-Behavioral Disorder', 'Orthopedic/Physical Handicap',
+  'Speech/Language Disorder', 'Cerebral Palsy', 'Special Health Problem/Chronic Disease',
+  'Multiple Disorder', 'Cancer',
+];
+
+export const EXTENSION_NAME_SUGGESTIONS: string[] = ['Jr.', 'Sr.', 'II', 'III', 'IV'];
+
+export function isShsGrade(grade: string | null | undefined): boolean {
+  const g = (grade ?? '').trim().toLowerCase();
+  return g === 'grade 11' || g === 'grade 12';
+}

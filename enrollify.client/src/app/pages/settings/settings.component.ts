@@ -1161,7 +1161,8 @@ export class SettingsComponent implements OnInit {
     this.api.createRequirementTemplate({
       documentName: this.newRequirement.documentName.trim(),
       gradeLevel: this.newRequirement.gradeLevel || null,
-      displayOrder: this.newRequirement.displayOrder || 0
+      displayOrder: this.newRequirement.displayOrder || 0,
+      keepOnFile: false
     }).subscribe({
       next: () => {
         this.newRequirement = { documentName: '', gradeLevel: '', displayOrder: 0 };
@@ -1176,7 +1177,8 @@ export class SettingsComponent implements OnInit {
       documentName: t.documentName,
       gradeLevel: t.gradeLevel,
       isActive: !t.isActive,
-      displayOrder: t.displayOrder
+      displayOrder: t.displayOrder,
+      keepOnFile: t.keepOnFile
     }).subscribe(() => this.loadRequirementTemplates());
   }
 

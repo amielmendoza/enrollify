@@ -16,14 +16,77 @@ export interface LoginResponse {
   mustChangePassword: boolean;
 }
 
+// PSGC-resolved address. Codes are 10-digit strings (never numbers); names travel with them.
+export interface PsgcAddress {
+  regionCode: string | null;
+  regionName: string | null;
+  provinceCode: string | null;     // null for NCR / independent cities
+  provinceName: string | null;
+  cityMunicipalityCode: string | null;
+  cityMunicipalityName: string | null;
+  barangayCode: string | null;
+  barangayName: string | null;
+  zipCode: string | null;
+}
+
+// DepEd Basic Education Enrollment Form learner fields (LRN travels separately).
+export interface LearnerProfile {
+  extensionName: string | null;
+  psaBirthCertificateNumber: string | null;
+  placeOfBirth: string | null;
+  motherTongue: string | null;
+  religion: string | null;
+  isIndigenousPeople: boolean;
+  ipCommunity: string | null;
+  is4PsBeneficiary: boolean;
+  fourPsHouseholdId: string | null;
+  hasDisability: boolean;
+  disabilityTypes: string[] | null;
+  fatherLastName: string | null;
+  fatherFirstName: string | null;
+  fatherMiddleName: string | null;
+  fatherContactNumber: string | null;
+  motherMaidenLastName: string | null;
+  motherMaidenFirstName: string | null;
+  motherMaidenMiddleName: string | null;
+  motherContactNumber: string | null;
+  homeAddress: PsgcAddress | null;
+}
+
+// Per-enrollment DepEd fields.
+export interface EnrollmentLearnerInfo {
+  learnerType: string | null;
+  lastGradeLevelCompleted: string | null;
+  lastSchoolYearCompleted: string | null;
+  lastSchoolAttended: string | null;
+  lastSchoolAddress: string | null;
+  lastSchoolId: string | null;
+  track: string | null;
+  strand: string | null;
+}
+
+export interface ShsStrand {
+  id: string;
+  track: string;
+  strand: string;
+  isActive: boolean;
+  displayOrder: number;
+}
+
 export interface Student {
   id: string;
-  lrn: string;
+  // Enrollify-issued "YYYY-NNNNN". Never confuse with the DepEd LRN.
+  studentNumber: string;
+  // DepEd LRN (12 digits); null until known.
+  lrn: string | null;
+  // Pre-migration LRN awaiting registrar confirmation ("Check LRN").
+  lrnNeedsReview: boolean;
   firstName: string;
   middleName: string;
   lastName: string;
   birthDate: string;
   gender: string | null;
+  // House no. / street / sitio line; the structured part is profile.homeAddress.
   address: string;
   contactNumber: string | null;
   email: string | null;
@@ -34,10 +97,11 @@ export interface Student {
   userId: string | null;
   parentUserId: string | null;
   isActive: boolean;
+  profile: LearnerProfile | null;
 }
 
 export interface CreateStudentRequest {
-  lrn: string;
+  lrn: string | null;
   firstName: string;
   middleName: string;
   lastName: string;
@@ -48,6 +112,19 @@ export interface CreateStudentRequest {
   email: string | null;
   guardianName: string | null;
   guardianContact: string | null;
+  profile: LearnerProfile | null;
+}
+
+// What a parent or student may change on their own profile (null/omitted = unchanged).
+export interface ProfileSelfUpdate {
+  contactNumber?: string;
+  email?: string;
+  address?: string;
+  guardianName?: string;
+  guardianContact?: string;
+  homeAddress?: PsgcAddress;
+  fatherContactNumber?: string;
+  motherContactNumber?: string;
 }
 
 export interface EnrollmentRequirement {
@@ -77,12 +154,19 @@ export interface Enrollment {
   requirements: EnrollmentRequirement[] | null;
   // Only populated on GET /enrollments list rows (not detail/me/child payloads).
   pendingPaymentsCount?: number;
+  // Populated on GET /enrollments/{id} (detail + print pages).
+  studentNumber?: string | null;
+  lrn?: string | null;
+  learnerInfo?: EnrollmentLearnerInfo | null;
 }
 
 export interface CreateEnrollmentRequest {
   studentId: string;
   schoolYear: string;
   gradeLevel: string;
+  learnerType?: string | null;
+  track?: string | null;
+  strand?: string | null;
 }
 
 // One status transition of an enrollment (GET /enrollments/{id}/history, ascending).
@@ -211,10 +295,18 @@ export interface ApplicantData {
   guardianContact: string | null;
   guardianRelationship: string | null;
   customFieldValues: Record<string, string | null> | null;
+  lrn: string | null;
+  learner: LearnerProfile;
+  learnerType: string | null;
+  lastGradeLevelCompleted: string | null;
+  lastSchoolYearCompleted: string | null;
+  lastSchoolId: string | null;
+  track: string | null;
+  strand: string | null;
 }
 
 export type FormFieldType = 'Text' | 'TextArea' | 'Number' | 'Date' | 'Checkbox' | 'Dropdown';
-export type FormFieldSection = 'Parent' | 'Student' | 'Enrollment' | 'Guardian';
+export type FormFieldSection = 'Parent' | 'Student' | 'Enrollment' | 'Guardian' | 'Family';
 export type FormFieldAppliesTo = 'Both' | 'ParentMode' | 'StudentMode';
 
 export interface Tenant {
@@ -384,6 +476,9 @@ export interface ApplicationDetailDto {
   parentEmail: string | null;
   parentContactNumber: string | null;
   customFieldValues: Record<string, string | null> | null;
+  lrn?: string | null;
+  learner?: LearnerProfile | null;
+  enrollmentInfo?: EnrollmentLearnerInfo | null;
 }
 
 export interface ParentPayRequest {
@@ -469,6 +564,7 @@ export interface RequirementTemplate {
   gradeLevel: string | null;
   isActive: boolean;
   displayOrder: number;
+  keepOnFile: boolean;
 }
 
 // Cashier's collections journal (GET /reports/collections). Rows ascending by
@@ -519,6 +615,7 @@ export interface EnrollmentRegisterRow {
   enrollmentId: string;
   studentId: string;
   lrn: string | null;
+  studentNumber: string;
   studentName: string;
   gradeLevel: string;
   sectionName: string | null;
@@ -551,7 +648,7 @@ export interface EnrollmentRegisterFilters {
 // Class list for one section (GET /sections/{id}/roster); cancelled enrollments excluded.
 export interface SectionRoster {
   section: { id: string; name: string; gradeLevel: string; schoolYear: string; capacity: number; currentCount: number; adviser: string | null };
-  students: { studentId: string; enrollmentId: string; lrn: string | null; name: string; gender: string | null; status: string }[];
+  students: { studentId: string; enrollmentId: string; lrn: string | null; studentNumber: string; name: string; gender: string | null; status: string }[];
 }
 
 export interface DashboardStats {

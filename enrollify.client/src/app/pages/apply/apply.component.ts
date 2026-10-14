@@ -7,6 +7,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { SchoolYearService } from '../../core/services/school-year.service';
 import { ApplicantData, ApplicationFormField, FormFieldSection, PublicTenant, SubmitApplicationRequest } from '../../core/models';
 import { GRADE_LEVELS } from '../../core/constants';
+import { emptyLearnerProfile } from '../../core/learner';
 import { formatApiError } from '../../core/utils/format-api-error';
 
 type ApplyMode = 'Parent' | 'Student';
@@ -681,7 +682,9 @@ export class ApplyComponent {
       gradeLevel: '', schoolYear: this.activeSchoolYear,
       previousSchool: null, previousSchoolAddress: null,
       guardianName: null, guardianContact: null, guardianRelationship: null,
-      customFieldValues: null
+      customFieldValues: null,
+      lrn: null, learner: emptyLearnerProfile(), learnerType: 'New', lastGradeLevelCompleted: null,
+      lastSchoolYearCompleted: null, lastSchoolId: null, track: null, strand: null
     };
   }
 }

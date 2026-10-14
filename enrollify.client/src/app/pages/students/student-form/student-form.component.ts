@@ -100,7 +100,7 @@ export class StudentFormComponent implements OnInit {
   form: CreateStudentRequest = {
     lrn: '', firstName: '', middleName: '', lastName: '',
     birthDate: '', gender: null, address: '',
-    contactNumber: null, email: null, guardianName: null, guardianContact: null
+    contactNumber: null, email: null, guardianName: null, guardianContact: null, profile: null
   };
 
   constructor(private api: ApiService, private route: ActivatedRoute, private router: Router) {}
@@ -114,7 +114,7 @@ export class StudentFormComponent implements OnInit {
         this.form = {
           lrn: s.lrn, firstName: s.firstName, middleName: s.middleName, lastName: s.lastName,
           birthDate: s.birthDate.substring(0, 10), gender: s.gender, address: s.address,
-          contactNumber: s.contactNumber, email: s.email, guardianName: s.guardianName, guardianContact: s.guardianContact
+          contactNumber: s.contactNumber, email: s.email, guardianName: s.guardianName, guardianContact: s.guardianContact, profile: null
         };
       });
     }

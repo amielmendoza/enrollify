@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Student, CreateStudentRequest, Enrollment, CreateEnrollmentRequest, EnrollmentRequirement, EnrollmentHistoryItem,
-  EnrollmentLedger,
+  EnrollmentLedger, EnrollmentLearnerInfo, ShsStrand, ProfileSelfUpdate,
   Section, Fee, FeeLine, Payment, BalanceInfo, PagedResult, WorkflowDefinition,
   SubmitApplicationRequest, ApplicationListDto, ApplicationDetailDto, ApplicationStatusDto,
   ParentPayRequest, StudentPayRequest, ParentChild, MyPaymentsResponse, DashboardStats, CollectionsReport, SchoolYear, PaymentTerm, RequirementTemplate,
@@ -23,11 +23,18 @@ export class ApiService {
 
   // Students. includeInactive is for the admin management list only — pickers and
   // searches stay active-only, which the default (omitted param) preserves.
-  getStudents(search?: string, page = 1, pageSize = 20, includeInactive = false): Observable<PagedResult<Student>> {
+  getStudents(search?: string, page = 1, pageSize = 20, includeInactive = false,
+              flags: { missingLrn?: boolean; lrnNeedsReview?: boolean } = {}): Observable<PagedResult<Student>> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (search) params = params.set('search', search);
     if (includeInactive) params = params.set('includeInactive', true);
+    if (flags.missingLrn) params = params.set('missingLrn', true);
+    if (flags.lrnNeedsReview) params = params.set('lrnNeedsReview', true);
     return this.http.get<PagedResult<Student>>(`${this.baseUrl}/students`, { params });
+  }
+
+  confirmLrn(studentId: string): Observable<Student> {
+    return this.http.post<Student>(`${this.baseUrl}/students/${studentId}/confirm-lrn`, {});
   }
 
   getStudent(id: string): Observable<Student> {
@@ -61,6 +68,10 @@ export class ApiService {
     return this.http.get<Enrollment>(`${this.baseUrl}/enrollments/${id}`);
   }
 
+  updateEnrollmentLearnerInfo(id: string, info: EnrollmentLearnerInfo): Observable<EnrollmentLearnerInfo> {
+    return this.http.put<EnrollmentLearnerInfo>(`${this.baseUrl}/enrollments/${id}/learner-info`, info);
+  }
+
   createEnrollment(data: CreateEnrollmentRequest): Observable<Enrollment> {
     return this.http.post<Enrollment>(`${this.baseUrl}/enrollments`, data);
   }
@@ -85,8 +96,8 @@ export class ApiService {
 
   // Bulk year-rollover: Draft enrollments for every Enrolled student of the source year,
   // promoted one grade. Grade 12 and already-enrolled students are skipped server-side.
-  bulkReenroll(fromSchoolYear: string, toSchoolYear: string): Observable<{ created: number; skippedExisting: number; skippedGraduates: number }> {
-    return this.http.post<{ created: number; skippedExisting: number; skippedGraduates: number }>(
+  bulkReenroll(fromSchoolYear: string, toSchoolYear: string): Observable<{ created: number; skippedExisting: number; skippedGraduates: number; needsStrand: number }> {
+    return this.http.post<{ created: number; skippedExisting: number; skippedGraduates: number; needsStrand: number }>(
       `${this.baseUrl}/enrollments/bulk-reenroll`, { fromSchoolYear, toSchoolYear });
   }
 
@@ -186,7 +197,7 @@ export class ApiService {
     return this.http.get<Student>(`${this.baseUrl}/students/me`);
   }
 
-  updateMyProfile(data: { contactNumber?: string; email?: string; address?: string; guardianName?: string; guardianContact?: string }): Observable<Student> {
+  updateMyProfile(data: ProfileSelfUpdate): Observable<Student> {
     return this.http.put<Student>(`${this.baseUrl}/students/me`, data);
   }
 
@@ -194,8 +205,9 @@ export class ApiService {
     return this.http.get<Enrollment[]>(`${this.baseUrl}/enrollments/me`);
   }
 
-  requestEnrollment(): Observable<Enrollment> {
-    return this.http.post<Enrollment>(`${this.baseUrl}/enrollments/request`, {});
+  // Optional SHS strand chosen when moving up into Grade 11; omitted otherwise.
+  requestEnrollment(strand?: { track: string; strand: string } | null): Observable<Enrollment> {
+    return this.http.post<Enrollment>(`${this.baseUrl}/enrollments/request`, strand ?? {});
   }
 
   submitEnrollment(enrollmentId: string): Observable<Enrollment> {
@@ -250,7 +262,7 @@ export class ApiService {
     return this.http.get<Student>(`${this.baseUrl}/parent/children/${studentId}/profile`);
   }
 
-  updateChildProfile(studentId: string, data: { contactNumber?: string; email?: string; address?: string; guardianName?: string; guardianContact?: string }): Observable<Student> {
+  updateChildProfile(studentId: string, data: ProfileSelfUpdate): Observable<Student> {
     return this.http.put<Student>(`${this.baseUrl}/parent/children/${studentId}/profile`, data);
   }
 
@@ -301,8 +313,8 @@ export class ApiService {
   }
 
   // Parent self-service for a specific child
-  requestEnrollmentForChild(studentId: string): Observable<Enrollment> {
-    return this.http.post<Enrollment>(`${this.baseUrl}/parent/children/${studentId}/enrollments/request`, {});
+  requestEnrollmentForChild(studentId: string, strand?: { track: string; strand: string } | null): Observable<Enrollment> {
+    return this.http.post<Enrollment>(`${this.baseUrl}/parent/children/${studentId}/enrollments/request`, strand ?? {});
   }
 
   submitParentPayment(studentId: string, data: ParentPayRequest): Observable<Payment> {
@@ -345,16 +357,30 @@ export class ApiService {
     return this.http.get<RequirementTemplate[]>(`${this.baseUrl}/requirementtemplates`);
   }
 
-  createRequirementTemplate(data: { documentName: string; gradeLevel: string | null; displayOrder: number }): Observable<RequirementTemplate> {
+  createRequirementTemplate(data: { documentName: string; gradeLevel: string | null; displayOrder: number; keepOnFile: boolean }): Observable<RequirementTemplate> {
     return this.http.post<RequirementTemplate>(`${this.baseUrl}/requirementtemplates`, data);
   }
 
-  updateRequirementTemplate(id: string, data: { documentName: string; gradeLevel: string | null; isActive: boolean; displayOrder: number }): Observable<RequirementTemplate> {
+  updateRequirementTemplate(id: string, data: { documentName: string; gradeLevel: string | null; isActive: boolean; displayOrder: number; keepOnFile: boolean }): Observable<RequirementTemplate> {
     return this.http.put<RequirementTemplate>(`${this.baseUrl}/requirementtemplates/${id}`, data);
   }
 
   deleteRequirementTemplate(id: string): Observable<any> {
     return this.http.delete(`${this.baseUrl}/requirementtemplates/${id}`);
+  }
+
+  // SHS strands (tenant catalog). Inactive rows are returned to staff only.
+  getShsStrands(includeInactive = false): Observable<ShsStrand[]> {
+    const params = includeInactive ? new HttpParams().set('includeInactive', true) : undefined;
+    return this.http.get<ShsStrand[]>(`${this.baseUrl}/shs-strands`, { params });
+  }
+
+  createShsStrand(data: { track: string; strand: string; displayOrder: number }): Observable<ShsStrand> {
+    return this.http.post<ShsStrand>(`${this.baseUrl}/shs-strands`, data);
+  }
+
+  updateShsStrand(id: string, data: { track: string; strand: string; isActive: boolean; displayOrder: number }): Observable<ShsStrand> {
+    return this.http.put<ShsStrand>(`${this.baseUrl}/shs-strands/${id}`, data);
   }
 
   selectChildPaymentPlan(studentId: string, plan: string): Observable<any> {
@@ -568,6 +594,10 @@ export class ApiService {
   // Anonymous school-year list for the public /apply form (the active year drives the default).
   getSchoolSchoolYears(slug: string): Observable<SchoolYear[]> {
     return this.http.get<SchoolYear[]>(`${this.baseUrl}/schools/${slug}/school-years`);
+  }
+
+  getSchoolShsStrands(slug: string): Observable<ShsStrand[]> {
+    return this.http.get<ShsStrand[]>(`${this.baseUrl}/schools/${slug}/shs-strands`);
   }
 
   applyToSchool(slug: string, data: SubmitApplicationRequest): Observable<ApplicationDetailDto[]> {

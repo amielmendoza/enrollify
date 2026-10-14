@@ -8,6 +8,7 @@ import { SchoolYearService } from '../../core/services/school-year.service';
 import { ApplicantData, ApplicationFormField, FormFieldSection, PublicTenant, SubmitApplicationRequest } from '../../core/models';
 import { GRADE_LEVELS } from '../../core/constants';
 import { emptyLearnerProfile } from '../../core/learner';
+import { DynamicFieldComponent } from '../../core/components/dynamic-field.component';
 import { formatApiError } from '../../core/utils/format-api-error';
 
 type ApplyMode = 'Parent' | 'Student';
@@ -15,7 +16,7 @@ type ApplyMode = 'Parent' | 'Student';
 @Component({
   selector: 'app-apply',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, DynamicFieldComponent],
   template: `
     <div class="folio min-h-screen px-6 py-8 sm:py-12">
       <div class="mx-auto max-w-2xl">
@@ -160,39 +161,8 @@ type ApplyMode = 'Parent' | 'Student';
                   <!-- Parent-section custom fields (admin-defined) -->
                   @for (cf of customFieldsFor('Parent'); track cf.id) {
                     <div class="mt-4">
-                      <label class="form-label">{{ cf.label }} <span *ngIf="cf.isRequired">*</span></label>
-                      @switch (cf.fieldType) {
-                        @case ('TextArea') {
-                          <textarea [ngModel]="parentCustomValue(cf.fieldKey)" (ngModelChange)="setParentCustomValue(cf.fieldKey, $event)"
-                                    [name]="'parent_' + cf.fieldKey" [required]="cf.isRequired" rows="3" class="form-input"></textarea>
-                        }
-                        @case ('Number') {
-                          <input type="number" [ngModel]="parentCustomValue(cf.fieldKey)" (ngModelChange)="setParentCustomValue(cf.fieldKey, $event)"
-                                 [name]="'parent_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" />
-                        }
-                        @case ('Date') {
-                          <input type="date" [ngModel]="parentCustomValue(cf.fieldKey)" (ngModelChange)="setParentCustomValue(cf.fieldKey, $event)"
-                                 [name]="'parent_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" />
-                        }
-                        @case ('Checkbox') {
-                          <label class="inline-flex items-center gap-2 mt-1 text-sm text-gray-700">
-                            <input type="checkbox" [ngModel]="parentCustomCheckboxValue(cf.fieldKey)" (ngModelChange)="setParentCustomCheckboxValue(cf.fieldKey, $event)" [name]="'parent_' + cf.fieldKey" />
-                            Yes
-                          </label>
-                        }
-                        @case ('Dropdown') {
-                          <select [ngModel]="parentCustomValue(cf.fieldKey)" (ngModelChange)="setParentCustomValue(cf.fieldKey, $event)"
-                                  [name]="'parent_' + cf.fieldKey" [required]="cf.isRequired" class="form-input">
-                            <option value="">Select</option>
-                            @for (opt of customDropdownOptions(cf); track opt) { <option [value]="opt">{{ opt }}</option> }
-                          </select>
-                        }
-                        @default {
-                          <input type="text" [ngModel]="parentCustomValue(cf.fieldKey)" (ngModelChange)="setParentCustomValue(cf.fieldKey, $event)"
-                                 [name]="'parent_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" />
-                        }
-                      }
-                      @if (cf.helpText) { <p class="mt-1 text-xs text-gray-400">{{ cf.helpText }}</p> }
+                      <app-dynamic-field [field]="cf" [name]="'parent_' + cf.fieldKey"
+                                         [value]="parentCustomValue(cf.fieldKey)" (valueChange)="setParentCustomValue(cf.fieldKey, $event)" />
                     </div>
                   }
                 </div>
@@ -274,16 +244,8 @@ type ApplyMode = 'Parent' | 'Student';
                   <!-- Student-section custom fields (admin-defined) -->
                   @for (cf of customFieldsFor('Student'); track cf.id) {
                     <div class="mt-4">
-                      <label class="form-label">{{ cf.label }} <span *ngIf="cf.isRequired">*</span></label>
-                      @switch (cf.fieldType) {
-                        @case ('TextArea') { <textarea [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" rows="3" class="form-input"></textarea> }
-                        @case ('Number')   { <input type="number" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                        @case ('Date')     { <input type="date" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                        @case ('Checkbox') { <label class="inline-flex items-center gap-2 mt-1 text-sm text-gray-700"><input type="checkbox" [ngModel]="customCheckboxValue(i, cf.fieldKey)" (ngModelChange)="setCustomCheckboxValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" />Yes</label> }
-                        @case ('Dropdown') { <select [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input"><option value="">Select</option>@for (opt of customDropdownOptions(cf); track opt) { <option [value]="opt">{{ opt }}</option> }</select> }
-                        @default           { <input type="text" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                      }
-                      @if (cf.helpText) { <p class="mt-1 text-xs text-gray-400">{{ cf.helpText }}</p> }
+                      <app-dynamic-field [field]="cf" [name]="'cf_' + i + '_' + cf.fieldKey"
+                                         [value]="customValue(i, cf.fieldKey)" (valueChange)="setCustomValue(i, cf.fieldKey, $event)" />
                     </div>
                   }
 
@@ -320,16 +282,8 @@ type ApplyMode = 'Parent' | 'Student';
                   <!-- Enrollment-section custom fields -->
                   @for (cf of customFieldsFor('Enrollment'); track cf.id) {
                     <div class="mt-4">
-                      <label class="form-label">{{ cf.label }} <span *ngIf="cf.isRequired">*</span></label>
-                      @switch (cf.fieldType) {
-                        @case ('TextArea') { <textarea [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" rows="3" class="form-input"></textarea> }
-                        @case ('Number')   { <input type="number" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                        @case ('Date')     { <input type="date" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                        @case ('Checkbox') { <label class="inline-flex items-center gap-2 mt-1 text-sm text-gray-700"><input type="checkbox" [ngModel]="customCheckboxValue(i, cf.fieldKey)" (ngModelChange)="setCustomCheckboxValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" />Yes</label> }
-                        @case ('Dropdown') { <select [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input"><option value="">Select</option>@for (opt of customDropdownOptions(cf); track opt) { <option [value]="opt">{{ opt }}</option> }</select> }
-                        @default           { <input type="text" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                      }
-                      @if (cf.helpText) { <p class="mt-1 text-xs text-gray-400">{{ cf.helpText }}</p> }
+                      <app-dynamic-field [field]="cf" [name]="'cf_' + i + '_' + cf.fieldKey"
+                                         [value]="customValue(i, cf.fieldKey)" (valueChange)="setCustomValue(i, cf.fieldKey, $event)" />
                     </div>
                   }
 
@@ -363,16 +317,8 @@ type ApplyMode = 'Parent' | 'Student';
                     <!-- Guardian-section custom fields -->
                     @for (cf of customFieldsFor('Guardian'); track cf.id) {
                       <div class="mt-4">
-                        <label class="form-label">{{ cf.label }} <span *ngIf="cf.isRequired">*</span></label>
-                        @switch (cf.fieldType) {
-                          @case ('TextArea') { <textarea [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" rows="3" class="form-input"></textarea> }
-                          @case ('Number')   { <input type="number" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                          @case ('Date')     { <input type="date" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                          @case ('Checkbox') { <label class="inline-flex items-center gap-2 mt-1 text-sm text-gray-700"><input type="checkbox" [ngModel]="customCheckboxValue(i, cf.fieldKey)" (ngModelChange)="setCustomCheckboxValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" />Yes</label> }
-                          @case ('Dropdown') { <select [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input"><option value="">Select</option>@for (opt of customDropdownOptions(cf); track opt) { <option [value]="opt">{{ opt }}</option> }</select> }
-                          @default           { <input type="text" [ngModel]="customValue(i, cf.fieldKey)" (ngModelChange)="setCustomValue(i, cf.fieldKey, $event)" [name]="'cf_' + i + '_' + cf.fieldKey" [required]="cf.isRequired" class="form-input" /> }
-                        }
-                        @if (cf.helpText) { <p class="mt-1 text-xs text-gray-400">{{ cf.helpText }}</p> }
+                        <app-dynamic-field [field]="cf" [name]="'cf_' + i + '_' + cf.fieldKey"
+                                           [value]="customValue(i, cf.fieldKey)" (valueChange)="setCustomValue(i, cf.fieldKey, $event)" />
                       </div>
                     }
                   } @else {
@@ -536,14 +482,6 @@ export class ApplyComponent {
       .sort((a, b) => a.displayOrder - b.displayOrder);
   }
 
-  customDropdownOptions(field: ApplicationFormField): string[] {
-    if (!field.options) return [];
-    try {
-      const parsed = JSON.parse(field.options);
-      return Array.isArray(parsed) ? parsed.map(String) : [];
-    } catch { return []; }
-  }
-
   private appliesToCurrentMode(applies: string): boolean {
     const effectiveMode = this.isParentLoggedIn() ? 'Parent' : this.mode();
     if (applies === 'Both') return true;
@@ -567,14 +505,6 @@ export class ApplyComponent {
     }));
   }
 
-  customCheckboxValue(applicantIndex: number, key: string): boolean {
-    return this.customValue(applicantIndex, key) === 'true';
-  }
-
-  setCustomCheckboxValue(applicantIndex: number, key: string, value: boolean) {
-    this.setCustomValue(applicantIndex, key, value ? 'true' : 'false');
-  }
-
   parentCustomValue(key: string): string {
     return this.parentCustomValues[key] ?? '';
   }
@@ -583,13 +513,6 @@ export class ApplyComponent {
     this.parentCustomValues = { ...this.parentCustomValues, [key]: value };
   }
 
-  parentCustomCheckboxValue(key: string): boolean {
-    return this.parentCustomValue(key) === 'true';
-  }
-
-  setParentCustomCheckboxValue(key: string, value: boolean) {
-    this.setParentCustomValue(key, value ? 'true' : 'false');
-  }
 
   setMode(m: ApplyMode) {
     this.mode.set(m);

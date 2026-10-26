@@ -57,7 +57,15 @@ public class StudentRequestEnrollmentCommandHandler : IRequestHandler<StudentReq
 
         return new EnrollmentDto(enrollment.Id, enrollment.StudentId, student.FullName,
             enrollment.SchoolYear, enrollment.GradeLevel, null, null,
-            enrollment.Status, enrollment.Remarks, enrollment.PaymentPlan, enrollment.CreatedAt, null);
+            enrollment.Status, enrollment.Remarks, enrollment.PaymentPlan, enrollment.CreatedAt, null,
+            IsRepeater: enrollment.IsRepeater,
+            FirstAttendanceDate: enrollment.FirstAttendanceDate,
+            WithdrawalType: enrollment.WithdrawalType,
+            WithdrawalDate: enrollment.WithdrawalDate,
+            WithdrawalReason: enrollment.WithdrawalReason,
+            TransferredToSchool: enrollment.TransferredToSchool,
+            LisEncodedAt: enrollment.LisEncodedAt,
+            LisEncodedBy: enrollment.LisEncodedBy);
     }
 }
 
@@ -100,7 +108,15 @@ public class StudentSubmitEnrollmentCommandHandler : IRequestHandler<StudentSubm
         return new EnrollmentDto(enrollment.Id, enrollment.StudentId, enrollment.Student.FullName,
             enrollment.SchoolYear, enrollment.GradeLevel, enrollment.SectionId, enrollment.Section?.Name,
             enrollment.Status, enrollment.Remarks, enrollment.PaymentPlan, enrollment.CreatedAt,
-            enrollment.Requirements.Select(r => new RequirementDto(r.Id, r.DocumentName, r.IsSubmitted, r.FileName, r.Notes, r.IsVerified, r.VerifiedBy)).ToList());
+            enrollment.Requirements.Select(r => new RequirementDto(r.Id, r.DocumentName, r.IsSubmitted, r.FileName, r.Notes, r.IsVerified, r.VerifiedBy)).ToList(),
+            IsRepeater: enrollment.IsRepeater,
+            FirstAttendanceDate: enrollment.FirstAttendanceDate,
+            WithdrawalType: enrollment.WithdrawalType,
+            WithdrawalDate: enrollment.WithdrawalDate,
+            WithdrawalReason: enrollment.WithdrawalReason,
+            TransferredToSchool: enrollment.TransferredToSchool,
+            LisEncodedAt: enrollment.LisEncodedAt,
+            LisEncodedBy: enrollment.LisEncodedBy);
     }
 }
 

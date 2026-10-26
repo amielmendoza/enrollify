@@ -114,6 +114,14 @@ public class EnrollmentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("{id:guid}/lis-details")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> UpdateLisDetails(Guid id, [FromBody] UpdateLisDetailsRequest request)
+    {
+        var result = await _sender.Send(new UpdateEnrollmentLisDetailsCommand(id, request.IsRepeater, request.FirstAttendanceDate));
+        return Ok(result);
+    }
+
     [HttpPost("{id:guid}/move-step")]
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> MoveStep(Guid id, [FromBody] MoveEnrollmentStepRequest request)

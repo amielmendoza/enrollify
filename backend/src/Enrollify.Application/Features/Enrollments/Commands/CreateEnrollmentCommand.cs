@@ -80,6 +80,14 @@ public class CreateEnrollmentCommandHandler : IRequestHandler<CreateEnrollmentCo
 
         return new EnrollmentDto(enrollment.Id, enrollment.StudentId, student.FullName,
             enrollment.SchoolYear, enrollment.GradeLevel, null, null,
-            enrollment.Status, enrollment.Remarks, enrollment.PaymentPlan, enrollment.CreatedAt, null);
+            enrollment.Status, enrollment.Remarks, enrollment.PaymentPlan, enrollment.CreatedAt, null,
+            IsRepeater: enrollment.IsRepeater,
+            FirstAttendanceDate: enrollment.FirstAttendanceDate,
+            WithdrawalType: enrollment.WithdrawalType,
+            WithdrawalDate: enrollment.WithdrawalDate,
+            WithdrawalReason: enrollment.WithdrawalReason,
+            TransferredToSchool: enrollment.TransferredToSchool,
+            LisEncodedAt: enrollment.LisEncodedAt,
+            LisEncodedBy: enrollment.LisEncodedBy);
     }
 }

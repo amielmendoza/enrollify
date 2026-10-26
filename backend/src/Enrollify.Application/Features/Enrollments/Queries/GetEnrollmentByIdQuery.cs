@@ -32,6 +32,14 @@ public class GetEnrollmentByIdQueryHandler : IRequestHandler<GetEnrollmentByIdQu
             e.Requirements.Select(r => new RequirementDto(r.Id, r.DocumentName, r.IsSubmitted, r.FileName, r.Notes, r.IsVerified, r.VerifiedBy, r.VerifiedAt, r.ReviewNotes)).ToList(),
             StudentNumber: e.Student.StudentNumber,
             Lrn: e.Student.LRN,
-            LearnerInfo: EnrollmentLearnerInfoMapping.ToDto(e));
+            LearnerInfo: EnrollmentLearnerInfoMapping.ToDto(e),
+            IsRepeater: e.IsRepeater,
+            FirstAttendanceDate: e.FirstAttendanceDate,
+            WithdrawalType: e.WithdrawalType,
+            WithdrawalDate: e.WithdrawalDate,
+            WithdrawalReason: e.WithdrawalReason,
+            TransferredToSchool: e.TransferredToSchool,
+            LisEncodedAt: e.LisEncodedAt,
+            LisEncodedBy: e.LisEncodedBy);
     }
 }

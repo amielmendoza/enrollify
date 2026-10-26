@@ -52,5 +52,13 @@ public class SubmitEnrollmentCommandHandler : IRequestHandler<SubmitEnrollmentCo
 
     private static EnrollmentDto MapToDto(Enrollment e) => new(e.Id, e.StudentId, e.Student.FullName,
         e.SchoolYear, e.GradeLevel, e.SectionId, e.Section?.Name, e.Status, e.Remarks, e.PaymentPlan, e.CreatedAt,
-        e.Requirements.Select(r => new RequirementDto(r.Id, r.DocumentName, r.IsSubmitted, r.FileName, r.Notes, r.IsVerified, r.VerifiedBy)).ToList());
+        e.Requirements.Select(r => new RequirementDto(r.Id, r.DocumentName, r.IsSubmitted, r.FileName, r.Notes, r.IsVerified, r.VerifiedBy)).ToList(),
+        IsRepeater: e.IsRepeater,
+        FirstAttendanceDate: e.FirstAttendanceDate,
+        WithdrawalType: e.WithdrawalType,
+        WithdrawalDate: e.WithdrawalDate,
+        WithdrawalReason: e.WithdrawalReason,
+        TransferredToSchool: e.TransferredToSchool,
+        LisEncodedAt: e.LisEncodedAt,
+        LisEncodedBy: e.LisEncodedBy);
 }

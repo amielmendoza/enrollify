@@ -19,7 +19,15 @@ public record EnrollmentDto(
     int PendingPaymentsCount = 0,
     string? StudentNumber = null,
     string? Lrn = null,
-    EnrollmentLearnerInfoDto? LearnerInfo = null);
+    EnrollmentLearnerInfoDto? LearnerInfo = null,
+    bool IsRepeater = false,
+    DateTime? FirstAttendanceDate = null,
+    string? WithdrawalType = null,
+    DateTime? WithdrawalDate = null,
+    string? WithdrawalReason = null,
+    string? TransferredToSchool = null,
+    DateTime? LisEncodedAt = null,
+    string? LisEncodedBy = null);
 
 public record RequirementDto(
     Guid Id,
@@ -80,6 +88,8 @@ public record CancelEnrollmentRequest(
 
 public record SendBackEnrollmentRequest(
     string Reason);
+
+public record UpdateLisDetailsRequest(bool IsRepeater, DateTime? FirstAttendanceDate);
 
 public record AssignSectionRequest(
     Guid SectionId);

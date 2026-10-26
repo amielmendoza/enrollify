@@ -69,4 +69,21 @@ public class ReportsController : ControllerBase
         var result = await _sender.Send(new GetLisWorklistQuery(tenantId, schoolYear, sectionId, noSection));
         return Ok(result);
     }
+
+    [HttpGet("deped/quick-count")]
+    public async Task<IActionResult> GetQuickCount([FromQuery] string? schoolYear, [FromQuery] DateOnly? asOf)
+    {
+        var tenantId = Guid.Parse(User.FindFirst("TenantId")!.Value);
+        var result = await _sender.Send(new GetQuickCountQuery(tenantId, schoolYear, asOf));
+        return Ok(result);
+    }
+
+    [HttpGet("deped/quick-count/export")]
+    public async Task<IActionResult> ExportQuickCount([FromQuery] string? schoolYear, [FromQuery] DateOnly? asOf)
+    {
+        var tenantId = Guid.Parse(User.FindFirst("TenantId")!.Value);
+        var result = await _sender.Send(new GetQuickCountExportQuery(tenantId, schoolYear, asOf));
+        var csv = QuickCountCsvBuilder.Build(result);
+        return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv", $"quick-count_{result.AsOf:yyyyMMdd}.csv");
+    }
 }

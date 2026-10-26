@@ -11,7 +11,9 @@ import {
   ApplicationFormField, EnrollmentRegister, EnrollmentRegisterFilters, SectionRoster,
   Tenant, PublicTenant, CreateTenantRequest, UpdateTenantRequest,
   TenantUser, CreateTenantUserRequest, UpdateTenantUserRequest,
-  Registrar, CreateRegistrarRequest, UpdateRegistrarRequest
+  Registrar, CreateRegistrarRequest, UpdateRegistrarRequest,
+  SchoolProfile, UpdateSchoolProfileRequest, UpdateEnrollmentLisDetailsRequest, MarkWithdrawnRequest,
+  SetLisEncodedRequest, LisWorklist, QuickCount, Sf1
 } from '../models';
 import { HttpHeaders } from '@angular/common/http';
 
@@ -495,6 +497,68 @@ export class ApiService {
     if (f.status) params = params.set('status', f.status);
     if (f.sectionId) params = params.set('sectionId', f.sectionId);
     if (f.includeCancelled) params = params.set('includeCancelled', true);
+    return params;
+  }
+
+  // ---- DepEd reports / LIS ----
+  getSchoolProfile(): Observable<SchoolProfile> {
+    return this.http.get<SchoolProfile>(`${this.baseUrl}/school-profile`);
+  }
+
+  updateSchoolProfile(body: UpdateSchoolProfileRequest): Observable<SchoolProfile> {
+    return this.http.put<SchoolProfile>(`${this.baseUrl}/school-profile`, body);
+  }
+
+  updateEnrollmentLisDetails(id: string, body: UpdateEnrollmentLisDetailsRequest): Observable<Enrollment> {
+    return this.http.put<Enrollment>(`${this.baseUrl}/enrollments/${id}/lis-details`, body);
+  }
+
+  markEnrollmentWithdrawn(id: string, body: MarkWithdrawnRequest): Observable<Enrollment> {
+    return this.http.post<Enrollment>(`${this.baseUrl}/enrollments/${id}/withdrawal`, body);
+  }
+
+  undoEnrollmentWithdrawal(id: string): Observable<Enrollment> {
+    return this.http.delete<Enrollment>(`${this.baseUrl}/enrollments/${id}/withdrawal`);
+  }
+
+  setLisEncoded(body: SetLisEncodedRequest): Observable<{ changed: number }> {
+    return this.http.post<{ changed: number }>(`${this.baseUrl}/enrollments/lis-encoded`, body);
+  }
+
+  getLisWorklist(schoolYear?: string, sectionId?: string, noSection?: boolean): Observable<LisWorklist> {
+    let params = new HttpParams();
+    if (schoolYear) params = params.set('schoolYear', schoolYear);
+    if (sectionId) params = params.set('sectionId', sectionId);
+    if (noSection) params = params.set('noSection', true);
+    return this.http.get<LisWorklist>(`${this.baseUrl}/reports/deped/lis-worklist`, { params });
+  }
+
+  getQuickCount(schoolYear?: string, asOf?: string): Observable<QuickCount> {
+    return this.http.get<QuickCount>(`${this.baseUrl}/reports/deped/quick-count`, { params: this.quickCountParams(schoolYear, asOf) });
+  }
+
+  exportQuickCount(schoolYear?: string, asOf?: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/reports/deped/quick-count/export`, { params: this.quickCountParams(schoolYear, asOf), responseType: 'blob' });
+  }
+
+  getSf1(sectionId: string, schoolYear?: string): Observable<Sf1> {
+    return this.http.get<Sf1>(`${this.baseUrl}/reports/deped/sf1`, { params: this.sf1Params(sectionId, schoolYear) });
+  }
+
+  exportSf1(sectionId: string, schoolYear?: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/reports/deped/sf1/export`, { params: this.sf1Params(sectionId, schoolYear), responseType: 'blob' });
+  }
+
+  private quickCountParams(schoolYear?: string, asOf?: string): HttpParams {
+    let params = new HttpParams();
+    if (schoolYear) params = params.set('schoolYear', schoolYear);
+    if (asOf) params = params.set('asOf', asOf);
+    return params;
+  }
+
+  private sf1Params(sectionId: string, schoolYear?: string): HttpParams {
+    let params = new HttpParams().set('sectionId', sectionId);
+    if (schoolYear) params = params.set('schoolYear', schoolYear);
     return params;
   }
 

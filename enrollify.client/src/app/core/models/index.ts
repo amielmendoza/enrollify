@@ -158,6 +158,15 @@ export interface Enrollment {
   studentNumber?: string | null;
   lrn?: string | null;
   learnerInfo?: EnrollmentLearnerInfo | null;
+  // DepEd LIS tracking (lis-details / withdrawal / LIS-encoded endpoints).
+  isRepeater?: boolean;
+  firstAttendanceDate?: string | null;
+  withdrawalType?: string | null;
+  withdrawalDate?: string | null;
+  withdrawalReason?: string | null;
+  transferredToSchool?: string | null;
+  lisEncodedAt?: string | null;
+  lisEncodedBy?: string | null;
 }
 
 export interface CreateEnrollmentRequest {
@@ -662,4 +671,163 @@ export interface DashboardStats {
   totalSections: number;
   totalRevenue: number;
   pendingPayments: number;
+}
+
+// ---- DepEd reports ----
+
+// Editable on PUT /school-profile (all but schoolName).
+export interface SchoolProfile {
+  schoolName: string;
+  depEdSchoolId?: string | null;
+  depEdRegionCode?: string | null;
+  depEdRegionName?: string | null;
+  depEdDivision?: string | null;
+  depEdDistrict?: string | null;
+  schoolHeadName?: string | null;
+}
+
+export interface UpdateSchoolProfileRequest {
+  depEdSchoolId?: string | null;
+  depEdRegionCode?: string | null;
+  depEdRegionName?: string | null;
+  depEdDivision?: string | null;
+  depEdDistrict?: string | null;
+  schoolHeadName?: string | null;
+}
+
+export interface SchoolHeader {
+  schoolName?: string | null;
+  schoolId?: string | null;
+  regionName?: string | null;
+  division?: string | null;
+  district?: string | null;
+  schoolYear: string;
+}
+
+export interface UpdateEnrollmentLisDetailsRequest {
+  isRepeater: boolean;
+  firstAttendanceDate: string | null;
+}
+
+export interface MarkWithdrawnRequest {
+  type: string;
+  date: string; // yyyy-MM-dd
+  reason?: string | null;
+  transferredToSchool?: string | null; // null (not "") for Dropped
+}
+
+export interface SetLisEncodedRequest {
+  enrollmentIds: string[];
+  encoded: boolean;
+}
+
+// LIS worklist (GET /reports/deped/lis-worklist)
+export interface WorklistSection {
+  sectionId: string | null; // null = learners with no section
+  gradeLevel: string;
+  sectionName: string;
+  adviser?: string | null;
+  listed: number;
+  encoded: number;
+  pending: number;
+}
+
+export interface WorklistLearner {
+  enrollmentId: string;
+  studentId: string;
+  lrn?: string | null;
+  lrnNeedsReview: boolean;
+  name: string;
+  sex: string;
+  birthDate?: string | null;
+  learnerType?: string | null;
+  firstAttendance: string;
+  tags: string[];
+  withdrawalType?: string | null;
+  withdrawalDate?: string | null;
+  lisEncodedAt?: string | null;
+  lisEncodedBy?: string | null;
+  fixReasons: string[];
+}
+
+export interface WorklistSectionDetail {
+  sectionId: string | null;
+  gradeLevel: string;
+  sectionName: string;
+  adviser?: string | null;
+  continuing: WorklistLearner[];
+  searchOrRegister: WorklistLearner[];
+}
+
+export interface LisWorklist {
+  header: SchoolHeader;
+  sections: WorklistSection[];
+  selected?: WorklistSectionDetail | null;
+}
+
+// Quick count (GET /reports/deped/quick-count)
+export interface QuickCountRow {
+  gradeLevel: string;
+  male: number;
+  female: number;
+  notSet: number;
+  total: number;
+  maleChange: number;
+  femaleChange: number;
+  notSetChange: number;
+  totalChange: number;
+}
+
+export interface NotSetLearner {
+  enrollmentId: string;
+  studentId: string;
+  name: string;
+  gradeLevel: string;
+}
+
+export interface QuickCount {
+  header: SchoolHeader;
+  asOf: string;
+  rows: QuickCountRow[];
+  total: QuickCountRow;
+  notSetLearners: NotSetLearner[];
+}
+
+// SF1 school register (GET /reports/deped/sf1)
+export interface Sf1Row {
+  lrn?: string | null;
+  name: string;
+  sex: string;
+  birthDate?: string | null;
+  age?: number | null;
+  motherTongue?: string | null;
+  ipGroup?: string | null;
+  religion?: string | null;
+  houseStreet?: string | null;
+  barangay?: string | null;
+  cityMunicipality?: string | null;
+  province?: string | null;
+  fatherName?: string | null;
+  motherMaidenName?: string | null;
+  guardianName?: string | null;
+  guardianRelationship?: string | null;
+  contact?: string | null;
+  remarks?: string | null;
+}
+
+export interface Sf1Header {
+  school: SchoolHeader;
+  gradeLevel: string;
+  sectionName: string;
+  adviser?: string | null;
+  schoolHeadName?: string | null;
+}
+
+export interface Sf1 {
+  header: Sf1Header;
+  learners: Sf1Row[];
+  male: number;
+  female: number;
+  notSet: number;
+  total: number;
 }

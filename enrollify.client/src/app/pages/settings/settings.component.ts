@@ -8,11 +8,12 @@ import { WorkflowDefinition, Fee, Section, SchoolYear, PaymentTerm, RequirementT
 import { GRADE_LEVELS } from '../../core/constants';
 import { formatApiError } from '../../core/utils/format-api-error';
 import { LoadingComponent } from '../../core/components/loading.component';
+import { SchoolProfileSettingsComponent } from './school-profile-settings.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, LoadingComponent],
+  imports: [CommonModule, FormsModule, LoadingComponent, SchoolProfileSettingsComponent],
   template: `
     <div>
       <h1 class="text-2xl font-bold text-gray-900">School Management</h1>
@@ -535,6 +536,10 @@ import { LoadingComponent } from '../../core/components/loading.component';
       }
 
       <!-- SHS Strands Tab -->
+      @if (activeTab === 'school-profile') {
+        <app-school-profile-settings />
+      }
+
       @if (activeTab === 'strands') {
         <div class="mt-6 space-y-6">
           <div class="bg-white rounded-xl border border-[#E2D9C2] p-6">
@@ -1132,6 +1137,7 @@ export class SettingsComponent implements OnInit {
   activeTab = 'school-year';
   tabs = [
     { id: 'school-year', label: 'School Year' },
+    { id: 'school-profile', label: 'School Profile' },
     { id: 'fees', label: 'Fees' },
     { id: 'sections', label: 'Sections' },
     { id: 'payment-terms', label: 'Payment Terms' },

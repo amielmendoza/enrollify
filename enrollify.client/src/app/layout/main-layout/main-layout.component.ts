@@ -128,6 +128,17 @@ import { CommonModule } from '@angular/common';
             </a>
 
             @if (isStaff()) {
+              <p class="folio-eyebrow px-3 mt-6 mb-2">Reports &middot; DepEd</p>
+
+              <a routerLink="/reports/deped/lis-worklist" routerLinkActive="active-nav" class="nav-item" (click)="sidebarOpen.set(false)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span>LIS Worklist</span>
+              </a>
+            }
+
+            @if (isStaff()) {
               <p class="folio-eyebrow px-3 mt-6 mb-2">Management</p>
 
               <a routerLink="/settings" routerLinkActive="active-nav" class="nav-item" (click)="sidebarOpen.set(false)">

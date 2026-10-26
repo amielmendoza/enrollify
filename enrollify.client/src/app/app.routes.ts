@@ -62,6 +62,7 @@ export const routes: Routes = [
       { path: 'admissions', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/admissions/admissions.component').then(m => m.AdmissionsComponent) },
       { path: 'reports/enrollment-register', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/enrollment-register.component').then(m => m.EnrollmentRegisterComponent) },
       { path: 'reports/collections', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/collections.component').then(m => m.CollectionsComponent) },
+      { path: 'reports/deped/lis-worklist', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/deped/lis-worklist.component').then(m => m.LisWorklistComponent) },
       { path: 'settings', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
 
       // Student-self pages

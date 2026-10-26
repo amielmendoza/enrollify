@@ -92,6 +92,7 @@ export interface Student {
   email: string | null;
   guardianName: string | null;
   guardianContact: string | null;
+  guardianRelationship?: string | null;
   fullName: string;
   // Login linkage: the student's own account, and/or the managing parent's.
   userId: string | null;
@@ -112,6 +113,7 @@ export interface CreateStudentRequest {
   email: string | null;
   guardianName: string | null;
   guardianContact: string | null;
+  guardianRelationship?: string | null;
   profile: LearnerProfile | null;
 }
 
@@ -122,6 +124,7 @@ export interface ProfileSelfUpdate {
   address?: string;
   guardianName?: string;
   guardianContact?: string;
+  guardianRelationship?: string;
   homeAddress?: PsgcAddress;
   fatherContactNumber?: string;
   motherContactNumber?: string;

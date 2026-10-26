@@ -57,6 +57,9 @@ export const DISABILITY_TYPES: string[] = [
 
 export const EXTENSION_NAME_SUGGESTIONS: string[] = ['Jr.', 'Sr.', 'II', 'III', 'IV'];
 
+// Suggestions for the guardian "Relationship" field (free text is still allowed).
+export const GUARDIAN_RELATIONSHIP_SUGGESTIONS: string[] = ['Mother', 'Father', 'Grandparent', 'Aunt/Uncle', 'Sibling', 'Other relative', 'Non-relative'];
+
 export function isShsGrade(grade: string | null | undefined): boolean {
   const g = (grade ?? '').trim().toLowerCase();
   return g === 'grade 11' || g === 'grade 12';

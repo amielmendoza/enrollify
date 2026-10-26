@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PsgcAddress, Student } from '../../core/models';
 import { emptyPsgcAddress } from '../../core/learner';
+import { GUARDIAN_RELATIONSHIP_SUGGESTIONS } from '../../core/constants';
 import { PsgcAddressComponent } from '../../core/components/psgc-address.component';
 import { LearnerSummaryComponent } from '../../core/components/learner-summary.component';
 import { formatApiError } from '../../core/utils/format-api-error';
@@ -82,10 +83,15 @@ import { formatApiError } from '../../core/utils/format-api-error';
                     <input id="my-mother-contact" type="text" maxlength="50" [(ngModel)]="editMotherContact" class="form-input" />
                   </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label class="form-label">Guardian Name</label>
                     <input type="text" [(ngModel)]="editGuardianName" class="form-input" />
+                  </div>
+                  <div>
+                    <label class="form-label" for="my-guardian-relationship">Relationship</label>
+                    <input id="my-guardian-relationship" type="text" maxlength="50" list="my-guardian-relationships" [(ngModel)]="editGuardianRelationship" class="form-input" />
+                    <datalist id="my-guardian-relationships">@for (r of guardianRelationships; track r) { <option [value]="r"></option> }</datalist>
                   </div>
                   <div>
                     <label class="form-label">Guardian Contact</label>
@@ -156,6 +162,8 @@ export class MyProfileComponent implements OnInit {
   editMotherContact = '';
   editGuardianName = '';
   editGuardianContact = '';
+  editGuardianRelationship = '';
+  readonly guardianRelationships = GUARDIAN_RELATIONSHIP_SUGGESTIONS;
   savingProfile = signal(false);
   profileSuccess = signal(false);
 
@@ -179,6 +187,7 @@ export class MyProfileComponent implements OnInit {
       this.editMotherContact = s.profile?.motherContactNumber || '';
       this.editGuardianName = s.guardianName || '';
       this.editGuardianContact = s.guardianContact || '';
+      this.editGuardianRelationship = s.guardianRelationship || '';
     });
   }
 
@@ -191,6 +200,7 @@ export class MyProfileComponent implements OnInit {
       address: this.editAddress,
       guardianName: this.editGuardianName,
       guardianContact: this.editGuardianContact,
+      guardianRelationship: this.editGuardianRelationship,
       homeAddress: this.editHome,
       fatherContactNumber: this.editFatherContact,
       motherContactNumber: this.editMotherContact

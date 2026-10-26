@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { Enrollment, Section, BalanceInfo, Payment, EnrollmentHistoryItem, EnrollmentLedger, ShsStrand, EnrollmentLearnerInfo } from '../../../core/models';
+import { Enrollment, Section, BalanceInfo, Payment, EnrollmentHistoryItem, EnrollmentLedger, ShsStrand, EnrollmentLearnerInfo, SchoolYear } from '../../../core/models';
+import { manilaToday } from '../../../core/utils/manila-today';
 import { ENROLLMENT_STATUS_NAMES, ENROLLMENT_STEP_NAMES, LEARNER_TYPES, GRADE_LEVELS, isShsGrade } from '../../../core/constants';
 import { emptyLearnerInfo } from '../../../core/learner';
 import { StrandSelectComponent } from '../../../core/components/strand-select.component';
@@ -232,6 +233,75 @@ import { formatApiError } from '../../../core/utils/format-api-error';
           @if (!learnerLocked()) {
             <div class="flex justify-end">
               <button (click)="saveLearnerInfo()" [disabled]="savingLearner()" class="btn btn-primary">{{ savingLearner() ? 'Saving…' : 'Save learner details' }}</button>
+            </div>
+          }
+        </div>
+
+        <!-- DepEd / LIS -->
+        <div class="bg-white rounded-xl border border-[#E2D9C2] p-6 mb-6 space-y-5">
+          <h3 class="font-semibold text-gray-900">DepEd / LIS</h3>
+
+          <!-- Repeater + first attendance: editable in every status except Cancelled (not gated by the learner lock). -->
+          <div class="space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex items-center gap-2 pt-6">
+                <input id="lis-repeater" type="checkbox" class="h-4 w-4 rounded border-gray-300" [disabled]="isCancelled()"
+                       [ngModel]="lisForm.isRepeater" (ngModelChange)="lisForm.isRepeater = $event" [ngModelOptions]="{ standalone: true }" />
+                <label for="lis-repeater" class="text-sm text-gray-700">Repeater (repeating this grade level)</label>
+              </div>
+              <div>
+                <label class="form-label" for="lis-first-attendance">First day of attendance</label>
+                <input id="lis-first-attendance" type="date" class="form-input" [disabled]="isCancelled()"
+                       [ngModel]="lisForm.firstAttendanceDate" (ngModelChange)="lisForm.firstAttendanceDate = $event || null" [ngModelOptions]="{ standalone: true }" />
+                @if (schoolYearStart()) {
+                  <p class="mt-1 text-xs text-gray-500">
+                    School year starts {{ schoolYearStart() }}.
+                    @if (!isCancelled() && lisForm.firstAttendanceDate !== schoolYearStart()) {
+                      <button type="button" class="text-[#0038A8] hover:underline" (click)="lisForm.firstAttendanceDate = schoolYearStart()">Use school-year start</button>
+                    }
+                  </p>
+                }
+              </div>
+            </div>
+            @if (!isCancelled()) {
+              <div class="flex justify-end">
+                <button (click)="saveLisDetails()" [disabled]="savingLis()" class="btn btn-primary">{{ savingLis() ? 'Saving…' : 'Save DepEd details' }}</button>
+              </div>
+            }
+          </div>
+
+          <!-- LIS encoded status -->
+          <div class="border-t border-gray-100 pt-4 flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-gray-700">
+              @if (enrollment()!.lisEncodedAt) {
+                Encoded in LIS on <span class="font-medium text-gray-900">{{ enrollment()!.lisEncodedAt | date:'mediumDate' }}</span>@if (enrollment()!.lisEncodedBy) { by <span class="font-medium text-gray-900">{{ enrollment()!.lisEncodedBy }}</span> }
+              } @else {
+                Not yet encoded in LIS.
+              }
+            </p>
+            @if (!isCancelled()) {
+              <button (click)="toggleLisEncoded()" [disabled]="savingLisEncoded()"
+                      class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+                {{ enrollment()!.lisEncodedAt ? 'Undo LIS-encoded' : 'Mark as encoded in LIS' }}
+              </button>
+            }
+          </div>
+
+          <!-- Withdrawal -->
+          @if (isWithdrawn()) {
+            <div class="border-t border-gray-100 pt-4 flex flex-wrap items-start justify-between gap-3">
+              <p class="text-sm text-gray-700">
+                <span class="font-medium text-gray-900">{{ withdrawalTypeLabel() }}</span> on {{ enrollment()!.withdrawalDate | date:'mediumDate' }}
+                @if (enrollment()!.transferredToSchool) { — to {{ enrollment()!.transferredToSchool }} }
+                @if (enrollment()!.withdrawalReason) { <span class="text-gray-500"> ({{ enrollment()!.withdrawalReason }})</span> }
+              </p>
+              <button (click)="undoWithdrawal()" [disabled]="savingWithdrawal()"
+                      class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60">Undo withdrawal</button>
+            </div>
+          } @else if (canMarkWithdrawn()) {
+            <div class="border-t border-gray-100 pt-4 flex flex-wrap items-center justify-between gap-3">
+              <p class="text-sm text-gray-500">Learner no longer attending? Record a drop or a transfer out for the LIS and SF reports.</p>
+              <button (click)="openWithdrawal()" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50">Mark dropped / transferred out</button>
             </div>
           }
         </div>
@@ -554,6 +624,63 @@ import { formatApiError } from '../../../core/utils/format-api-error';
           </div>
         </div>
       }
+
+      <!-- Mark dropped / transferred out modal -->
+      @if (wdShowModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50" (click)="closeWithdrawal()">
+          <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6" (click)="$event.stopPropagation()">
+            <h3 class="text-lg font-semibold text-gray-900">Mark dropped / transferred out</h3>
+            <p class="text-xs text-gray-500 mt-1">The learner stays on the enrollment record; the LIS and SF reports will show the withdrawal.</p>
+
+            @if (wdError()) {
+              <div class="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{{ wdError() }}</div>
+            }
+
+            <div class="mt-5 space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <button type="button" (click)="wdForm.type = 'Dropped'"
+                        class="border-2 rounded-xl p-3 text-left transition-all"
+                        [class]="wdForm.type === 'Dropped' ? 'border-[#0038A8] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                  <p class="text-sm font-semibold text-gray-900">Dropped</p>
+                  <p class="text-xs text-gray-500 mt-0.5">Stopped attending</p>
+                </button>
+                <button type="button" (click)="wdForm.type = 'TransferredOut'"
+                        class="border-2 rounded-xl p-3 text-left transition-all"
+                        [class]="wdForm.type === 'TransferredOut' ? 'border-[#0038A8] bg-blue-50/50' : 'border-gray-200 hover:border-gray-300'">
+                  <p class="text-sm font-semibold text-gray-900">Transferred out</p>
+                  <p class="text-xs text-gray-500 mt-0.5">Moved to another school</p>
+                </button>
+              </div>
+              <div>
+                <label class="form-label" for="wd-date">Date *</label>
+                <input id="wd-date" type="date" class="form-input" [(ngModel)]="wdForm.date" />
+              </div>
+              @if (wdForm.type === 'Dropped') {
+                <div>
+                  <label class="form-label" for="wd-reason">Reason *</label>
+                  <input id="wd-reason" type="text" maxlength="500" class="form-input" [(ngModel)]="wdForm.reason" placeholder="e.g. Moved abroad, stopped attending" />
+                </div>
+              } @else {
+                <div>
+                  <label class="form-label" for="wd-school">Transferred to (school) *</label>
+                  <input id="wd-school" type="text" maxlength="200" class="form-input" [(ngModel)]="wdForm.transferredToSchool" />
+                </div>
+                <div>
+                  <label class="form-label" for="wd-reason-opt">Reason (optional)</label>
+                  <input id="wd-reason-opt" type="text" maxlength="500" class="form-input" [(ngModel)]="wdForm.reason" />
+                </div>
+              }
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3">
+              <button (click)="closeWithdrawal()" class="text-sm px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
+              <button (click)="saveWithdrawal()" [disabled]="savingWithdrawal()" class="text-sm px-5 py-2 rounded-lg bg-[#0038A8] text-white font-semibold hover:bg-[#002B85] disabled:opacity-60">
+                {{ savingWithdrawal() ? 'Saving...' : 'Mark withdrawn' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `
 })
@@ -603,6 +730,31 @@ export class EnrollmentDetailComponent implements OnInit {
   learnerLocked = computed(() => !['Draft', 'Submitted'].includes(this.getStatusName()));
   missingStrand = computed(() => this.isShs() && this.strands().length > 0 && !this.enrollment()?.learnerInfo?.strand);
 
+  // DepEd / LIS card
+  schoolYears = signal<SchoolYear[]>([]);
+  lisForm: { isRepeater: boolean; firstAttendanceDate: string | null } = { isRepeater: false, firstAttendanceDate: null };
+  savingLis = signal(false);
+  savingLisEncoded = signal(false);
+  isCancelled = computed(() => this.getStatusName() === 'Cancelled');
+  // yyyy-MM-dd start date of this enrollment's school year, shown as the first-attendance hint.
+  schoolYearStart = computed(() => {
+    const sy = this.schoolYears().find(y => y.name === this.enrollment()?.schoolYear);
+    return sy?.startDate ? sy.startDate.substring(0, 10) : '';
+  });
+  isWithdrawn = computed(() => !!this.enrollment()?.withdrawalType);
+  canMarkWithdrawn = computed(() => ['Approved', 'Paid', 'Enrolled'].includes(this.getStatusName()) && !this.isWithdrawn());
+  withdrawalTypeLabel = computed(() => {
+    const t = this.enrollment()?.withdrawalType;
+    return t === 'TransferredOut' ? 'Transferred out' : t === 'Dropped' ? 'Dropped' : (t ?? '');
+  });
+
+  // Withdrawal modal state
+  wdShowModal = signal(false);
+  wdForm: { type: 'Dropped' | 'TransferredOut'; date: string; reason: string; transferredToSchool: string } =
+    { type: 'Dropped', date: '', reason: '', transferredToSchool: '' };
+  wdError = signal('');
+  savingWithdrawal = signal(false);
+
   private enrollmentId = '';
 
   constructor(private api: ApiService, private route: ActivatedRoute, private auth: AuthService, private notify: NotificationService) {}
@@ -615,17 +767,20 @@ export class EnrollmentDetailComponent implements OnInit {
   ngOnInit(): void {
     this.enrollmentId = this.route.snapshot.paramMap.get('id')!;
     this.api.getShsStrands().subscribe(s => this.strands.set(s));
-    this.loadAll(true);
+    this.api.getSchoolYears().subscribe({ next: list => this.schoolYears.set(list), error: () => this.schoolYears.set([]) });
+    this.loadAll(true, true);
   }
 
   /**
    * Reloads the page. The Learner tab's form is re-read from the server only on the first load and
    * after saving it — other reloads (approve, assign section, payments…) keep the registrar's unsaved edits.
    */
-  loadAll(resetLearnerForm = false): void {
+  loadAll(resetLearnerForm = false, resetLisForm = false): void {
     this.api.getEnrollment(this.enrollmentId).subscribe(e => {
       this.enrollment.set(e);
       if (resetLearnerForm) this.learnerForm = { ...emptyLearnerInfo(), ...(e.learnerInfo ?? {}) };
+      // The DepEd/LIS card has its own save; keep unsaved edits across unrelated reloads.
+      if (resetLisForm) this.lisForm = { isRepeater: e.isRepeater ?? false, firstAttendanceDate: e.firstAttendanceDate ? e.firstAttendanceDate.substring(0, 10) : null };
       // Land the registrar where the action is — set once on first load only, so
       // reloads after approve/void/advance don't yank the user's chosen tab away.
       if (!this.defaultTabSet) {
@@ -654,6 +809,79 @@ export class EnrollmentDetailComponent implements OnInit {
     this.api.updateEnrollmentLearnerInfo(this.enrollmentId, this.learnerForm).subscribe({
       next: () => { this.savingLearner.set(false); this.notify.success('Learner details saved.'); this.loadAll(true); },
       error: err => { this.savingLearner.set(false); this.notify.error(formatApiError(err, 'Could not save learner details.')); },
+    });
+  }
+
+  saveLisDetails(): void {
+    this.savingLis.set(true);
+    this.api.updateEnrollmentLisDetails(this.enrollmentId, {
+      isRepeater: this.lisForm.isRepeater,
+      firstAttendanceDate: this.lisForm.firstAttendanceDate || null,
+    }).subscribe({
+      next: () => { this.savingLis.set(false); this.notify.success('DepEd details saved.'); this.loadAll(false, true); },
+      error: err => { this.savingLis.set(false); this.notify.error(formatApiError(err, 'Could not save DepEd details.')); },
+    });
+  }
+
+  async toggleLisEncoded(): Promise<void> {
+    const encode = !this.enrollment()?.lisEncodedAt;
+    if (!encode) {
+      const ok = await this.notify.confirm('Mark this learner as not yet encoded in LIS?',
+        { title: 'Undo LIS-encoded', confirmLabel: 'Undo' });
+      if (!ok) return;
+    }
+    this.savingLisEncoded.set(true);
+    this.api.setLisEncoded({ enrollmentIds: [this.enrollmentId], encoded: encode }).subscribe({
+      next: () => {
+        this.savingLisEncoded.set(false);
+        this.notify.success(encode ? 'Marked as encoded in LIS.' : 'LIS-encoded mark removed.');
+        this.loadAll();
+      },
+      error: err => { this.savingLisEncoded.set(false); this.notify.error(formatApiError(err, 'Could not update the LIS status.')); },
+    });
+  }
+
+  openWithdrawal(): void {
+    this.wdError.set('');
+    this.wdForm = { type: 'Dropped', date: manilaToday(), reason: '', transferredToSchool: '' };
+    this.wdShowModal.set(true);
+  }
+
+  closeWithdrawal(): void { this.wdShowModal.set(false); }
+
+  saveWithdrawal(): void {
+    const f = this.wdForm;
+    const reason = f.reason.trim();
+    const school = f.transferredToSchool.trim();
+    if (!f.date) { this.wdError.set('Date is required.'); return; }
+    if (f.type === 'Dropped' && !reason) { this.wdError.set('Reason is required for a dropped learner.'); return; }
+    if (f.type === 'TransferredOut' && !school) { this.wdError.set('The destination school is required for a transfer.'); return; }
+    this.wdError.set('');
+    this.savingWithdrawal.set(true);
+    this.api.markEnrollmentWithdrawn(this.enrollmentId, {
+      type: f.type,
+      date: f.date,
+      reason: reason || null,
+      transferredToSchool: f.type === 'TransferredOut' ? school : null,
+    }).subscribe({
+      next: () => {
+        this.savingWithdrawal.set(false);
+        this.wdShowModal.set(false);
+        this.notify.success('Withdrawal recorded.');
+        this.loadAll();
+      },
+      error: err => { this.savingWithdrawal.set(false); this.wdError.set(formatApiError(err, 'Could not record the withdrawal.')); },
+    });
+  }
+
+  async undoWithdrawal(): Promise<void> {
+    const ok = await this.notify.confirm('Remove the dropped / transferred-out mark from this enrollment?',
+      { title: 'Undo withdrawal', confirmLabel: 'Undo withdrawal' });
+    if (!ok) return;
+    this.savingWithdrawal.set(true);
+    this.api.undoEnrollmentWithdrawal(this.enrollmentId).subscribe({
+      next: () => { this.savingWithdrawal.set(false); this.notify.success('Withdrawal removed.'); this.loadAll(); },
+      error: err => { this.savingWithdrawal.set(false); this.notify.error(formatApiError(err, 'Could not undo the withdrawal.')); },
     });
   }
 

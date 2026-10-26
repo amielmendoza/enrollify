@@ -6,7 +6,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { CreateStudentRequest, LearnerProfile } from '../../../core/models';
 import { ALL_FIELDS_VISIBLE, editableProfile, emptyLearnerProfile, isPsgcMatched } from '../../../core/learner';
-import { EXTENSION_NAME_SUGGESTIONS } from '../../../core/constants';
+import { EXTENSION_NAME_SUGGESTIONS, GUARDIAN_RELATIONSHIP_SUGGESTIONS } from '../../../core/constants';
 import { formatApiError } from '../../../core/utils/format-api-error';
 import { PsgcAddressComponent } from '../../../core/components/psgc-address.component';
 import { LearnerBackgroundFieldsComponent } from '../../../core/components/learner-background-fields.component';
@@ -102,10 +102,14 @@ type StudentForm = Omit<CreateStudentRequest, 'profile'> & { profile: LearnerPro
         <section class="bg-white rounded-xl border border-[#E2D9C2] p-6 space-y-4">
           <h3 class="font-semibold text-gray-900">Family</h3>
           <app-learner-family-fields [profile]="form.profile" [config]="allFields" namePrefix="staff-fam" />
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="form-label" for="guardianName">Guardian Name</label>
               <input id="guardianName" name="guardianName" type="text" maxlength="200" class="form-input" [(ngModel)]="form.guardianName" />
+            </div>
+            <div>
+              <label class="form-label" for="guardianRelationship">Relationship</label>
+              <input id="guardianRelationship" name="guardianRelationship" type="text" maxlength="50" list="guardian-relationships" class="form-input" [(ngModel)]="form.guardianRelationship" />
             </div>
             <div>
               <label class="form-label" for="guardianContact">Guardian Contact</label>
@@ -135,6 +139,7 @@ type StudentForm = Omit<CreateStudentRequest, 'profile'> & { profile: LearnerPro
           <button type="button" (click)="onCancel()" class="btn btn-secondary">Cancel</button>
         </div>
       </form>
+      <datalist id="guardian-relationships">@for (r of guardianRelationships; track r) { <option [value]="r"></option> }</datalist>
       <datalist id="staff-extension-names">@for (x of extensionNames; track x) { <option [value]="x"></option> }</datalist>
     </div>
   `
@@ -149,6 +154,7 @@ export class StudentFormComponent implements OnInit {
   studentId = '';
   readonly allFields = ALL_FIELDS_VISIBLE;
   readonly extensionNames = EXTENSION_NAME_SUGGESTIONS;
+  readonly guardianRelationships = GUARDIAN_RELATIONSHIP_SUGGESTIONS;
 
   form: StudentForm = this.blankForm();
 
@@ -166,6 +172,7 @@ export class StudentFormComponent implements OnInit {
           lrn: s.lrn, firstName: s.firstName, middleName: s.middleName, lastName: s.lastName,
           birthDate: s.birthDate.substring(0, 10), gender: s.gender, address: s.address,
           contactNumber: s.contactNumber, email: s.email, guardianName: s.guardianName, guardianContact: s.guardianContact,
+          guardianRelationship: s.guardianRelationship ?? null,
           profile: editableProfile(s.profile),
         };
       });
@@ -187,7 +194,7 @@ export class StudentFormComponent implements OnInit {
   onSubmit(): void {
     this.saving.set(true);
     this.error.set('');
-    const payload: CreateStudentRequest = { ...this.form, lrn: this.form.lrn?.trim() || null };
+    const payload: CreateStudentRequest = { ...this.form, lrn: this.form.lrn?.trim() || null, guardianRelationship: this.form.guardianRelationship?.trim() || null };
     const obs = this.isEdit()
       ? this.api.updateStudent(this.studentId, payload)
       : this.api.createStudent(payload);
@@ -202,7 +209,7 @@ export class StudentFormComponent implements OnInit {
   private blankForm(): StudentForm {
     return {
       lrn: null, firstName: '', middleName: '', lastName: '', birthDate: '', gender: null, address: '',
-      contactNumber: null, email: null, guardianName: null, guardianContact: null,
+      contactNumber: null, email: null, guardianName: null, guardianContact: null, guardianRelationship: null,
       profile: emptyLearnerProfile(),
     };
   }

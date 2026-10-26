@@ -91,6 +91,8 @@ public record SendBackEnrollmentRequest(
 
 public record MarkWithdrawnRequest(string Type, DateTime Date, string? Reason, string? TransferredToSchool);
 
+public record SetLisEncodedRequest(IReadOnlyList<Guid> EnrollmentIds, bool Encoded);
+
 public record UpdateLisDetailsRequest(bool IsRepeater, DateTime? FirstAttendanceDate);
 
 public record AssignSectionRequest(

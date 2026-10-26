@@ -141,6 +141,17 @@ public class EnrollmentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("lis-encoded")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> SetLisEncoded([FromBody] SetLisEncodedRequest request)
+    {
+        var encodedBy = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                        ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                        ?? "Admin";
+        var changed = await _sender.Send(new SetLisEncodedCommand(request.EnrollmentIds, request.Encoded, encodedBy));
+        return Ok(new { changed });
+    }
+
     [HttpPost("{id:guid}/send-back")]
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> SendBack(Guid id, [FromBody] SendBackEnrollmentRequest request)

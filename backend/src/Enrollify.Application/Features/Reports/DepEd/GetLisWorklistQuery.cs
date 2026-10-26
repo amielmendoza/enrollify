@@ -75,7 +75,10 @@ public class GetLisWorklistQueryHandler : IRequestHandler<GetLisWorklistQuery, L
             .Where(DepEdRules.Listed)
             .ToList();
 
-        var bySection = listed.ToLookup(e => e.SectionId);
+        // A listed enrollment whose SectionId is not one of this year's sections (e.g. the section was
+        // moved to another year after assignment) folds into the no-section group, so nobody vanishes.
+        var sectionIds = sections.Select(s => s.Id).ToHashSet();
+        var bySection = listed.ToLookup(e => e.SectionId is { } id && sectionIds.Contains(id) ? id : (Guid?)null);
 
         var rows = sections
             .Select(s => Count(s.Id, s.GradeLevel, s.Name, s.Adviser, bySection[s.Id]))

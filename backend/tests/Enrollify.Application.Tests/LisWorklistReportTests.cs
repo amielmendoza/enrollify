@@ -158,6 +158,25 @@ public class LisWorklistReportTests
     }
 
     [Fact]
+    public async Task Listed_learner_with_a_section_outside_the_year_falls_into_the_no_section_group()
+    {
+        var ctx = NewDb();
+        var s = AddSection(ctx, "Grade 7", "Einstein");
+        var otherYear = AddSection(ctx, "Grade 7", "Moved", year: "2024-2025");
+        AddLearner(ctx, s, "In", "Section");
+        AddLearner(ctx, otherYear, "Or", "Phaned", enrollment: e => e.GradeLevel = "Grade 7");
+        await ctx.SaveChangesAsync();
+
+        var result = await Run(ctx);
+        var none = result.Sections.Single(x => x.SectionId == null);
+        Assert.Equal(1, none.Listed);
+        Assert.Equal(1, result.Sections.Single(x => x.SectionId == s.Id).Listed);
+
+        var sel = (await Run(ctx, noSection: true)).Selected!;
+        Assert.Equal(new[] { "Or, Phaned, M" }, All(sel).Select(l => l.Name));
+    }
+
+    [Fact]
     public async Task No_section_group_is_present_even_when_empty()
     {
         var ctx = NewDb();

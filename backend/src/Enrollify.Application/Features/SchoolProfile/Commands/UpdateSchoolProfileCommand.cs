@@ -31,28 +31,28 @@ public class UpdateSchoolProfileCommandValidator : AbstractValidator<UpdateSchoo
     {
         RuleFor(x => Clean(x.DepEdSchoolId))
             .Matches(@"^\d{6}$").When(x => Clean(x.DepEdSchoolId) != null)
-            .WithName(nameof(UpdateSchoolProfileCommand.DepEdSchoolId))
+            .OverridePropertyName(nameof(UpdateSchoolProfileCommand.DepEdSchoolId))
             .WithMessage("DepEd School ID must be exactly 6 digits.");
 
         RuleFor(x => Clean(x.DepEdRegionCode))
             .Matches(@"^\d{2}0{8}$").When(x => Clean(x.DepEdRegionCode) != null)
-            .WithName(nameof(UpdateSchoolProfileCommand.DepEdRegionCode))
+            .OverridePropertyName(nameof(UpdateSchoolProfileCommand.DepEdRegionCode))
             .WithMessage("Region code must be 10 digits: a 2-digit region followed by eight zeros.");
 
         RuleFor(x => Clean(x.DepEdRegionName))
             .NotNull().When(x => Clean(x.DepEdRegionCode) != null)
-            .WithName(nameof(UpdateSchoolProfileCommand.DepEdRegionName))
+            .OverridePropertyName(nameof(UpdateSchoolProfileCommand.DepEdRegionName))
             .WithMessage("Region name is required when a region code is set.");
         RuleFor(x => Clean(x.DepEdRegionName))
             .MaximumLength(MaxText)
-            .WithName(nameof(UpdateSchoolProfileCommand.DepEdRegionName));
+            .OverridePropertyName(nameof(UpdateSchoolProfileCommand.DepEdRegionName));
 
         RuleFor(x => Clean(x.DepEdDivision)).MaximumLength(MaxText)
-            .WithName(nameof(UpdateSchoolProfileCommand.DepEdDivision));
+            .OverridePropertyName(nameof(UpdateSchoolProfileCommand.DepEdDivision));
         RuleFor(x => Clean(x.DepEdDistrict)).MaximumLength(MaxText)
-            .WithName(nameof(UpdateSchoolProfileCommand.DepEdDistrict));
+            .OverridePropertyName(nameof(UpdateSchoolProfileCommand.DepEdDistrict));
         RuleFor(x => Clean(x.SchoolHeadName)).MaximumLength(MaxText)
-            .WithName(nameof(UpdateSchoolProfileCommand.SchoolHeadName));
+            .OverridePropertyName(nameof(UpdateSchoolProfileCommand.SchoolHeadName));
     }
 
     /// <summary>Trims; blank or whitespace becomes null.</summary>

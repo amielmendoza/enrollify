@@ -135,6 +135,18 @@ public class SchoolProfileTests
         Assert.False(IsValid(Cmd(regionCode: "0100000000", regionName: new string('x', 151))));
 
     [Fact]
+    public void Failures_ReportTheCommandPropertyName()
+    {
+        var result = new UpdateSchoolProfileCommandValidator()
+            .Validate(Cmd(schoolId: "bad", regionCode: "0100000000", division: new string('x', 151)));
+
+        var names = result.Errors.Select(e => e.PropertyName).ToHashSet();
+        Assert.Contains("DepEdSchoolId", names);
+        Assert.Contains("DepEdRegionName", names);
+        Assert.Contains("DepEdDivision", names);
+    }
+
+    [Fact]
     public void WhitespacePaddedValue_IsMeasuredTrimmed()
     {
         // 150 real chars plus padding: trimmed length is 150, so it passes.

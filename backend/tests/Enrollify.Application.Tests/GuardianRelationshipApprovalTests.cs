@@ -1,3 +1,4 @@
+using Enrollify.Application.Features.Admissions.Commands;
 using Enrollify.Application.Features.Students;
 using Enrollify.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -76,5 +77,80 @@ public class GuardianRelationshipApprovalTests
         var second = await GuardianRelationshipBackfill.RunForTenantAsync(ctx, TestDb.TenantId, default);
 
         Assert.Equal(0, second);
+    }
+
+    private static AdmissionApplication ApprovableApp(string? relationship) => new()
+    {
+        ApplicationNumber = $"APP-{Guid.NewGuid().ToString()[..8].ToUpper()}",
+        FirstName = "Ana", LastName = "Cruz", Email = "", Gender = "Female",
+        DateOfBirth = new DateTime(2009, 3, 10), GradeLevel = "Grade 11", SchoolYear = "2026-2027",
+        Status = "Submitted", ApplicationType = "Parent", ParentUserId = Guid.NewGuid(),
+        GuardianRelationship = relationship
+    };
+
+    private static Task ApproveAsync(Enrollify.Infrastructure.Persistence.ApplicationDbContext ctx, Guid appId) =>
+        new ReviewApplicationCommandHandler(ctx, new RecordingEmailSender())
+            .Handle(new ReviewApplicationCommand(appId, IsApproved: true, null), default);
+
+    [Fact]
+    public async Task Approval_copies_relationship_onto_a_new_student()
+    {
+        var ctx = TestDb.Create();
+        var app = ApprovableApp("Mother");
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        Assert.Equal("Mother", (await ctx.Students.SingleAsync()).GuardianRelationship);
+    }
+
+    [Fact]
+    public async Task Approval_fills_a_reused_students_empty_relationship()
+    {
+        var ctx = TestDb.Create();
+        var existing = NewStudent();
+        ctx.Students.Add(existing);
+        var app = ApprovableApp("Father");
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        var student = await ctx.Students.SingleAsync();
+        Assert.Equal(existing.Id, student.Id);
+        Assert.Equal("Father", student.GuardianRelationship);
+    }
+
+    [Fact]
+    public async Task Approval_fills_a_reused_students_blank_relationship()
+    {
+        var ctx = TestDb.Create();
+        var existing = NewStudent("   ");
+        ctx.Students.Add(existing);
+        var app = ApprovableApp("Father");
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        Assert.Equal("Father", (await ctx.Students.SingleAsync()).GuardianRelationship);
+    }
+
+    [Fact]
+    public async Task Approval_preserves_a_reused_students_existing_relationship()
+    {
+        var ctx = TestDb.Create();
+        var existing = NewStudent("Aunt");
+        ctx.Students.Add(existing);
+        var app = ApprovableApp("Mother");
+        ctx.AdmissionApplications.Add(app);
+        await ctx.SaveChangesAsync();
+
+        await ApproveAsync(ctx, app.Id);
+
+        var student = await ctx.Students.SingleAsync();
+        Assert.Equal(existing.Id, student.Id);
+        Assert.Equal("Aunt", student.GuardianRelationship);
     }
 }

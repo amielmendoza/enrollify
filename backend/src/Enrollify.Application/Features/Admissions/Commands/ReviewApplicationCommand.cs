@@ -103,6 +103,8 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
 
                     // New DepEd details fill blanks only - never overwrite the registrar's record.
                     LearnerProfileMapping.FillBlanks(app, existingStudent);
+                    if (string.IsNullOrWhiteSpace(existingStudent.GuardianRelationship))
+                        existingStudent.GuardianRelationship = app.GuardianRelationship;
                     if (existingStudent.LRN == null && appLrn != null
                         && !await _context.Students.AnyAsync(s => s.Id != existingStudent.Id && s.LRN == appLrn, ct))
                         existingStudent.LRN = appLrn;
@@ -145,6 +147,7 @@ public class ReviewApplicationCommandHandler : IRequestHandler<ReviewApplication
                         Email = app.Email,
                         GuardianName = app.GuardianName,
                         GuardianContact = app.GuardianContact,
+                        GuardianRelationship = app.GuardianRelationship,
                         UserId = studentSelfUserId,
                         ParentUserId = parentUserId,
                         TenantId = app.TenantId

@@ -36,7 +36,7 @@ public class Enrollment : TenantEntity
     // DepEd reporting (SF1 / LIS worklist)
     public bool IsRepeater { get; set; }
     public DateTime? FirstAttendanceDate { get; set; }
-    public string? WithdrawalType { get; set; }            // e.g. Transferred Out / Dropped Out
+    public string? WithdrawalType { get; set; }            // "TransferredOut" or "Dropped"; null = not withdrawn
     public DateTime? WithdrawalDate { get; set; }
     public string? WithdrawalReason { get; set; }
     public string? TransferredToSchool { get; set; }

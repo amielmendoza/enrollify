@@ -13,11 +13,12 @@ namespace Enrollify.Application.Features.Enrollments.Commands;
 /// Batch re-enrollment for a new school year: every student who finished FromSchoolYear
 /// (status Enrolled) gets a Draft enrollment in ToSchoolYear at the next grade up.
 /// Grade 12 finishers graduate (skipped); students who already have a non-cancelled
-/// ToSchoolYear enrollment are skipped. All-or-nothing via a single transaction.
+/// ToSchoolYear enrollment are skipped; so are learners whose source enrollment carries a
+/// withdrawal mark (dropped / transferred out). All-or-nothing via a single transaction.
 /// </summary>
 public record BulkReenrollCommand(string FromSchoolYear, string ToSchoolYear) : IRequest<BulkReenrollResultDto>;
 
-public record BulkReenrollResultDto(int Created, int SkippedExisting, int SkippedGraduates, int NeedsStrand = 0);
+public record BulkReenrollResultDto(int Created, int SkippedExisting, int SkippedGraduates, int NeedsStrand = 0, int SkippedWithdrawn = 0);
 
 public class BulkReenrollCommandValidator : AbstractValidator<BulkReenrollCommand>
 {
@@ -46,13 +47,13 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
             throw new InvalidOperationException(
                 $"School year '{request.ToSchoolYear}' does not exist. Create it first under Settings → School Years.");
 
-        int created = 0, skippedExisting = 0, skippedGraduates = 0, needsStrand = 0;
+        int created = 0, skippedExisting = 0, skippedGraduates = 0, needsStrand = 0, skippedWithdrawn = 0;
 
         var offersStrands = await _context.ShsStrands.AnyAsync(s => s.IsActive, cancellationToken);
 
         await _context.ExecuteInTransactionAsync(async ct =>
         {
-            created = 0; skippedExisting = 0; skippedGraduates = 0; needsStrand = 0;
+            created = 0; skippedExisting = 0; skippedGraduates = 0; needsStrand = 0; skippedWithdrawn = 0;
 
             // Students who completed the source year: one row per student (Enrolled is terminal
             // per year, so duplicates would be data noise — take the most recent).
@@ -75,6 +76,13 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
 
             foreach (var source in perStudent)
             {
+                // Dropped / transferred out during the year: not continuing, so no new Draft.
+                if (source.WithdrawalType != null)
+                {
+                    skippedWithdrawn++;
+                    continue;
+                }
+
                 if (source.GradeLevel == "Grade 12")
                 {
                     skippedGraduates++;
@@ -120,6 +128,6 @@ public class BulkReenrollCommandHandler : IRequestHandler<BulkReenrollCommand, B
             await _context.SaveChangesAsync(ct);
         }, cancellationToken);
 
-        return new BulkReenrollResultDto(created, skippedExisting, skippedGraduates, needsStrand);
+        return new BulkReenrollResultDto(created, skippedExisting, skippedGraduates, needsStrand, skippedWithdrawn);
     }
 }

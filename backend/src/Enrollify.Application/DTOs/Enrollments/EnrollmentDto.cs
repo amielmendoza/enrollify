@@ -89,6 +89,8 @@ public record CancelEnrollmentRequest(
 public record SendBackEnrollmentRequest(
     string Reason);
 
+public record MarkWithdrawnRequest(string Type, DateTime Date, string? Reason, string? TransferredToSchool);
+
 public record UpdateLisDetailsRequest(bool IsRepeater, DateTime? FirstAttendanceDate);
 
 public record AssignSectionRequest(

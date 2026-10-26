@@ -152,6 +152,29 @@ public class EnrollmentsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("{id:guid}/withdrawal")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> MarkWithdrawn(Guid id, [FromBody] MarkWithdrawnRequest request)
+    {
+        var markedBy = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                       ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                       ?? "Admin";
+        var result = await _sender.Send(new MarkEnrollmentWithdrawnCommand(
+            id, request.Type, request.Date, request.Reason, request.TransferredToSchool, markedBy));
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}/withdrawal")]
+    [Authorize(Roles = "Admin,Registrar")]
+    public async Task<IActionResult> UndoWithdrawal(Guid id)
+    {
+        var undoneBy = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                       ?? User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                       ?? "Admin";
+        var result = await _sender.Send(new UndoEnrollmentWithdrawalCommand(id, undoneBy));
+        return Ok(result);
+    }
+
     [HttpPost("{id:guid}/assign-section")]
     [Authorize(Roles = "Admin,Registrar")]
     public async Task<IActionResult> AssignSection(Guid id, [FromBody] AssignSectionRequest request)

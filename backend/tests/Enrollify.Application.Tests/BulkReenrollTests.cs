@@ -89,6 +89,32 @@ public class BulkReenrollTests
     }
 
     [Fact]
+    public async Task BulkReenroll_SkipsWithdrawnSource_AndCountsSkippedWithdrawn()
+    {
+        var ctx = TestDb.Create();
+        await SeedScenarioAsync(ctx);
+
+        // Echo is Enrolled in FromYear but was marked dropped during the year.
+        var echo = NewStudent("LRN-0905", "Echo");
+        ctx.Students.Add(echo);
+        var echoEnrollment = EnrollmentOf(echo.Id, FromYear, "Grade 8", EnrollmentStatus.Enrolled);
+        echoEnrollment.WithdrawalType = "Dropped";
+        echoEnrollment.WithdrawalDate = new DateTime(2025, 10, 1);
+        echoEnrollment.WithdrawalReason = "Moved abroad";
+        ctx.Enrollments.Add(echoEnrollment);
+        await ctx.SaveChangesAsync();
+
+        var result = await new BulkReenrollCommandHandler(ctx)
+            .Handle(new BulkReenrollCommand(FromYear, ToYear), default);
+
+        Assert.Equal(1, result.Created); // only Alpha
+        Assert.Equal(1, result.SkippedWithdrawn);
+        Assert.Equal(1, result.SkippedExisting);
+        Assert.Equal(1, result.SkippedGraduates);
+        Assert.Equal(0, await ctx.Enrollments.CountAsync(e => e.StudentId == echo.Id && e.SchoolYear == ToYear));
+    }
+
+    [Fact]
     public async Task BulkReenroll_FailedSave_LeavesNothingBehind()
     {
         var dbName = $"bulk-reenroll-{Guid.NewGuid()}";

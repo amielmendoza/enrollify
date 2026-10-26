@@ -33,6 +33,9 @@ export const routes: Routes = [
   // Printable DepEd quick count, ?schoolYear&asOf.
   { path: 'print/quick-count', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-quick-count.component').then(m => m.PrintQuickCountComponent) },
 
+  // Printable DepEd SF1 register for one section, ?schoolYear. Landscape long bond.
+  { path: 'print/sf1/:sectionId', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-sf1.component').then(m => m.PrintSf1Component) },
+
   // Printable class list for one section.
   { path: 'print/section-roster/:id', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-section-roster.component').then(m => m.PrintSectionRosterComponent) },
 
@@ -67,6 +70,7 @@ export const routes: Routes = [
       { path: 'reports/collections', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/collections.component').then(m => m.CollectionsComponent) },
       { path: 'reports/deped/lis-worklist', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/deped/lis-worklist.component').then(m => m.LisWorklistComponent) },
       { path: 'reports/deped/quick-count', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/deped/quick-count.component').then(m => m.QuickCountComponent) },
+      { path: 'reports/deped/sf1-register', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/deped/sf1-register.component').then(m => m.Sf1RegisterComponent) },
       { path: 'settings', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
 
       // Student-self pages

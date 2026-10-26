@@ -22,6 +22,8 @@ public class Student : TenantEntity, ILearnerProfile
     public string? Email { get; set; }
     public string? GuardianName { get; set; }
     public string? GuardianContact { get; set; }
+    /// <summary>Guardian's relationship to the learner (e.g. Mother); copied from the approved application. Printed on the SF1.</summary>
+    public string? GuardianRelationship { get; set; }
     public bool IsActive { get; set; } = true;
     public Guid? UserId { get; set; }          // Set when the student self-registered (Student-role User)
     public Guid? ParentUserId { get; set; }    // Set when a parent registered the student (Parent-role User)

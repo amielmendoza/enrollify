@@ -26,6 +26,12 @@ public class EnrollmentConfiguration : IEntityTypeConfiguration<Enrollment>
         builder.Property(e => e.Track).HasMaxLength(100);
         builder.Property(e => e.Strand).HasMaxLength(100);
 
+        builder.Property(e => e.IsRepeater).HasDefaultValue(false);
+        builder.Property(e => e.WithdrawalType).HasMaxLength(20);
+        builder.Property(e => e.WithdrawalReason).HasMaxLength(500);
+        builder.Property(e => e.TransferredToSchool).HasMaxLength(200);
+        builder.Property(e => e.LisEncodedBy).HasMaxLength(200);
+
         builder.HasOne(e => e.Student)
             .WithMany(s => s.Enrollments)
             .HasForeignKey(e => e.StudentId)

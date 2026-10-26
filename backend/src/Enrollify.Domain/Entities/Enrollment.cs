@@ -33,6 +33,16 @@ public class Enrollment : TenantEntity
     public string? Track { get; set; }                     // Grade 11/12 only
     public string? Strand { get; set; }                    // Grade 11/12 only
 
+    // DepEd reporting (SF1 / LIS worklist)
+    public bool IsRepeater { get; set; }
+    public DateTime? FirstAttendanceDate { get; set; }
+    public string? WithdrawalType { get; set; }            // e.g. Transferred Out / Dropped Out
+    public DateTime? WithdrawalDate { get; set; }
+    public string? WithdrawalReason { get; set; }
+    public string? TransferredToSchool { get; set; }
+    public DateTime? LisEncodedAt { get; set; }            // when the registrar marked this row as encoded in the LIS
+    public string? LisEncodedBy { get; set; }
+
     public ICollection<EnrollmentStatusHistory> StatusHistory { get; set; } = new List<EnrollmentStatusHistory>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public ICollection<EnrollmentRequirement> Requirements { get; set; } = new List<EnrollmentRequirement>();

@@ -1,5 +1,6 @@
 using Enrollify.Application.Common;
 using Enrollify.Application.Features.ApplicationFormFields;
+using Enrollify.Application.Features.SchoolProfile;
 using Enrollify.Application.Features.ShsStrands;
 using Enrollify.Application.Features.Students;
 using Enrollify.Application.Features.Workflows;
@@ -46,6 +47,8 @@ public static class ApplicationDbContextSeed
         await SeedApplicationFormFieldsAsync(context);
         await SeedLearnerRecordBackfillAsync(context);
         await SeedShsStrandsAsync(context);
+        await SeedDepEdProfileAsync(context);
+        await SeedGuardianRelationshipBackfillAsync(context);
 
         if (await context.Tenants.IgnoreQueryFilters().AnyAsync())
             return;
@@ -366,6 +369,24 @@ public static class ApplicationDbContextSeed
         foreach (var tenantId in tenantIds)
             added += await DefaultShsStrands.EnsureForTenantAsync(context, tenantId);
         if (added > 0) await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedDepEdProfileAsync(ApplicationDbContext context)
+    {
+        var tenantIds = await context.Tenants.IgnoreQueryFilters().Select(t => t.Id).ToListAsync();
+        var touched = 0;
+        foreach (var tenantId in tenantIds)
+            touched += await DefaultDepEdProfile.EnsureForTenantAsync(context, tenantId);
+        if (touched > 0) await context.SaveChangesAsync();
+    }
+
+    private static async Task SeedGuardianRelationshipBackfillAsync(ApplicationDbContext context)
+    {
+        var tenantIds = await context.Tenants.IgnoreQueryFilters().Select(t => t.Id).ToListAsync();
+        var changes = 0;
+        foreach (var tenantId in tenantIds)
+            changes += await GuardianRelationshipBackfill.RunForTenantAsync(context, tenantId);
+        if (changes > 0) await context.SaveChangesAsync();
     }
 
     // ----- Below: the legacy in-file defaults are no longer used; kept commented for reference. -----

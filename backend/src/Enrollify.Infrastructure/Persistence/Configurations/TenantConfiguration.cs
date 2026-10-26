@@ -17,6 +17,13 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(t => t.ContactPhone).HasMaxLength(50);
         builder.Property(t => t.Address).HasMaxLength(500);
 
+        builder.Property(t => t.DepEdSchoolId).HasMaxLength(6);
+        builder.Property(t => t.DepEdRegionCode).HasMaxLength(10);
+        builder.Property(t => t.DepEdRegionName).HasMaxLength(150);
+        builder.Property(t => t.DepEdDivision).HasMaxLength(150);
+        builder.Property(t => t.DepEdDistrict).HasMaxLength(150);
+        builder.Property(t => t.SchoolHeadName).HasMaxLength(150);
+
         builder.HasIndex(t => t.Subdomain).IsUnique();
     }
 }

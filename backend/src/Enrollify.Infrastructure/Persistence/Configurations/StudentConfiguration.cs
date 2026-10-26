@@ -24,6 +24,7 @@ public class StudentConfiguration : IEntityTypeConfiguration<Student>
         builder.Property(s => s.Email).HasMaxLength(200);
         builder.Property(s => s.GuardianName).HasMaxLength(200);
         builder.Property(s => s.GuardianContact).HasMaxLength(50);
+        builder.Property(s => s.GuardianRelationship).HasMaxLength(50);
 
         builder.Property(s => s.UserId);
         builder.HasIndex(s => new { s.TenantId, s.UserId }).IsUnique().HasFilter("[UserId] IS NOT NULL");

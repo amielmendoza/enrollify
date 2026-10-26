@@ -5,6 +5,7 @@ using Enrollify.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Enrollify.API.Controllers;
 
@@ -85,5 +86,22 @@ public class ReportsController : ControllerBase
         var result = await _sender.Send(new GetQuickCountExportQuery(tenantId, schoolYear, asOf));
         var csv = QuickCountCsvBuilder.Build(result);
         return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv", $"quick-count_{result.AsOf:yyyyMMdd}.csv");
+    }
+
+    [HttpGet("deped/sf1")]
+    public async Task<IActionResult> GetSf1([FromQuery] string? schoolYear, [FromQuery, BindRequired] Guid sectionId)
+    {
+        var tenantId = Guid.Parse(User.FindFirst("TenantId")!.Value);
+        var result = await _sender.Send(new GetSf1Query(tenantId, schoolYear, sectionId));
+        return Ok(result);
+    }
+
+    [HttpGet("deped/sf1/export")]
+    public async Task<IActionResult> ExportSf1([FromQuery] string? schoolYear, [FromQuery, BindRequired] Guid sectionId)
+    {
+        var tenantId = Guid.Parse(User.FindFirst("TenantId")!.Value);
+        var result = await _sender.Send(new GetSf1ExportQuery(tenantId, schoolYear, sectionId));
+        var csv = Sf1CsvBuilder.Build(result);
+        return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv", $"sf1_{sectionId}.csv");
     }
 }

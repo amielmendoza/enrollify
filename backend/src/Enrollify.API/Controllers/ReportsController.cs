@@ -1,4 +1,5 @@
 using Enrollify.Application.Features.Reports;
+using Enrollify.Application.Features.Reports.DepEd;
 using Enrollify.Application.Features.Reports.Queries;
 using Enrollify.Domain.Enums;
 using MediatR;
@@ -58,5 +59,14 @@ public class ReportsController : ControllerBase
         var csv = EnrollmentRegisterCsvBuilder.Build(rows);
         var fileName = $"enrollment-register_{schoolYear ?? "active-year"}.csv";
         return File(System.Text.Encoding.UTF8.GetBytes(csv), "text/csv", fileName);
+    }
+
+    [HttpGet("deped/lis-worklist")]
+    public async Task<IActionResult> GetLisWorklist(
+        [FromQuery] string? schoolYear, [FromQuery] Guid? sectionId, [FromQuery] bool noSection = false)
+    {
+        var tenantId = Guid.Parse(User.FindFirst("TenantId")!.Value);
+        var result = await _sender.Send(new GetLisWorklistQuery(tenantId, schoolYear, sectionId, noSection));
+        return Ok(result);
     }
 }

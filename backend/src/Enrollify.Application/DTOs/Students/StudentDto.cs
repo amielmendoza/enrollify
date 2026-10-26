@@ -21,7 +21,8 @@ public record StudentDto(
     bool IsActive = true,
     string StudentNumber = "",
     bool LrnNeedsReview = false,
-    LearnerProfileDto? Profile = null);
+    LearnerProfileDto? Profile = null,
+    string? GuardianRelationship = null);
 
 public record SetStudentActiveRequest(bool IsActive);
 
@@ -37,7 +38,8 @@ public record CreateStudentRequest(
     string? Email,
     string? GuardianName,
     string? GuardianContact,
-    LearnerProfileDto? Profile = null);
+    LearnerProfileDto? Profile = null,
+    string? GuardianRelationship = null);
 
 public record UpdateStudentRequest(
     string? LRN,
@@ -51,7 +53,8 @@ public record UpdateStudentRequest(
     string? Email,
     string? GuardianName,
     string? GuardianContact,
-    LearnerProfileDto? Profile = null);
+    LearnerProfileDto? Profile = null,
+    string? GuardianRelationship = null);
 
 public record UpdateMyProfileRequest(
     string? ContactNumber,
@@ -61,7 +64,8 @@ public record UpdateMyProfileRequest(
     string? GuardianContact,
     PsgcAddressDto? HomeAddress = null,
     string? FatherContactNumber = null,
-    string? MotherContactNumber = null);
+    string? MotherContactNumber = null,
+    string? GuardianRelationship = null);
 
 public record UpdateChildProfileRequest(
     string? ContactNumber,
@@ -71,4 +75,5 @@ public record UpdateChildProfileRequest(
     string? GuardianContact,
     PsgcAddressDto? HomeAddress = null,
     string? FatherContactNumber = null,
-    string? MotherContactNumber = null);
+    string? MotherContactNumber = null,
+    string? GuardianRelationship = null);

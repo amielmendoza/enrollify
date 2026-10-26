@@ -17,7 +17,8 @@ public record UpdateMyProfileCommand(
     string? GuardianContact,
     PsgcAddressDto? HomeAddress = null,
     string? FatherContactNumber = null,
-    string? MotherContactNumber = null) : IRequest<StudentDto>;
+    string? MotherContactNumber = null,
+    string? GuardianRelationship = null) : IRequest<StudentDto>;
 
 public class UpdateMyProfileCommandValidator : AbstractValidator<UpdateMyProfileCommand>
 {
@@ -28,6 +29,7 @@ public class UpdateMyProfileCommandValidator : AbstractValidator<UpdateMyProfile
         RuleFor(x => x.Address).MaximumLength(500);
         RuleFor(x => x.GuardianName).MaximumLength(200);
         RuleFor(x => x.GuardianContact).MaximumLength(50);
+        RuleFor(x => x.GuardianRelationship).MaximumLength(50);
         RuleFor(x => x.FatherContactNumber).MaximumLength(50);
         RuleFor(x => x.MotherContactNumber).MaximumLength(50);
         RuleFor(x => x.HomeAddress!).SetValidator(new PsgcAddressDtoValidator()).When(x => x.HomeAddress != null);
@@ -51,6 +53,8 @@ public class UpdateMyProfileCommandHandler : IRequestHandler<UpdateMyProfileComm
         if (request.Address != null) student.Address = request.Address;
         if (request.GuardianName != null) student.GuardianName = request.GuardianName;
         if (request.GuardianContact != null) student.GuardianContact = request.GuardianContact;
+        // The user's own edit: set directly (blank clears), not the blank-only guard used by approval.
+        if (request.GuardianRelationship != null) student.GuardianRelationship = LearnerProfileMapping.Clean(request.GuardianRelationship);
         if (request.FatherContactNumber != null) student.FatherContactNumber = LearnerProfileMapping.Clean(request.FatherContactNumber);
         if (request.MotherContactNumber != null) student.MotherContactNumber = LearnerProfileMapping.Clean(request.MotherContactNumber);
         if (request.HomeAddress != null) LearnerProfileMapping.ApplyAddress(request.HomeAddress, student.HomeAddress);

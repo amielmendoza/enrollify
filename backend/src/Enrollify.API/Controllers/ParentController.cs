@@ -51,7 +51,7 @@ public class ParentController : ControllerBase
             studentId, CurrentUserId(),
             request.ContactNumber, request.Email, request.Address,
             request.GuardianName, request.GuardianContact,
-            request.HomeAddress, request.FatherContactNumber, request.MotherContactNumber));
+            request.HomeAddress, request.FatherContactNumber, request.MotherContactNumber, request.GuardianRelationship));
         return Ok(result);
     }
 

@@ -15,7 +15,8 @@ public record CreateStudentCommand(
     string? ContactNumber, string? Email, string? GuardianName, string? GuardianContact,
     Guid? UserId = null,        // Set for Student-mode applications (student logs in as themselves)
     Guid? ParentUserId = null,  // Set for Parent-mode applications (parent owns this student)
-    LearnerProfileDto? Profile = null
+    LearnerProfileDto? Profile = null,
+    string? GuardianRelationship = null
 ) : IRequest<StudentDto>;
 
 public class CreateStudentCommandValidator : AbstractValidator<CreateStudentCommand>
@@ -26,6 +27,7 @@ public class CreateStudentCommandValidator : AbstractValidator<CreateStudentComm
             .Must(l => DepEdLists.IsTwelveDigitLrn(l!.Trim()))
             .When(x => !string.IsNullOrWhiteSpace(x.LRN))
             .WithMessage("LRN must be exactly 12 digits (leave it blank if the learner has none yet).");
+        RuleFor(x => x.GuardianRelationship).MaximumLength(50);
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.BirthDate).NotEmpty().LessThan(DateTime.UtcNow);
@@ -68,6 +70,7 @@ public class CreateStudentCommandHandler : IRequestHandler<CreateStudentCommand,
             Email = request.Email,
             GuardianName = request.GuardianName,
             GuardianContact = request.GuardianContact,
+            GuardianRelationship = LearnerProfileMapping.Clean(request.GuardianRelationship),
             UserId = request.UserId,
             ParentUserId = request.ParentUserId
         };

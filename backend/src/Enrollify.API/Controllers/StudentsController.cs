@@ -43,7 +43,7 @@ public class StudentsController : ControllerBase
         var result = await _sender.Send(new CreateStudentCommand(
             request.LRN, request.FirstName, request.MiddleName, request.LastName,
             request.BirthDate, request.Gender, request.Address,
-            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact, Profile: request.Profile));
+            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact, Profile: request.Profile, GuardianRelationship: request.GuardianRelationship));
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -54,7 +54,7 @@ public class StudentsController : ControllerBase
         var result = await _sender.Send(new UpdateStudentCommand(
             id, request.LRN, request.FirstName, request.MiddleName, request.LastName,
             request.BirthDate, request.Gender, request.Address,
-            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact, request.Profile));
+            request.ContactNumber, request.Email, request.GuardianName, request.GuardianContact, request.Profile, request.GuardianRelationship));
         return Ok(result);
     }
 
@@ -98,7 +98,7 @@ public class StudentsController : ControllerBase
         var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
         var result = await _sender.Send(new UpdateMyProfileCommand(
             userId, request.ContactNumber, request.Email, request.Address, request.GuardianName, request.GuardianContact,
-            request.HomeAddress, request.FatherContactNumber, request.MotherContactNumber));
+            request.HomeAddress, request.FatherContactNumber, request.MotherContactNumber, request.GuardianRelationship));
         return Ok(result);
     }
 }

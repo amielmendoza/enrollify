@@ -11,5 +11,6 @@ public static class StudentMapping
         s.BirthDate, s.Gender, s.Address, s.ContactNumber, s.Email,
         s.GuardianName, s.GuardianContact, s.FullName,
         s.UserId, s.ParentUserId, s.IsActive,
-        s.StudentNumber, s.LrnNeedsReview, LearnerProfileMapping.ToDto(s));
+        s.StudentNumber, s.LrnNeedsReview, LearnerProfileMapping.ToDto(s),
+        s.GuardianRelationship);
 }

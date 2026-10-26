@@ -12,7 +12,8 @@ public record UpdateStudentCommand(
     Guid Id, string? LRN, string FirstName, string MiddleName, string LastName,
     DateTime BirthDate, string? Gender, string Address,
     string? ContactNumber, string? Email, string? GuardianName, string? GuardianContact,
-    LearnerProfileDto? Profile = null
+    LearnerProfileDto? Profile = null,
+    string? GuardianRelationship = null
 ) : IRequest<StudentDto>;
 
 public class UpdateStudentCommandValidator : AbstractValidator<UpdateStudentCommand>
@@ -23,6 +24,7 @@ public class UpdateStudentCommandValidator : AbstractValidator<UpdateStudentComm
         // Shape is checked in the handler, and only when the LRN CHANGES — an untouched legacy
         // value must never block an unrelated edit.
         RuleFor(x => x.LRN).MaximumLength(20);
+        RuleFor(x => x.GuardianRelationship).MaximumLength(50);
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
         // DELIBERATE data-quality ratchet on the STAFF path: a staff save needs either a
@@ -73,6 +75,7 @@ public class UpdateStudentCommandHandler : IRequestHandler<UpdateStudentCommand,
         student.Email = request.Email;
         student.GuardianName = request.GuardianName;
         student.GuardianContact = request.GuardianContact;
+        student.GuardianRelationship = LearnerProfileMapping.Clean(request.GuardianRelationship);
 
         if (request.Profile != null)
             LearnerProfileMapping.Apply(request.Profile, student);

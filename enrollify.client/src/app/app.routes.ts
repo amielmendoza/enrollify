@@ -30,6 +30,9 @@ export const routes: Routes = [
   // Printable enrollment register, ?schoolYear&gradeLevel&status&sectionId&includeCancelled.
   { path: 'print/enrollment-register', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-enrollment-register.component').then(m => m.PrintEnrollmentRegisterComponent) },
 
+  // Printable DepEd quick count, ?schoolYear&asOf.
+  { path: 'print/quick-count', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-quick-count.component').then(m => m.PrintQuickCountComponent) },
+
   // Printable class list for one section.
   { path: 'print/section-roster/:id', canActivate: [authGuard, roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/print/print-section-roster.component').then(m => m.PrintSectionRosterComponent) },
 
@@ -63,6 +66,7 @@ export const routes: Routes = [
       { path: 'reports/enrollment-register', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/enrollment-register.component').then(m => m.EnrollmentRegisterComponent) },
       { path: 'reports/collections', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/collections.component').then(m => m.CollectionsComponent) },
       { path: 'reports/deped/lis-worklist', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/deped/lis-worklist.component').then(m => m.LisWorklistComponent) },
+      { path: 'reports/deped/quick-count', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/reports/deped/quick-count.component').then(m => m.QuickCountComponent) },
       { path: 'settings', canActivate: [roleGuard], data: { roles: ['Admin', 'Registrar'] }, loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
 
       // Student-self pages
